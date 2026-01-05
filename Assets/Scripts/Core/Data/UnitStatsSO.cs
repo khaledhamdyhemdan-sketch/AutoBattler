@@ -11,6 +11,7 @@ namespace AutoBattler.Data
     {
         [Header("Basic Info")]
         public string unitName;
+        public AutoBattler.Core.VoidGame.UnitType unitType = AutoBattler.Core.VoidGame.UnitType.Dps;
         public int tier = 1; // For shop pool filtering
         public Sprite icon;
         public GameObject visualPrefab;

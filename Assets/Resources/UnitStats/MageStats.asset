@@ -13,6 +13,7 @@ MonoBehaviour:
   m_Name: MageStats
   m_EditorClassIdentifier: 
   unitName: Mage
+  unitType: 4
   tier: 2
   icon: {fileID: 0}
   maxHealth: 70

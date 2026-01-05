@@ -4,5 +4,5 @@ This file tracks all major tracks for the project. Each track has its own detail
 
 ---
 
-## [ ] Track: Core Roguelike Mode Implementation
+## [~] Track: Core Roguelike Mode Implementation
 *Link: [./conductor/tracks/roguelike_core_20260104/](./conductor/tracks/roguelike_core_20260104/)*

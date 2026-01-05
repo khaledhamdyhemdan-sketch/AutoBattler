@@ -3,11 +3,11 @@
 ## Phase 1: Data Architecture & Core Logic
 *Focus: Setting up ScriptableObjects for Equipment and the backend logic for Smart Auto-Equip.*
 
-- [ ] Task: Create Equipment Data Structure
+- [x] Task: Create Equipment Data Structure
     -   **Sub-task:** Create `EquipmentSO.cs` inheriting from ScriptableObject (Fields: Name, Icon, Stats, ClassTags, Rarity).
     -   **Sub-task:** Create `EquipmentDatabaseSO` to hold lists of all equipment for the drafted pool.
     -   **Unity:** Create ~5 dummy Equipment assets (Sword, Staff, Shield, etc.) in `Assets/Data/Equipment/`.
-- [ ] Task: Implement Smart Equip Logic (Backend)
+- [~] Task: Implement Smart Equip Logic (Backend)
     -   **Sub-task:** Create `SmartEquipSystem.cs` (pure C# logic or Monobehavior).
     -   **Sub-task:** Implement `CalculateUtility(UnitStats, Equipment)` function.
     -   **Sub-task:** Implement `AutoEquip(Equipment, List<UnitController>)` function.
