@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" xsi:noNamespaceSchemaLocation="../../UIElementsSchema/UIElements.xsd" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <ui:VisualElement class="banner">
+    <ui:Label name="title" class="banner-title" text="AUTOBATTLER"/>
+    <ui:Label name="subtitle" class="banner-subtitle" text="Strategy Combat at its Finest"/>
+  </ui:VisualElement>
+</ui:UXML>

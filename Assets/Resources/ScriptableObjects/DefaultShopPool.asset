@@ -1,0 +1,52 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b05482967f7dcff4d8b9d9134c897d3e, type: 3}
+  m_Name: DefaultShopPool
+  m_EditorClassIdentifier: Assembly-CSharp::AutoBattler.Data.ShopPoolSO
+  shopSlots: 5
+  rerollCost: 2
+  tierPools:
+  - tier: 1
+    units:
+    - {fileID: 11400000, guid: a1b2c3d4e5f6789012345678901234a1, type: 2}
+    - {fileID: 11400000, guid: c3d4e5f6789012345678901234c3d4e5, type: 2}
+  levelOddsTable:
+  - level: 1
+    tierChances:
+    - 100
+  - level: 2
+    tierChances:
+    - 100
+  - level: 3
+    tierChances:
+    - 100
+  - level: 4
+    tierChances:
+    - 100
+  - level: 5
+    tierChances:
+    - 100
+  - level: 6
+    tierChances:
+    - 100
+  - level: 7
+    tierChances:
+    - 100
+  - level: 8
+    tierChances:
+    - 100
+  - level: 9
+    tierChances:
+    - 100
+  - level: 10
+    tierChances:
+    - 100

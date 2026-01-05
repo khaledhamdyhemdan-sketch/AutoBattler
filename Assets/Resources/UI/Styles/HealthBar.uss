@@ -1,0 +1,139 @@
+/* ===== HEALTH BAR: THE VOID MEDIEVAL STYLE ===== */
+/* No CSS variables - Unity doesn't support :root */
+
+/* Color Reference:
+   Health Green: #10b981
+   Health Yellow: #eab308
+   Health Red: #ef4444
+   Medieval Gold: #C5A059
+   Stone 900: #1c1917
+*/
+
+/* ===== CONTAINER ===== */
+.health-bar-container {
+    width: 120px;
+    height: 28px;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    position: absolute;
+}
+
+/* ===== BACKGROUND ===== */
+.health-bar-background {
+    width: 100%;
+    height: 12px;
+    background-color: rgba(28, 25, 23, 0.9);
+    border-radius: 6px;
+    overflow: hidden;
+    border-width: 2px;
+    border-color: rgba(197, 160, 89, 0.4);
+    flex-direction: row;
+    align-items: stretch;
+}
+
+/* ===== FILL BAR ===== */
+.health-bar-fill {
+    width: 100%;
+    height: 100%;
+    background-color: #10b981;
+    border-radius: 4px;
+    min-width: 0;
+}
+
+/* Health color states - applied via code */
+.health-bar-fill--high {
+    background-color: #10b981;
+}
+
+.health-bar-fill--medium {
+    background-color: #eab308;
+}
+
+.health-bar-fill--low {
+    background-color: #ef4444;
+}
+
+/* ===== TEXT LABEL ===== */
+.health-bar-text {
+    font-size: 11px;
+    color: #ffffff;
+    -unity-font-style: bold;
+    -unity-text-align: middle-center;
+    margin-top: 2px;
+    letter-spacing: 1px;
+}
+
+/* ===== SHIELD BAR (if needed) ===== */
+.shield-bar-background {
+    width: 100%;
+    height: 6px;
+    background-color: rgba(28, 25, 23, 0.9);
+    border-radius: 3px;
+    overflow: hidden;
+    border-width: 1px;
+    border-color: rgba(59, 130, 246, 0.4);
+    margin-top: 2px;
+}
+
+.shield-bar-fill {
+    width: 100%;
+    height: 100%;
+    background-color: #3b82f6;
+    border-radius: 2px;
+}
+
+/* ===== DAMAGE NUMBERS (floating) ===== */
+.damage-number {
+    position: absolute;
+    font-size: 16px;
+    -unity-font-style: bold;
+    color: #ef4444;
+    -unity-text-align: middle-center;
+}
+
+.damage-number--crit {
+    font-size: 22px;
+    color: #fbbf24;
+}
+
+.damage-number--heal {
+    color: #10b981;
+}
+
+/* ===== BOSS HEALTH BAR ===== */
+.boss-health-bar-container {
+    width: 400px;
+    height: 36px;
+    flex-direction: column;
+    align-items: center;
+    position: absolute;
+    bottom: 100px;
+    left: 50%;
+    translate: -50% 0;
+}
+
+.boss-health-bar-background {
+    width: 100%;
+    height: 20px;
+    background-color: rgba(28, 25, 23, 0.95);
+    border-radius: 10px;
+    overflow: hidden;
+    border-width: 2px;
+    border-color: #C5A059;
+}
+
+.boss-health-bar-fill {
+    width: 100%;
+    height: 100%;
+    background-color: #7f1d1d;
+    border-radius: 8px;
+}
+
+.boss-name {
+    font-size: 14px;
+    color: #C5A059;
+    -unity-font-style: bold;
+    letter-spacing: 2px;
+    margin-bottom: 4px;
+}

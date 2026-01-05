@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" xsi:noNamespaceSchemaLocation="../../UIElementsSchema/UIElements.xsd" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <ui:VisualElement class="button-template">
+    <ui:Button name="button" class="button button-primary">
+      <ui:Label name="label" text="BUTTON"/>
+    </ui:Button>
+  </ui:VisualElement>
+</ui:UXML>

@@ -1,0 +1,43 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" editor-extension-mode="False">
+    <ui:Style src="../USS/Variables.uss" />
+    <ui:Style src="../USS/Base.uss" />
+    <ui:Style src="../USS/HUD.uss" />
+
+    <ui:VisualElement name="HUDContainer" class="hud-container">
+        <!-- Top Bar -->
+        <ui:VisualElement name="TopBar" class="top-bar panel">
+            
+            <!-- Left: Phase Info -->
+            <ui:VisualElement class="top-bar__section">
+                <ui:Label text="COMBAT" name="PhaseLabel" class="text-header phase-label" />
+                <ui:VisualElement class="divider-vertical" />
+                <ui:Label text="Round 1" name="RoundLabel" class="text-body" />
+            </ui:VisualElement>
+
+            <!-- Center: Timer -->
+            <ui:VisualElement class="top-bar__center">
+                <ui:VisualElement class="timer-container">
+                    <ui:Label text="30" name="TimerLabel" class="timer-text" />
+                </ui:VisualElement>
+            </ui:VisualElement>
+
+            <!-- Right: Resources -->
+            <ui:VisualElement class="top-bar__section right-align">
+                <ui:VisualElement class="resource-item">
+                    <ui:Label text="Lv. 1" name="LevelLabel" class="text-header resource-text" />
+                </ui:VisualElement>
+                <ui:VisualElement class="resource-item gold-item">
+                    <ui:Label text="15" name="GoldLabel" class="text-header resource-text gold-text" />
+                </ui:VisualElement>
+            </ui:VisualElement>
+            
+        </ui:VisualElement>
+
+        <!-- Bottom Right: Action Buttons (Placeholder for now) -->
+        <ui:VisualElement name="ActionArea" class="action-area">
+            <ui:Button text="FIGHT!" name="FightButton" class="button-medieval fight-button" />
+            <ui:Button text="⚙" name="SettingsButton" class="button-medieval settings-button" />
+        </ui:VisualElement>
+
+    </ui:VisualElement>
+</ui:UXML>

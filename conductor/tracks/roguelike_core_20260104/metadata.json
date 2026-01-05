@@ -1,0 +1,8 @@
+{
+  "track_id": "roguelike_core_20260104",
+  "type": "feature",
+  "status": "new",
+  "created_at": "2026-01-04T12:00:00Z",
+  "updated_at": "2026-01-04T12:00:00Z",
+  "description": "Core Roguelike Game Mode with equipment card drafting, smart auto-equip logic, and lottery loot system."
+}

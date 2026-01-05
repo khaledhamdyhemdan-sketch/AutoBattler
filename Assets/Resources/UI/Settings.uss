@@ -1,0 +1,357 @@
+/* ===== SETTINGS PANEL - THE VOID STYLE ===== */
+/* Medieval iron & gold aesthetic - No CSS variables */
+
+/* Color Reference:
+   Medieval Gold: #C5A059
+   Stone 900: #1c1917
+   Stone 800: #292524
+   Stone 700: #44403c
+   Stone 500: #78716c
+   Stone 400: #a8a29e
+   Blood Deep: #7f1d1d
+   Emerald: #10b981
+*/
+
+/* ===== ROOT CONTAINER ===== */
+.settings-root {
+    width: 100%;
+    height: 100%;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background-color: rgba(5, 5, 5, 0.95);
+    position: absolute;
+}
+
+/* ===== SETTINGS PANEL ===== */
+.settings-panel {
+    width: 640px;
+    max-height: 85%;
+    background-color: #1c1917;
+    border-width: 2px;
+    border-color: #44403c;
+    border-radius: 12px;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+/* ===== HEADER ===== */
+.settings-header {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    padding: 24px 32px;
+    background-color: #0c0c0c;
+    border-bottom-width: 1px;
+    border-bottom-color: #44403c;
+}
+
+.settings-title {
+    font-size: 28px;
+    color: #C5A059;
+    -unity-font-style: bold;
+    letter-spacing: 4px;
+}
+
+.settings-close-button {
+    width: 40px;
+    height: 40px;
+    font-size: 24px;
+    color: #78716c;
+    background-color: transparent;
+    border-width: 1px;
+    border-color: #44403c;
+    border-radius: 8px;
+    -unity-text-align: middle-center;
+}
+
+.settings-close-button:hover {
+    background-color: rgba(127, 29, 29, 0.3);
+    border-color: #7f1d1d;
+    color: #ef4444;
+}
+
+/* ===== CONTENT AREA ===== */
+.settings-content {
+    flex-direction: column;
+    padding: 24px 32px;
+    flex-grow: 1;
+    overflow: scroll;
+}
+
+/* ===== SECTION ===== */
+.settings-section {
+    flex-direction: column;
+    margin-bottom: 32px;
+}
+
+.section-title {
+    font-size: 14px;
+    color: #78716c;
+    -unity-font-style: bold;
+    letter-spacing: 3px;
+    margin-bottom: 16px;
+    padding-bottom: 8px;
+    border-bottom-width: 1px;
+    border-bottom-color: #292524;
+}
+
+/* ===== SETTING ROW ===== */
+.setting-row {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 0;
+    min-height: 48px;
+}
+
+.setting-label {
+    font-size: 16px;
+    color: #a8a29e;
+    flex-grow: 1;
+}
+
+.setting-value {
+    font-size: 14px;
+    color: #78716c;
+    min-width: 60px;
+    -unity-text-align: middle-right;
+    margin-right: 12px;
+}
+
+/* ===== SLIDER ===== */
+.settings-slider {
+    width: 200px;
+    height: 24px;
+}
+
+.settings-slider .unity-base-slider__tracker {
+    background-color: #292524;
+    border-radius: 4px;
+    height: 8px;
+    top: 8px;
+}
+
+.settings-slider .unity-base-slider__dragger {
+    width: 20px;
+    height: 20px;
+    background-color: #C5A059;
+    border-radius: 10px;
+    border-width: 2px;
+    border-color: #1c1917;
+    top: 2px;
+}
+
+.settings-slider .unity-base-slider__dragger:hover {
+    background-color: #d4b476;
+    scale: 1.1;
+}
+
+.settings-slider .unity-base-slider__fill {
+    background-color: rgba(197, 160, 89, 0.4);
+    border-radius: 4px;
+}
+
+/* ===== DROPDOWN ===== */
+.settings-dropdown {
+    width: 200px;
+    height: 40px;
+    background-color: #292524;
+    border-width: 1px;
+    border-color: #44403c;
+    border-radius: 6px;
+    color: #a8a29e;
+    font-size: 14px;
+}
+
+.settings-dropdown:hover {
+    border-color: #C5A059;
+}
+
+.settings-dropdown .unity-base-popup-field__text {
+    color: #a8a29e;
+    padding-left: 12px;
+}
+
+.settings-dropdown .unity-base-popup-field__arrow {
+    -unity-background-image-tint-color: #78716c;
+}
+
+/* ===== TOGGLE ===== */
+.settings-toggle {
+    flex-direction: row-reverse;
+}
+
+.settings-toggle .unity-toggle__checkmark {
+    width: 48px;
+    height: 24px;
+    background-color: #292524;
+    border-width: 1px;
+    border-color: #44403c;
+    border-radius: 12px;
+}
+
+.settings-toggle:checked .unity-toggle__checkmark {
+    background-color: rgba(197, 160, 89, 0.3);
+    border-color: #C5A059;
+}
+
+/* Toggle indicator */
+.settings-toggle .unity-toggle__checkmark::before {
+    width: 18px;
+    height: 18px;
+    background-color: #78716c;
+    border-radius: 9px;
+    margin: 2px;
+    transition-property: translate, background-color;
+    transition-duration: 0.15s;
+}
+
+.settings-toggle:checked .unity-toggle__checkmark::before {
+    translate: 24px 0;
+    background-color: #C5A059;
+}
+
+/* ===== FOOTER ===== */
+.settings-footer {
+    flex-direction: row;
+    justify-content: space-between;
+    padding: 20px 32px;
+    background-color: #0c0c0c;
+    border-top-width: 1px;
+    border-top-color: #44403c;
+}
+
+/* ===== BUTTONS ===== */
+.button-secondary {
+    height: 48px;
+    min-width: 140px;
+    padding: 0 24px;
+    font-size: 14px;
+    -unity-font-style: bold;
+    letter-spacing: 2px;
+    background-color: rgba(0, 0, 0, 0.6);
+    border-width: 1px;
+    border-color: #44403c;
+    border-radius: 6px;
+    color: #a8a29e;
+}
+
+.button-secondary:hover {
+    background-color: rgba(68, 64, 60, 0.4);
+    border-color: #78716c;
+    color: #C5A059;
+}
+
+.button-primary {
+    height: 48px;
+    min-width: 140px;
+    padding: 0 24px;
+    font-size: 14px;
+    -unity-font-style: bold;
+    letter-spacing: 2px;
+    background-color: rgba(197, 160, 89, 0.15);
+    border-width: 2px;
+    border-color: #C5A059;
+    border-radius: 6px;
+    color: #C5A059;
+}
+
+.button-primary:hover {
+    background-color: rgba(197, 160, 89, 0.25);
+    scale: 1.02;
+}
+
+.button-danger {
+    height: 48px;
+    min-width: 140px;
+    padding: 0 24px;
+    font-size: 14px;
+    -unity-font-style: bold;
+    letter-spacing: 2px;
+    background-color: rgba(127, 29, 29, 0.2);
+    border-width: 1px;
+    border-color: #7f1d1d;
+    border-radius: 6px;
+    color: #ef4444;
+}
+
+.button-danger:hover {
+    background-color: rgba(127, 29, 29, 0.4);
+    border-color: #991b1b;
+}
+
+/* ===== RESET CONFIRMATION ===== */
+.reset-warning {
+    font-size: 12px;
+    color: #ef4444;
+    margin-top: 8px;
+    -unity-text-align: middle-center;
+}
+
+/* ===== KEYBINDING ROW ===== */
+.keybind-row {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 0;
+}
+
+.keybind-label {
+    font-size: 14px;
+    color: #78716c;
+}
+
+.keybind-key {
+    min-width: 80px;
+    height: 32px;
+    padding: 0 12px;
+    background-color: #292524;
+    border-width: 1px;
+    border-color: #44403c;
+    border-radius: 4px;
+    color: #a8a29e;
+    font-size: 12px;
+    -unity-text-align: middle-center;
+    -unity-font-style: bold;
+}
+
+.keybind-key:hover {
+    border-color: #C5A059;
+    color: #C5A059;
+}
+
+/* ===== DIVIDER ===== */
+.settings-divider {
+    height: 1px;
+    background-color: #292524;
+    margin: 8px 0;
+}
+
+/* ===== TABS (if needed) ===== */
+.settings-tabs {
+    flex-direction: row;
+    padding: 0 32px;
+    background-color: #0c0c0c;
+    border-bottom-width: 1px;
+    border-bottom-color: #292524;
+}
+
+.settings-tab {
+    padding: 16px 24px;
+    font-size: 14px;
+    color: #78716c;
+    background-color: transparent;
+    border-width: 0;
+    border-bottom-width: 2px;
+    border-bottom-color: transparent;
+}
+
+.settings-tab:hover {
+    color: #a8a29e;
+}
+
+.settings-tab--active {
+    color: #C5A059;
+    border-bottom-color: #C5A059;
+}

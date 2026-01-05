@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" xsi:noNamespaceSchemaLocation="../../UIElementsSchema/UIElements.xsd" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <ui:VisualElement class="unit-card" name="unit-card">
+    <ui:VisualElement class="unit-card-header">
+      <ui:Label name="unit-name" class="unit-name">Unit</ui:Label>
+      <ui:Label name="unit-cost" class="unit-cost">1g</ui:Label>
+    </ui:VisualElement>
+
+    <ui:Label name="unit-role" class="unit-role">Frontline</ui:Label>
+    <ui:VisualElement class="unit-preview" name="unit-preview" />
+    <ui:Label name="unit-desc" class="unit-desc">Reliable frontline defender.</ui:Label>
+
+    <ui:VisualElement class="unit-stats">
+      <ui:VisualElement class="stat-item">
+        <ui:Label class="stat-label" text="HP" />
+        <ui:Label class="stat-value" name="unit-hp" text="120" />
+      </ui:VisualElement>
+      <ui:VisualElement class="stat-item">
+        <ui:Label class="stat-label" text="DMG" />
+        <ui:Label class="stat-value" name="unit-dmg" text="20" />
+      </ui:VisualElement>
+    </ui:VisualElement>
+
+    <ui:Button name="add-button" class="button button-primary focusable">Add to Squad</ui:Button>
+  </ui:VisualElement>
+</ui:UXML>

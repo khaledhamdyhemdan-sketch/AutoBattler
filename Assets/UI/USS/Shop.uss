@@ -1,0 +1,31 @@
+.shop-container {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 250px;
+    background-color: rgba(18, 18, 18, 0.95);
+    border-top-width: 2px;
+    border-top-color: var(--color-primary-gold);
+    flex-direction: row;
+    align-items: center;
+    padding: var(--spacing-md);
+}
+
+.shop-controls {
+    width: 150px;
+    justify-content: center;
+    margin-right: var(--spacing-lg);
+}
+
+.shop-button {
+    margin-bottom: var(--spacing-sm);
+    font-size: 14px;
+}
+
+.card-list {
+    flex-direction: row;
+    flex-grow: 1;
+    justify-content: center;
+    align-items: center;
+}

@@ -1,0 +1,232 @@
+/* ===== UNIT CARD: THE VOID MEDIEVAL IRON & GOLD ===== */
+/* No CSS variables - Unity doesn't support :root */
+
+/* Color Reference:
+   Medieval Gold: #C5A059
+   Stone 900: #1c1917
+   Stone 800: #292524
+   Stone 700: #44403c
+   Stone 500: #78716c
+   Stone 400: #a8a29e
+   Blood Deep: #7f1d1d
+   Emerald: #10b981
+*/
+
+/* ===== UNIT CARD BASE ===== */
+.unit-card {
+    width: 160px;
+    height: 220px;
+    background-color: #1c1917;
+    border-width: 2px;
+    border-color: #44403c;
+    border-radius: 12px;
+    padding: 10px;
+    flex-direction: column;
+    align-items: stretch;
+    overflow: hidden;
+}
+
+.unit-card:hover {
+    border-color: #C5A059;
+    background-color: #292524;
+    scale: 1.03;
+}
+
+.unit-card--selected {
+    border-color: #10b981;
+    border-width: 2px;
+    background-color: rgba(16, 185, 129, 0.1);
+}
+
+.unit-card--disabled {
+    opacity: 0.4;
+}
+
+/* ===== CARD HEADER ===== */
+.unit-card-header {
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 6px;
+}
+
+.unit-name {
+    font-size: 14px;
+    color: #a8a29e;
+    -unity-font-style: bold;
+    flex: 1;
+}
+
+.unit-cost {
+    font-size: 12px;
+    color: #C5A059;
+    -unity-font-style: bold;
+    margin-left: 4px;
+}
+
+/* ===== UNIT ROLE/CLASS ===== */
+.unit-role {
+    font-size: 11px;
+    color: #78716c;
+    margin-top: -2px;
+    margin-bottom: 8px;
+}
+
+.unit-class {
+    font-size: 10px;
+    color: #78716c;
+    padding: 2px 6px;
+    background-color: rgba(68, 64, 60, 0.3);
+    border-radius: 4px;
+}
+
+/* ===== UNIT PREVIEW/PORTRAIT ===== */
+.unit-preview {
+    flex: 1;
+    background-color: rgba(12, 12, 12, 0.5);
+    border-radius: 8px;
+    margin-bottom: 8px;
+    border-width: 1px;
+    border-color: #292524;
+    align-items: center;
+    justify-content: center;
+}
+
+.unit-portrait {
+    font-size: 48px;
+    color: #78716c;
+}
+
+/* ===== UNIT DESCRIPTION ===== */
+.unit-desc {
+    color: #78716c;
+    font-size: 10px;
+    height: 24px;
+    margin-bottom: 8px;
+    -unity-text-align: middle-center;
+}
+
+/* ===== UNIT STATS ===== */
+.unit-stats {
+    flex-direction: row;
+    justify-content: space-around;
+    padding: 6px;
+    border-radius: 6px;
+    background-color: rgba(12, 12, 12, 0.5);
+    margin-bottom: 8px;
+}
+
+.stat-item {
+    align-items: center;
+    flex-direction: column;
+}
+
+.stat-label {
+    font-size: 9px;
+    color: #78716c;
+}
+
+.stat-value {
+    font-size: 12px;
+    color: #a8a29e;
+    -unity-font-style: bold;
+}
+
+.stat-value--hp {
+    color: #10b981;
+}
+
+.stat-value--dmg {
+    color: #ef4444;
+}
+
+.stat-value--gold {
+    color: #C5A059;
+}
+
+/* ===== TIER BADGE ===== */
+.tier-badge {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    padding: 2px 8px;
+    background-color: rgba(12, 12, 12, 0.9);
+    border-radius: 4px;
+    font-size: 10px;
+    color: #C5A059;
+    -unity-font-style: bold;
+    border-width: 1px;
+    border-color: rgba(197, 160, 89, 0.3);
+}
+
+/* ===== RARITY VARIANTS ===== */
+.unit-card--common {
+    border-color: #78716c;
+}
+
+.unit-card--uncommon {
+    border-color: #10b981;
+}
+
+.unit-card--rare {
+    border-color: #3b82f6;
+}
+
+.unit-card--epic {
+    border-color: #a855f7;
+}
+
+.unit-card--legendary {
+    border-color: #C5A059;
+}
+
+/* ===== UNIT CARD IN SHOP ===== */
+.unit-card--shop .unit-card-footer {
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+    padding-top: 8px;
+    border-top-width: 1px;
+    border-top-color: #292524;
+}
+
+.buy-button {
+    height: 28px;
+    min-width: 60px;
+    font-size: 11px;
+    padding: 0 8px;
+}
+
+/* ===== UNIT CARD IN SQUAD ===== */
+.unit-card--squad {
+    width: 140px;
+    height: 180px;
+}
+
+.unit-card--squad .unit-preview {
+    height: 80px;
+    flex: 0 0 auto;
+}
+
+/* ===== MINI UNIT CARD ===== */
+.unit-card--mini {
+    width: 80px;
+    height: 100px;
+    padding: 6px;
+}
+
+.unit-card--mini .unit-name {
+    font-size: 10px;
+}
+
+.unit-card--mini .unit-preview {
+    height: 40px;
+}
+
+.unit-card--mini .unit-stats {
+    padding: 4px;
+}
+
+.unit-card--mini .stat-value {
+    font-size: 10px;
+}

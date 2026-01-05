@@ -1,0 +1,61 @@
+.unit-card {
+    width: 140px;
+    height: 200px;
+    margin: var(--spacing-xs);
+    background-color: var(--color-surface);
+    border-color: var(--color-primary-gold-dim);
+    border-width: 2px;
+    overflow: hidden;
+    transition: scale 0.1s ease-out, border-color 0.1s;
+}
+
+.unit-card:hover {
+    scale: 1.05;
+    border-color: var(--color-primary-gold);
+}
+
+.unit-card__header {
+    flex-direction: row;
+    justify-content: space-between;
+    padding: var(--spacing-xs);
+    background-color: rgba(0, 0, 0, 0.5);
+}
+
+.unit-name {
+    color: var(--color-text-parchment);
+    font-size: 14px;
+    -unity-font-style: bold;
+}
+
+.cost-badge {
+    width: 20px;
+    height: 20px;
+    background-color: var(--color-primary-gold);
+    border-radius: 10px;
+    justify-content: center;
+    align-items: center;
+}
+
+.cost-text {
+    color: var(--color-background);
+    font-size: 12px;
+    -unity-font-style: bold;
+}
+
+.unit-card__image {
+    flex-grow: 1;
+    background-color: #2A2A2A; /* Placeholder grey */
+    border-bottom-width: 1px;
+    border-bottom-color: var(--color-primary-gold-dim);
+}
+
+.unit-card__footer {
+    padding: var(--spacing-xs);
+    background-color: rgba(0, 0, 0, 0.8);
+}
+
+.trait-label {
+    color: var(--color-text-muted);
+    font-size: 10px;
+    margin-bottom: 2px;
+}

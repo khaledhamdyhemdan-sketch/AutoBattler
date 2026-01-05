@@ -1,0 +1,283 @@
+/* ===== THEME: THE VOID MEDIEVAL IRON & GOLD ===== */
+/* No CSS variables - Unity doesn't support :root */
+
+/* Color Reference:
+   Medieval Gold: #C5A059
+   Stone 900: #1c1917
+   Stone 800: #292524
+   Stone 700: #44403c
+   Stone 500: #78716c
+   Stone 400: #a8a29e
+   Blood Deep: #7f1d1d
+   Emerald: #10b981
+   Danger Red: #ef4444
+*/
+
+/* ===== GLOBAL RESETS ===== */
+Label {
+    color: #a8a29e;
+    font-size: 14px;
+}
+
+/* ===== UTILITY CLASSES ===== */
+.text-gold { color: #C5A059; }
+.text-white { color: #f0f6fc; }
+.text-muted { color: #78716c; }
+.text-stone { color: #a8a29e; }
+.text-danger { color: #ef4444; }
+.text-success { color: #10b981; }
+.font-bold { -unity-font-style: bold; }
+
+/* ===== GLASS PANELS ===== */
+.glass-panel {
+    background-color: rgba(28, 25, 23, 0.85);
+    border-width: 1px;
+    border-color: #44403c;
+    border-radius: 12px;
+    padding: 16px;
+}
+
+.glass-panel-raised {
+    background-color: rgba(41, 37, 36, 0.9);
+    border-width: 1px;
+    border-color: rgba(197, 160, 89, 0.2);
+    border-radius: 12px;
+}
+
+/* ===== MEDIEVAL SCROLL ===== */
+.medieval-scroll {
+    background-color: transparent;
+}
+
+/* ===== BUTTONS ===== */
+.button-primary {
+    background-color: rgba(197, 160, 89, 0.15);
+    color: #C5A059;
+    border-width: 2px;
+    border-color: #C5A059;
+    border-radius: 8px;
+    -unity-font-style: bold;
+    padding: 12px 24px;
+    font-size: 14px;
+    letter-spacing: 2px;
+}
+
+.button-primary:hover {
+    background-color: rgba(197, 160, 89, 0.25);
+    scale: 1.02;
+}
+
+.button-secondary {
+    background-color: rgba(0, 0, 0, 0.6);
+    color: #a8a29e;
+    border-width: 1px;
+    border-color: #44403c;
+    border-radius: 8px;
+    padding: 12px 24px;
+    font-size: 14px;
+}
+
+.button-secondary:hover {
+    background-color: rgba(68, 64, 60, 0.4);
+    border-color: #78716c;
+    color: #C5A059;
+}
+
+.button-danger {
+    background-color: rgba(127, 29, 29, 0.2);
+    color: #ef4444;
+    border-width: 1px;
+    border-color: #7f1d1d;
+    border-radius: 8px;
+    padding: 12px 24px;
+    font-size: 14px;
+}
+
+.button-danger:hover {
+    background-color: rgba(127, 29, 29, 0.4);
+    border-color: #991b1b;
+}
+
+/* ===== HUD LAYOUT ===== */
+.hud-root {
+    width: 100%;
+    height: 100%;
+}
+
+.hud-top-bar {
+    flex-direction: row;
+    justify-content: space-between;
+    padding: 16px;
+    width: 100%;
+    position: absolute;
+    top: 0;
+}
+
+.hud-bottom-bar {
+    flex-direction: row;
+    justify-content: center;
+    align-items: flex-end;
+    padding: 16px;
+    width: 100%;
+    position: absolute;
+    bottom: 0;
+}
+
+/* ===== SIDEBARS ===== */
+.hud-sidebar-left {
+    position: absolute;
+    left: 0;
+    top: 100px;
+    bottom: 150px;
+    width: 200px;
+    padding: 16px;
+    background-color: rgba(28, 25, 23, 0.4);
+    border-right-width: 1px;
+    border-color: rgba(197, 160, 89, 0.1);
+}
+
+.hud-sidebar-right {
+    position: absolute;
+    right: 0;
+    top: 100px;
+    bottom: 150px;
+    width: 280px;
+    padding: 16px;
+    background-color: rgba(28, 25, 23, 0.4);
+    border-left-width: 1px;
+    border-color: rgba(197, 160, 89, 0.1);
+}
+
+/* ===== IRON PANELS ===== */
+.iron-panel {
+    background-color: rgba(12, 12, 12, 0.95);
+    border-width: 1px;
+    border-color: #44403c;
+    border-radius: 8px;
+}
+
+.iron-panel-header {
+    background-color: #0c0c0c;
+    border-bottom-width: 1px;
+    border-bottom-color: #44403c;
+    padding: 16px 24px;
+}
+
+/* ===== STAT BADGES ===== */
+.stat-badge {
+    background-color: rgba(28, 25, 23, 0.9);
+    border-width: 1px;
+    border-color: #44403c;
+    border-radius: 6px;
+    padding: 8px 12px;
+    flex-direction: row;
+    align-items: center;
+}
+
+.stat-icon {
+    font-size: 16px;
+    margin-right: 8px;
+}
+
+.stat-value {
+    font-size: 16px;
+    color: #C5A059;
+    -unity-font-style: bold;
+}
+
+/* ===== RARITY COLORS ===== */
+.rarity-common { color: #78716c; }
+.rarity-uncommon { color: #10b981; }
+.rarity-rare { color: #3b82f6; }
+.rarity-epic { color: #a855f7; }
+.rarity-legendary { color: #C5A059; }
+
+/* ===== DIVIDERS ===== */
+.divider {
+    height: 1px;
+    background-color: #292524;
+    margin: 16px 0;
+}
+
+.divider-gold {
+    height: 1px;
+    background-color: rgba(197, 160, 89, 0.3);
+    margin: 16px 0;
+}
+
+/* ===== SCROLLBAR ===== */
+.unity-scroller {
+    width: 10px;
+    background-color: transparent;
+}
+
+.unity-scroller__low-button, .unity-scroller__high-button {
+    display: none;
+}
+
+.unity-scroller__slider {
+    margin: 0;
+    background-color: transparent;
+}
+
+.unity-scroller__thumb {
+    background-color: rgba(197, 160, 89, 0.2);
+    border-radius: 5px;
+    border-width: 0;
+}
+
+.unity-scroller__thumb:hover {
+    background-color: rgba(197, 160, 89, 0.4);
+}
+
+/* ===== FLEX UTILITIES ===== */
+.flex { display: flex; }
+.flex-row { flex-direction: row; }
+.flex-col { flex-direction: column; }
+.items-center { align-items: center; }
+.items-start { align-items: flex-start; }
+.items-stretch { align-items: stretch; }
+.justify-center { justify-content: center; }
+.justify-between { justify-content: space-between; }
+.flex-grow { flex-grow: 1; }
+
+/* ===== SPACING UTILITIES ===== */
+.p-1 { padding: 4px; }
+.p-2 { padding: 8px; }
+.p-3 { padding: 12px; }
+.p-4 { padding: 16px; }
+.p-5 { padding: 20px; }
+.p-6 { padding: 24px; }
+.px-4 { padding-left: 16px; padding-right: 16px; }
+.py-2 { padding-top: 8px; padding-bottom: 8px; }
+.gap-2 { margin: 4px; }
+.gap-3 { margin: 6px; }
+.gap-4 { margin: 8px; }
+.m-2 { margin: 8px; }
+.m-4 { margin: 16px; }
+.mb-2 { margin-bottom: 8px; }
+.mb-4 { margin-bottom: 16px; }
+.mt-2 { margin-top: 8px; }
+.mt-4 { margin-top: 16px; }
+
+/* ===== TYPOGRAPHY UTILITIES ===== */
+.text-xs { font-size: 12px; }
+.text-sm { font-size: 14px; }
+.text-base { font-size: 16px; }
+.text-lg { font-size: 20px; }
+.text-xl { font-size: 24px; }
+.text-2xl { font-size: 32px; }
+.text-3xl { font-size: 40px; }
+.tracking-wide { letter-spacing: 1px; }
+.tracking-wider { letter-spacing: 2px; }
+.text-center { -unity-text-align: middle-center; }
+.text-uppercase { text-transform: uppercase; }
+
+/* ===== BORDER UTILITIES ===== */
+.rounded-sm { border-radius: 4px; }
+.rounded { border-radius: 8px; }
+.rounded-lg { border-radius: 12px; }
+.rounded-xl { border-radius: 16px; }
+.border { border-width: 1px; border-color: #44403c; }
+.border-gold { border-width: 1px; border-color: #C5A059; }
+.border-2 { border-width: 2px; }

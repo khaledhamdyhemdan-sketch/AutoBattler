@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" xsi:noNamespaceSchemaLocation="../../UIElementsSchema/UIElements.xsd" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <ui:VisualElement class="root" style="background-color: rgba(5, 7, 10, 0.95); padding: 40px;">
+    <ui:VisualElement class="section" style="max-width: 1000px; align-self: center; width: 100%;">
+      <ui:VisualElement class="section-header">
+        <ui:Label text="MERCENARY SHOP" class="section-title text-glow"/>
+        <ui:Label name="player-gold" text="Gold: 100" class="section-count"/>
+      </ui:VisualElement>
+      <ui:ScrollView class="scroll-view">
+        <ui:VisualElement name="shop-pool-container" class="units-grid" style="padding: 32px; gap: 24px;"/>
+      </ui:ScrollView>
+      <ui:VisualElement class="footer" style="padding: 24px; background-color: rgba(0,0,0,0.2);">
+        <ui:Button name="close-shop" text="CLOSE SHOP" class="button button-secondary"/>
+      </ui:VisualElement>
+    </ui:VisualElement>
+  </ui:VisualElement>
+</ui:UXML>

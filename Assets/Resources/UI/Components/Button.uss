@@ -1,0 +1,133 @@
+/* ===== BUTTON: THE VOID MEDIEVAL IRON & GOLD ===== */
+/* No CSS variables - Unity doesn't support :root */
+
+/* Color Reference:
+   Medieval Gold: #C5A059
+   Stone 900: #1c1917
+   Stone 800: #292524
+   Stone 700: #44403c
+   Stone 500: #78716c
+   Stone 400: #a8a29e
+*/
+
+/* ===== BASE BUTTON ===== */
+.button {
+    height: 44px;
+    min-width: 140px;
+    font-size: 14px;
+    -unity-font-style: bold;
+    letter-spacing: 1.5px;
+    border-radius: 8px;
+    border-width: 1px;
+    color: #f0f6fc;
+    background-color: #292524;
+    border-color: rgba(255, 255, 255, 0.1);
+    margin: 4px;
+    -unity-text-align: middle-center;
+}
+
+.button:hover {
+    scale: 1.05;
+    border-color: #C5A059;
+    background-color: #44403c;
+}
+
+.button:active {
+    scale: 0.95;
+    opacity: 0.8;
+}
+
+/* ===== PRIMARY BUTTON (GOLD) ===== */
+.button-primary {
+    background-color: rgba(197, 160, 89, 0.15);
+    border-width: 2px;
+    border-color: #C5A059;
+    color: #C5A059;
+}
+
+.button-primary:hover {
+    background-color: rgba(197, 160, 89, 0.25);
+    border-color: #d4b476;
+}
+
+/* ===== SECONDARY BUTTON (STONE) ===== */
+.button-secondary {
+    background-color: rgba(0, 0, 0, 0.6);
+    border-color: #44403c;
+    color: #a8a29e;
+}
+
+.button-secondary:hover {
+    background-color: rgba(68, 64, 60, 0.4);
+    border-color: #78716c;
+    color: #C5A059;
+}
+
+/* ===== DANGER BUTTON (BLOOD) ===== */
+.button-danger {
+    background-color: rgba(127, 29, 29, 0.2);
+    border-color: #7f1d1d;
+    color: #ef4444;
+}
+
+.button-danger:hover {
+    background-color: rgba(127, 29, 29, 0.4);
+    border-color: #991b1b;
+}
+
+/* ===== SUCCESS BUTTON (EMERALD) ===== */
+.button-success {
+    background-color: rgba(16, 185, 129, 0.15);
+    border-color: #10b981;
+    color: #10b981;
+}
+
+.button-success:hover {
+    background-color: rgba(16, 185, 129, 0.25);
+    border-color: #34d399;
+}
+
+/* ===== FOCUS STATES ===== */
+.button:focus {
+    border-color: #C5A059;
+    border-width: 2px;
+}
+
+/* ===== DISABLED STATE ===== */
+.button:disabled {
+    opacity: 0.4;
+    background-color: #1c1917;
+    border-color: #292524;
+    color: #78716c;
+}
+
+/* ===== SMALL BUTTON ===== */
+.button-sm {
+    height: 32px;
+    min-width: 80px;
+    font-size: 12px;
+    padding: 0 12px;
+}
+
+/* ===== LARGE BUTTON ===== */
+.button-lg {
+    height: 56px;
+    min-width: 180px;
+    font-size: 16px;
+    padding: 0 32px;
+}
+
+/* ===== ICON BUTTON ===== */
+.button-icon {
+    width: 44px;
+    height: 44px;
+    min-width: 44px;
+    padding: 0;
+    font-size: 20px;
+}
+
+/* ===== FULL WIDTH ===== */
+.button-full {
+    width: 100%;
+    min-width: auto;
+}

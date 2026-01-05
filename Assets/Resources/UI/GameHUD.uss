@@ -1,0 +1,268 @@
+/* Game HUD Styles - Unity 6.3 UI Toolkit */
+/* No CSS variables - Unity doesn't support :root */
+
+/* Utility Classes */
+.absolute-fill {
+    position: absolute;
+    left: 0;
+    top: 0;
+    right: 0;
+    bottom: 0;
+}
+
+.flex-row {
+    flex-direction: row;
+}
+
+.flex-col {
+    flex-direction: column;
+}
+
+.items-center {
+    align-items: center;
+}
+
+.justify-center {
+    justify-content: center;
+}
+
+.justify-between {
+    justify-content: space-between;
+}
+
+.text-medieval-gold {
+    color: #C5A059;
+}
+
+.text-white {
+    color: white;
+}
+
+.text-stone-400 {
+    color: #a8a29e;
+}
+
+.text-stone-500 {
+    color: #78716c;
+}
+
+.font-black {
+    -unity-font-style: bold;
+}
+
+/* Iron Panel Style */
+.iron-panel {
+    background-color: rgba(12, 12, 12, 0.95);
+    border-width: 1px;
+    border-color: #44403c;
+    border-radius: 8px;
+}
+
+/* Top Bar */
+.top-bar {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    padding: 16px;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: flex-start;
+}
+
+.resource-panel {
+    flex-direction: row;
+    align-items: center;
+    padding: 6px 12px;
+    border-color: rgba(197, 160, 89, 0.2);
+}
+
+.game-speed-btn {
+    width: 40px;
+    height: 40px;
+    background-color: rgba(0, 0, 0, 0.4);
+    border-width: 1px;
+    border-color: #292524;
+    color: #78716c;
+    border-radius: 8px;
+    margin-right: 4px;
+    -unity-text-align: middle-center;
+}
+
+.game-speed-btn.active {
+    background-color: #C5A059;
+    color: black;
+}
+
+/* Character Sidebar */
+.character-sidebar {
+    position: absolute;
+    top: 64px;
+    left: 16px;
+    width: 192px;
+    flex-direction: column;
+}
+
+.unit-card {
+    flex-direction: row;
+    align-items: center;
+    padding: 6px;
+    margin-bottom: 6px;
+    background-color: rgba(0, 0, 0, 0.8);
+    border-width: 1px;
+    border-color: #1c1917;
+    border-radius: 8px;
+}
+
+.unit-card.selected {
+    background-color: rgba(197, 160, 89, 0.1);
+    border-color: #C5A059;
+}
+
+.unit-icon {
+    width: 36px;
+    height: 36px;
+    background-color: #0c0a09;
+    border-width: 1px;
+    border-color: #292524;
+    border-radius: 6px;
+    margin-right: 8px;
+    justify-content: center;
+    align-items: center;
+}
+
+.hp-bar-bg {
+    width: 80px;
+    height: 4px;
+    background-color: black;
+    border-radius: 2px;
+    margin-top: 4px;
+}
+
+.hp-bar-fill {
+    height: 100%;
+    background-color: #10b981;
+}
+
+/* Inventory Panel */
+.inventory-panel {
+    position: absolute;
+    top: 64px;
+    right: 16px;
+    width: 288px;
+    background-color: #0c0c0c;
+    border-width: 2px;
+    border-color: rgba(197, 160, 89, 0.15);
+    border-radius: 12px;
+    padding: 0;
+}
+
+.inventory-header {
+    flex-direction: row;
+    justify-content: space-between;
+    padding: 8px;
+    border-bottom-width: 1px;
+    border-bottom-color: #292524;
+    background-color: #0c0c0c;
+}
+
+.equipment-slots {
+    flex-direction: row;
+    justify-content: space-between;
+    padding: 12px;
+    background-color: rgba(0, 0, 0, 0.4);
+    border-width: 1px;
+    border-color: #1c1917;
+    border-radius: 12px;
+    margin-bottom: 12px;
+}
+
+.slot-icon {
+    width: 48px;
+    height: 48px;
+    border-width: 2px;
+    border-color: #292524;
+    background-color: rgba(0, 0, 0, 0.2);
+    border-radius: 12px;
+    justify-content: center;
+    align-items: center;
+}
+
+.inventory-grid {
+    flex-direction: row;
+    flex-wrap: wrap;
+    padding: 4px;
+}
+
+.inventory-slot {
+    width: 48px;
+    height: 48px;
+    margin: 3px;
+    border-width: 2px;
+    border-color: #292524;
+    background-color: rgba(0, 0, 0, 0.4);
+    border-radius: 8px;
+}
+
+/* Bottom Shop */
+.bottom-controls {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    padding-bottom: 16px;
+    flex-direction: row;
+    justify-content: center;
+    align-items: flex-end;
+}
+
+.shop-container {
+    flex-direction: row;
+    align-items: flex-end;
+}
+
+.reroll-btn {
+    width: 96px;
+    height: 96px;
+    background-color: rgba(12, 12, 12, 0.95);
+    border-width: 2px;
+    border-color: #292524;
+    border-radius: 12px;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+}
+
+.shop-item {
+    width: 192px;
+    height: 96px;
+    background-color: rgba(12, 12, 12, 0.95);
+    border-width: 2px;
+    border-color: #1c1917;
+    border-radius: 12px;
+    padding: 10px;
+    margin-left: 12px;
+    justify-content: space-between;
+}
+
+.battle-btn {
+    width: 224px;
+    height: 96px;
+    background-color: #7f1d1d;
+    border-width: 4px;
+    border-color: black;
+    border-radius: 12px;
+    margin-left: 24px;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+}
+
+.battle-btn:hover {
+    background-color: #991b1b;
+}
+
+.icon-placeholder {
+    -unity-font-style: bold;
+    color: #78716c;
+}

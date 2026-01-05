@@ -1,0 +1,207 @@
+/* ===== BASE: THE VOID MEDIEVAL IRON & GOLD ===== */
+/* No CSS variables - Unity doesn't support :root */
+
+/* Color Reference:
+   Medieval Gold: #C5A059
+   Stone 900: #1c1917
+   Stone 800: #292524
+   Stone 700: #44403c
+   Stone 500: #78716c
+   Stone 400: #a8a29e
+*/
+
+/* ===== SCROLLBAR STYLING ===== */
+.unity-scroller {
+    width: 10px;
+    background-color: transparent;
+}
+
+.unity-scroller__low-button, .unity-scroller__high-button {
+    display: none;
+}
+
+.unity-scroller__slider {
+    margin: 0;
+    background-color: transparent;
+}
+
+.unity-scroller__thumb {
+    background-color: rgba(197, 160, 89, 0.15);
+    border-radius: 5px;
+    border-width: 0;
+}
+
+.unity-scroller__thumb:hover {
+    background-color: rgba(197, 160, 89, 0.3);
+}
+
+/* ===== GLASS PANELS ===== */
+.glass-panel {
+    background-color: rgba(28, 25, 23, 0.7);
+    border-width: 1px;
+    border-color: rgba(197, 160, 89, 0.1);
+    border-radius: 12px;
+}
+
+.glass-panel-raised {
+    background-color: rgba(41, 37, 36, 0.8);
+    border-width: 1px;
+    border-color: rgba(197, 160, 89, 0.15);
+    border-radius: 12px;
+}
+
+/* ===== TYPOGRAPHY ===== */
+.text-glow {
+    /* Unity USS doesn't support text-shadow, use color */
+    color: #C5A059;
+}
+
+.text-accent-glow {
+    color: #10b981;
+}
+
+/* ===== TAILWIND-LIKE UTILITIES ===== */
+
+/* Sizing */
+.w-full { width: 100%; }
+.h-full { height: 100%; }
+.min-w-0 { min-width: 0; }
+.max-w-full { max-width: 100%; }
+
+/* Flex */
+.flex { display: flex; }
+.flex-row { flex-direction: row; }
+.flex-col { flex-direction: column; }
+.items-center { align-items: center; }
+.items-start { align-items: flex-start; }
+.items-end { align-items: flex-end; }
+.items-stretch { align-items: stretch; }
+.justify-center { justify-content: center; }
+.justify-between { justify-content: space-between; }
+.justify-start { justify-content: flex-start; }
+.justify-end { justify-content: flex-end; }
+.flex-grow { flex-grow: 1; }
+.flex-shrink { flex-shrink: 1; }
+.flex-wrap { flex-wrap: wrap; }
+
+/* Spacing */
+.p-0 { padding: 0; }
+.p-1 { padding: 4px; }
+.p-2 { padding: 8px; }
+.p-3 { padding: 12px; }
+.p-4 { padding: 16px; }
+.p-5 { padding: 20px; }
+.p-6 { padding: 24px; }
+.p-8 { padding: 32px; }
+.px-2 { padding-left: 8px; padding-right: 8px; }
+.px-4 { padding-left: 16px; padding-right: 16px; }
+.px-6 { padding-left: 24px; padding-right: 24px; }
+.py-1 { padding-top: 4px; padding-bottom: 4px; }
+.py-2 { padding-top: 8px; padding-bottom: 8px; }
+.py-4 { padding-top: 16px; padding-bottom: 16px; }
+.pt-4 { padding-top: 16px; }
+.pb-4 { padding-bottom: 16px; }
+.pl-4 { padding-left: 16px; }
+.pr-4 { padding-right: 16px; }
+
+.m-0 { margin: 0; }
+.m-1 { margin: 4px; }
+.m-2 { margin: 8px; }
+.m-3 { margin: 12px; }
+.m-4 { margin: 16px; }
+.mx-2 { margin-left: 8px; margin-right: 8px; }
+.mx-4 { margin-left: 16px; margin-right: 16px; }
+.my-2 { margin-top: 8px; margin-bottom: 8px; }
+.my-4 { margin-top: 16px; margin-bottom: 16px; }
+.mt-2 { margin-top: 8px; }
+.mt-4 { margin-top: 16px; }
+.mb-2 { margin-bottom: 8px; }
+.mb-4 { margin-bottom: 16px; }
+.ml-2 { margin-left: 8px; }
+.ml-4 { margin-left: 16px; }
+.mr-2 { margin-right: 8px; }
+.mr-4 { margin-right: 16px; }
+
+/* Typography */
+.text-xs { font-size: 12px; }
+.text-sm { font-size: 14px; }
+.text-base { font-size: 16px; }
+.text-lg { font-size: 20px; }
+.text-xl { font-size: 24px; }
+.text-2xl { font-size: 32px; }
+.text-3xl { font-size: 40px; }
+.text-4xl { font-size: 48px; }
+.font-normal { -unity-font-style: normal; }
+.font-bold { -unity-font-style: bold; }
+.font-italic { -unity-font-style: italic; }
+.tracking-tight { letter-spacing: -0.5px; }
+.tracking-normal { letter-spacing: 0; }
+.tracking-wide { letter-spacing: 1px; }
+.tracking-wider { letter-spacing: 2px; }
+.tracking-widest { letter-spacing: 4px; }
+.text-left { -unity-text-align: middle-left; }
+.text-center { -unity-text-align: middle-center; }
+.text-right { -unity-text-align: middle-right; }
+.uppercase { text-transform: uppercase; }
+.lowercase { text-transform: lowercase; }
+.capitalize { text-transform: capitalize; }
+
+/* Colors */
+.text-gold { color: #C5A059; }
+.text-white { color: #ffffff; }
+.text-stone-400 { color: #a8a29e; }
+.text-stone-500 { color: #78716c; }
+.text-stone-700 { color: #44403c; }
+.text-red { color: #ef4444; }
+.text-green { color: #10b981; }
+.text-blue { color: #3b82f6; }
+.text-purple { color: #a855f7; }
+
+.bg-stone-900 { background-color: #1c1917; }
+.bg-stone-800 { background-color: #292524; }
+.bg-stone-700 { background-color: #44403c; }
+.bg-black { background-color: #0c0c0c; }
+.bg-transparent { background-color: transparent; }
+
+/* Borders */
+.border-0 { border-width: 0; }
+.border { border-width: 1px; }
+.border-2 { border-width: 2px; }
+.border-4 { border-width: 4px; }
+.border-stone { border-color: #44403c; }
+.border-gold { border-color: #C5A059; }
+.border-gold-dim { border-color: rgba(197, 160, 89, 0.3); }
+
+.rounded-none { border-radius: 0; }
+.rounded-sm { border-radius: 4px; }
+.rounded { border-radius: 8px; }
+.rounded-md { border-radius: 8px; }
+.rounded-lg { border-radius: 12px; }
+.rounded-xl { border-radius: 16px; }
+.rounded-2xl { border-radius: 24px; }
+.rounded-full { border-radius: 9999px; }
+
+/* Opacity */
+.opacity-0 { opacity: 0; }
+.opacity-25 { opacity: 0.25; }
+.opacity-50 { opacity: 0.5; }
+.opacity-75 { opacity: 0.75; }
+.opacity-100 { opacity: 1; }
+
+/* Position */
+.absolute { position: absolute; }
+.relative { position: relative; }
+.inset-0 { left: 0; top: 0; right: 0; bottom: 0; }
+.top-0 { top: 0; }
+.bottom-0 { bottom: 0; }
+.left-0 { left: 0; }
+.right-0 { right: 0; }
+
+/* Overflow */
+.overflow-hidden { overflow: hidden; }
+.overflow-scroll { overflow: scroll; }
+.overflow-visible { overflow: visible; }
+
+/* Display */
+.hidden { display: none; }
+.block { display: flex; }

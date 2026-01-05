@@ -1,0 +1,478 @@
+/* ========== ROOT & BACKGROUND ========== */
+.root {
+    width: 100%;
+    height: 100%;
+    background-color: rgb(15, 20, 38);
+    flex-direction: column;
+    align-items: stretch;
+    font-size: 16px;
+}
+
+/* ========== HEADER ========== */
+.header {
+    background-color: rgba(74, 158, 255, 0.05);
+    border-bottom-color: rgba(74, 158, 255, 0.3);
+    border-bottom-width: 2px;
+    padding: 40px 20px;
+    align-items: center;
+}
+
+.game-title {
+    font-size: 48px;
+    color: #4a9eff;
+    -unity-font-style: bold;
+    -unity-text-align: middle-center;
+    text-shadow: 0 0 20px rgba(74, 158, 255, 0.6);
+    margin-bottom: 0;
+    margin-top: 0;
+    letter-spacing: 3px;
+}
+
+.subtitle {
+    font-size: 16px;
+    color: #b0b8c8;
+    -unity-text-align: middle-center;
+    letter-spacing: 1px;
+    -unity-font-style: italic;
+    margin-bottom: 0;
+    margin-top: 0;
+}
+
+/* ========== MAIN CONTENT ========== */
+.main-content {
+    flex: 1;
+    flex-direction: row;
+    padding: 20px;
+    align-items: stretch;
+    overflow: hidden;
+}
+
+/* ========== SECTIONS ========== */
+.section {
+    flex: 1;
+    background-color: rgba(20, 28, 55, 0.8);
+    border-color: rgba(74, 158, 255, 0.2);
+    border-width: 1px;
+    border-radius: 12px;
+    overflow: hidden;
+    flex-direction: column;
+    align-items: stretch;
+    padding: 0;
+    margin-left: 10px;
+    margin-right: 10px;
+}
+
+.available-section {
+    flex: 1;
+}
+
+.squad-section {
+    flex: 1;
+}
+
+/* Section Headers */
+.section-header {
+    flex-direction: column;
+    padding: 16px;
+    border-bottom-color: rgba(74, 158, 255, 0.3);
+    border-bottom-width: 2px;
+    background-color: rgba(0, 0, 0, 0);
+}
+
+.section-title {
+    font-size: 22px;
+    color: #4a9eff;
+    -unity-font-style: bold;
+    letter-spacing: 2px;
+    margin-bottom: 0;
+    margin-top: 0;
+}
+
+.section-count {
+    font-size: 12px;
+    color: #2ecc71;
+    margin-bottom: 0;
+    margin-top: 0;
+}
+
+/* Scroll Views */
+.scroll-view {
+    flex: 1;
+    min-height: 400px;
+    padding: 0;
+}
+
+/* ========== UNIT GRIDS ========== */
+.units-grid, .squad-grid {
+    flex-direction: row;
+    flex-wrap: wrap;
+    padding: 16px;
+    align-content: flex-start;
+}
+
+/* Unit Cards */
+.unit-card {
+    width: 140px;
+    height: 160px;
+    background-color: rgb(35, 50, 85);
+    border-color: rgba(74, 158, 255, 0.4);
+    border-width: 2px;
+    border-radius: 8px;
+    padding: 8px;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-end;
+    transition-property: border-color, background-color;
+    transition-duration: 0.3s;
+    transition-timing-function: ease;
+    overflow: hidden;
+    position: relative;
+    margin: 6px;
+}
+
+.unit-card:hover {
+    border-color: #4a9eff;
+    background-color: rgb(42, 74, 143);
+}
+
+.unit-card.selected {
+    border-color: #2ecc71;
+    border-width: 3px;
+    background-color: rgb(26, 79, 58);
+}
+
+.unit-icon {
+    width: 100%;
+    height: 80px;
+    background-size: cover;
+    background-position: center;
+    background-color: rgba(74, 158, 255, 0.2);
+    border-radius: 4px;
+    margin-bottom: 8px;
+}
+
+.unit-name {
+    font-size: 13px;
+    color: #e0e8f0;
+    -unity-text-align: middle-center;
+    white-space: normal;
+    letter-spacing: 0.5px;
+    margin-bottom: 0;
+    margin-top: 0;
+}
+
+/* ========== DIVIDER ========== */
+.content-divider {
+    width: 2px;
+    min-height: 400px;
+    background-color: rgba(74, 158, 255, 0.4);
+}
+
+/* ========== SQUAD STATS ========== */
+.squad-stats-panel {
+    flex-direction: column;
+    padding: 16px;
+    border-top-color: rgba(74, 158, 255, 0.3);
+    border-top-width: 2px;
+    background-color: rgba(0, 0, 0, 0);
+}
+
+.stat-row {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px;
+    background-color: rgba(74, 158, 255, 0.1);
+    border-radius: 4px;
+    margin-bottom: 8px;
+}
+
+.stat-label {
+    font-size: 14px;
+    color: #b0b8c8;
+    margin-bottom: 0;
+    margin-top: 0;
+    flex: 0;
+}
+
+.stat-value {
+    font-size: 24px;
+    color: #4a9eff;
+    -unity-font-style: bold;
+    letter-spacing: 1px;
+    margin-bottom: 0;
+    margin-top: 0;
+}
+
+.hp-value {
+    color: #e74c3c;
+}
+
+.dmg-value {
+    color: #f39c12;
+}
+
+/* ========== FOOTER ========== */
+.footer {
+    flex-direction: row;
+    padding: 20px;
+    border-top-color: rgba(74, 158, 255, 0.3);
+    border-top-width: 2px;
+    background-color: rgba(74, 158, 255, 0.05);
+    justify-content: flex-end;
+    align-items: center;
+}
+
+.button {
+    padding: 12px 24px;
+    font-size: 14px;
+    -unity-font-style: bold;
+    letter-spacing: 1.5px;
+    border-radius: 6px;
+    border-width: 2px;
+    transition-property: background-color, border-color;
+    transition-duration: 0.3s;
+    transition-timing-function: ease;
+    min-width: 140px;
+    margin-left: 6px;
+    margin-right: 6px;
+}
+
+.button-success {
+    background-color: rgb(46, 204, 113);
+    border-color: #27ae60;
+    color: white;
+}
+
+.button-success:hover {
+    background-color: rgb(61, 214, 129);
+    border-color: #2ecc71;
+}
+
+.button-success:active {
+    background-color: rgb(39, 174, 96);
+}
+
+.button-danger {
+    background-color: rgb(231, 76, 60);
+    border-color: #c0392b;
+    color: white;
+}
+
+.button-danger:hover {
+    background-color: rgb(236, 112, 99);
+    border-color: #e74c3c;
+}
+
+.button-danger:active {
+    background-color: rgb(192, 57, 43);
+}
+
+.section:hover {
+    border-color: #6ab3ff;
+    background-color: rgba(30, 40, 70, 0.9);
+}
+
+.available-section {
+    min-width: 400px;
+}
+
+.squad-section {
+    min-width: 300px;
+    border-color: #2ecc71;
+}
+
+.squad-section:hover {
+    border-color: #3fdd82;
+}
+
+/* ========== SECTION HEADER ========== */
+.section-header {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 15px;
+    padding-bottom: 12px;
+    border-bottom-color: rgba(74, 158, 255, 0.3);
+    border-bottom-width: 2px;
+}
+
+.section-title {
+    font-size: 22px;
+    color: #4a9eff;
+    -unity-font-style: bold;
+    letter-spacing: 2px;
+}
+
+.section-count {
+    font-size: 14px;
+    color: #7a95bb;
+    -unity-font-style: italic;
+}
+
+/* ========== SCROLL VIEW ========== */
+.scroll-view {
+    flex: 1;
+}
+
+.scroll-view > #unity-content-container {
+    flex: 1;
+}
+
+/* ========== GRIDS ========== */
+.units-grid,
+.squad-grid {
+    flex-direction: row;
+    flex-wrap: wrap;
+    justify-content: flex-start;
+}
+
+.squad-grid {
+    min-height: 200px;
+    padding: 10px;
+    background-color: rgba(0, 0, 0, 0.2);
+    border-radius: 8px;
+    margin-bottom: 15px;
+    align-items: flex-start;
+}
+
+/* Duplicate unit-card definition - keeping unique properties only */
+.unit-card.selected::after {
+    position: absolute;
+    top: 5px;
+    right: 8px;
+    font-size: 20px;
+    color: #2ecc71;
+    -unity-font-style: bold;
+}
+
+/* ========== UNIT CARD CONTENT ========== */
+.unit-icon {
+    width: 80px;
+    height: 80px;
+    background-color: rgba(74, 158, 255, 0.2);
+    border-color: rgba(74, 158, 255, 0.5);
+    border-width: 2px;
+    border-radius: 8px;
+    margin-bottom: 8px;
+}
+
+.unit-name {
+    font-size: 13px;
+    color: #e0e8f0;
+    -unity-text-align: middle-center;
+    -unity-font-style: bold;
+    margin-bottom: 6px;
+    white-space: normal;
+    width: 100%;
+}
+
+.unit-stats {
+    font-size: 11px;
+    color: #a0b0cc;
+    flex-direction: row;
+    width: 100%;
+}
+
+.stat {
+    flex: 1;
+    align-items: center;
+}
+
+.stat-icon {
+    font-size: 10px;
+    color: #4a9eff;
+    margin-right: 2px;
+}
+
+.stat-value {
+    color: #7ab8ff;
+    -unity-font-style: bold;
+}
+
+/* ========== SQUAD STATS ========== */
+.squad-stats {
+    background-color: rgba(0, 0, 0, 0.3);
+    border-color: rgba(46, 204, 113, 0.3);
+    border-width: 1px;
+    border-radius: 8px;
+    padding: 12px;
+    flex-direction: row;
+    justify-content: space-around;
+}
+
+.stat-item {
+    align-items: center;
+}
+
+.stat-label {
+    font-size: 12px;
+    color: #7a95bb;
+}
+
+.stat-value {
+    font-size: 18px;
+    color: #2ecc71;
+    -unity-font-style: bold;
+}
+
+/* ========== DIVIDER ========== */
+.divider {
+    width: 3px;
+    background-color: rgba(74, 158, 255, 0.4);
+    margin: 0 10px;
+}
+
+/* ========== FOOTER ========== */
+.footer {
+    background-color: rgba(15, 20, 38, 0.95);
+    border-top-color: #4a9eff;
+    border-top-width: 3px;
+    padding: 20px 40px;
+    flex-direction: row;
+    justify-content: flex-end;
+    align-items: center;
+}
+
+.footer-button {
+    height: 50px;
+    min-width: 160px;
+    font-size: 16px;
+    border-radius: 8px;
+    border-color: rgba(0, 0, 0, 0);
+    border-width: 2px;
+    -unity-font-style: bold;
+    transition-property: background-color, border-color;
+    transition-duration: 0.3s;
+    transition-timing-function: ease;
+    letter-spacing: 1px;
+    margin-left: 7px;
+    margin-right: 7px;
+}
+
+.primary-button {
+    background-color: rgb(46, 204, 113);
+    color: white;
+    border-color: #2ecc71;
+}
+
+.primary-button:hover {
+    background-color: rgb(63, 221, 130);
+    border-color: #3fdd82;
+}
+
+.primary-button:active {
+    background-color: rgb(39, 174, 96);
+}
+
+.secondary-button {
+    background-color: rgba(0, 0, 0, 0);
+    color: #a0b0cc;
+    border-color: #a0b0cc;
+}
+
+.secondary-button:hover {
+    color: #e0e8f0;
+    border-color: #e0e8f0;
+    background-color: rgba(74, 158, 255, 0.1);
+}

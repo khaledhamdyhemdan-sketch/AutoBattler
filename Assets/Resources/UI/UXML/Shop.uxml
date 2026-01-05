@@ -1,0 +1,23 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" editor-extension-mode="False">
+    <ui:Style src="../USS/Variables.uss" />
+    <ui:Style src="../USS/Base.uss" />
+    <ui:Style src="../USS/Shop.uss" />
+
+    <ui:VisualElement name="ShopContainer" class="shop-container">
+        <!-- Reroll / XP Area -->
+        <ui:VisualElement class="shop-controls">
+            <ui:Button text="Reroll (2g)" name="RerollButton" class="button-medieval shop-button" />
+            <ui:Button text="Buy XP (4g)" name="BuyXPButton" class="button-medieval shop-button" />
+        </ui:VisualElement>
+
+        <!-- Card Container -->
+        <ui:VisualElement name="CardList" class="card-list">
+            <!-- Cards will be instantiated here via script, but here is one for preview -->
+            <ui:Instance template="UnitCard" name="Slot1" />
+            <ui:Instance template="UnitCard" name="Slot2" />
+            <ui:Instance template="UnitCard" name="Slot3" />
+            <ui:Instance template="UnitCard" name="Slot4" />
+            <ui:Instance template="UnitCard" name="Slot5" />
+        </ui:VisualElement>
+    </ui:VisualElement>
+</ui:UXML>

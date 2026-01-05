@@ -1,0 +1,444 @@
+/* ===== UNIT SELECTION - THE VOID STYLE ===== */
+/* Medieval iron & gold aesthetic - No CSS variables */
+
+/* Color Reference:
+   Medieval Gold: #C5A059
+   Stone 900: #1c1917
+   Stone 800: #292524
+   Stone 700: #44403c
+   Stone 500: #78716c
+   Stone 400: #a8a29e
+   Blood Deep: #7f1d1d
+   Emerald: #10b981
+*/
+
+/* ===== ROOT ===== */
+.root {
+    width: 100%;
+    height: 100%;
+    background-color: #0c0c0c;
+    flex-direction: column;
+    align-items: stretch;
+}
+
+/* ===== SHELL (Main Container) ===== */
+.shell {
+    flex: 1;
+    padding: 32px 48px;
+    flex-direction: column;
+    max-width: 1600px;
+    align-self: center;
+    width: 100%;
+}
+
+/* ===== HEADER ===== */
+.header {
+    margin-bottom: 24px;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.header-left {
+    flex-direction: column;
+}
+
+.game-title {
+    font-size: 48px;
+    color: #C5A059;
+    -unity-font-style: bold;
+    letter-spacing: 6px;
+}
+
+.subtitle {
+    font-size: 14px;
+    color: #78716c;
+    letter-spacing: 3px;
+    margin-top: 4px;
+}
+
+.header-right {
+    flex-direction: row;
+    align-items: center;
+}
+
+.gold-display {
+    flex-direction: row;
+    align-items: center;
+    padding: 8px 16px;
+    background-color: rgba(12, 12, 12, 0.95);
+    border-width: 1px;
+    border-color: #44403c;
+    border-radius: 8px;
+}
+
+.gold-icon {
+    font-size: 18px;
+    color: #C5A059;
+    margin-right: 8px;
+}
+
+.gold-value {
+    font-size: 20px;
+    color: white;
+    -unity-font-style: bold;
+}
+
+/* ===== MAIN CONTENT ===== */
+.main-content {
+    flex: 1;
+    flex-direction: row;
+    overflow: hidden;
+}
+
+/* ===== SECTION PANELS ===== */
+.section {
+    flex: 1;
+    background-color: rgba(12, 12, 12, 0.95);
+    border-width: 1px;
+    border-color: #44403c;
+    border-radius: 12px;
+    overflow: hidden;
+    margin-right: 24px;
+}
+
+/* Last child margin fix */
+.section-last {
+    margin-right: 0;
+}
+
+.section-header {
+    padding: 16px 20px;
+    background-color: rgba(0, 0, 0, 0.4);
+    border-bottom-width: 1px;
+    border-bottom-color: #292524;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.section-title {
+    font-size: 16px;
+    color: #a8a29e;
+    -unity-font-style: bold;
+    letter-spacing: 2px;
+}
+
+.section-count {
+    font-size: 12px;
+    color: #C5A059;
+    -unity-font-style: bold;
+}
+
+/* ===== SCROLL VIEW ===== */
+.scroll-view {
+    flex: 1;
+}
+
+.unity-scroll-view__content-viewport {
+    padding: 16px;
+}
+
+/* ===== UNITS GRID (Pool) ===== */
+.units-grid {
+    flex-direction: row;
+    flex-wrap: wrap;
+    padding: 16px;
+    justify-content: flex-start;
+}
+
+/* ===== SQUAD GRID ===== */
+.squad-grid {
+    flex-direction: column;
+    padding: 16px;
+}
+
+/* ===== UNIT CARD ===== */
+.unit-card {
+    width: 180px;
+    background-color: rgba(0, 0, 0, 0.6);
+    border-width: 1px;
+    border-color: #292524;
+    border-radius: 8px;
+    margin-right: 12px;
+    margin-bottom: 12px;
+    padding: 12px;
+    transition-property: border-color, scale;
+    transition-duration: 0.15s;
+}
+
+.unit-card:hover {
+    border-color: #C5A059;
+    scale: 1.02;
+}
+
+.unit-card.selected {
+    border-color: #10b981;
+    border-width: 2px;
+}
+
+.unit-card-header {
+    flex-direction: row;
+    align-items: center;
+    margin-bottom: 8px;
+}
+
+.unit-icon {
+    width: 40px;
+    height: 40px;
+    background-color: #1c1917;
+    border-width: 1px;
+    border-color: #44403c;
+    border-radius: 6px;
+    align-items: center;
+    justify-content: center;
+    margin-right: 10px;
+}
+
+.unit-icon-letter {
+    font-size: 18px;
+    color: #C5A059;
+    -unity-font-style: bold;
+}
+
+.unit-info {
+    flex: 1;
+}
+
+.unit-name {
+    font-size: 14px;
+    color: white;
+    -unity-font-style: bold;
+}
+
+.unit-class {
+    font-size: 10px;
+    color: #78716c;
+    letter-spacing: 1px;
+}
+
+.unit-role {
+    font-size: 10px;
+    color: #78716c;
+    margin-top: 4px;
+}
+
+/* Unit Stats Row */
+.unit-stats {
+    flex-direction: row;
+    margin-top: 8px;
+    padding-top: 8px;
+    border-top-width: 1px;
+    border-top-color: #292524;
+}
+
+.stat {
+    flex: 1;
+    flex-direction: column;
+    align-items: center;
+}
+
+.stat-label {
+    font-size: 9px;
+    color: #44403c;
+    letter-spacing: 1px;
+}
+
+.stat-value {
+    font-size: 14px;
+    color: #a8a29e;
+    -unity-font-style: bold;
+}
+
+.stat-value.hp {
+    color: #10b981;
+}
+
+.stat-value.dmg {
+    color: #ef4444;
+}
+
+/* Tier Badge */
+.tier-badge {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    width: 24px;
+    height: 24px;
+    background-color: rgba(197, 160, 89, 0.2);
+    border-width: 1px;
+    border-color: #C5A059;
+    border-radius: 12px;
+    align-items: center;
+    justify-content: center;
+}
+
+.tier-text {
+    font-size: 11px;
+    color: #C5A059;
+    -unity-font-style: bold;
+}
+
+/* ===== SQUAD STATS PANEL ===== */
+.squad-stats {
+    padding: 16px 20px;
+    background-color: rgba(0, 0, 0, 0.5);
+    border-top-width: 1px;
+    border-top-color: #292524;
+    flex-direction: row;
+    justify-content: space-around;
+}
+
+.stat-item {
+    flex-direction: column;
+    align-items: center;
+}
+
+.stat-item .stat-label {
+    font-size: 10px;
+    color: #78716c;
+    letter-spacing: 1px;
+    margin-bottom: 4px;
+}
+
+.stat-item .stat-value {
+    font-size: 24px;
+    color: white;
+    -unity-font-style: bold;
+}
+
+/* ===== FOOTER ===== */
+.footer {
+    margin-top: 24px;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.footer-left {
+    flex-direction: row;
+}
+
+.footer-right {
+    flex-direction: row;
+}
+
+/* ===== FOOTER BUTTONS ===== */
+.footer-button {
+    height: 56px;
+    min-width: 180px;
+    font-size: 14px;
+    -unity-font-style: bold;
+    letter-spacing: 2px;
+    border-radius: 8px;
+    border-width: 2px;
+    margin-left: 12px;
+    -unity-text-align: middle-center;
+    transition-property: scale, background-color, border-color;
+    transition-duration: 0.15s;
+}
+
+/* Back Button */
+.button-back {
+    background-color: rgba(0, 0, 0, 0.6);
+    border-color: #44403c;
+    color: #78716c;
+}
+
+.button-back:hover {
+    border-color: #78716c;
+    color: #a8a29e;
+}
+
+/* Clear Button */
+.button-clear {
+    background-color: rgba(127, 29, 29, 0.2);
+    border-color: #7f1d1d;
+    color: #ef4444;
+}
+
+.button-clear:hover {
+    background-color: rgba(127, 29, 29, 0.4);
+}
+
+/* Start Battle Button - Primary */
+.button-battle {
+    min-width: 240px;
+    background-color: rgba(197, 160, 89, 0.15);
+    border-color: #C5A059;
+    color: #C5A059;
+}
+
+.button-battle:hover {
+    background-color: rgba(197, 160, 89, 0.3);
+    scale: 1.02;
+}
+
+.button-battle:disabled {
+    opacity: 0.4;
+}
+
+/* ===== EMPTY STATE ===== */
+.empty-state {
+    flex: 1;
+    align-items: center;
+    justify-content: center;
+    padding: 40px;
+}
+
+.empty-icon {
+    font-size: 48px;
+    color: #292524;
+    margin-bottom: 16px;
+}
+
+.empty-text {
+    font-size: 14px;
+    color: #44403c;
+    -unity-text-align: middle-center;
+}
+
+/* ===== SQUAD CARD (Horizontal) ===== */
+.squad-card {
+    flex-direction: row;
+    align-items: center;
+    padding: 12px 16px;
+    background-color: rgba(0, 0, 0, 0.4);
+    border-width: 1px;
+    border-color: #292524;
+    border-radius: 8px;
+    margin-bottom: 8px;
+    transition-property: border-color;
+    transition-duration: 0.15s;
+}
+
+.squad-card:hover {
+    border-color: #ef4444;
+}
+
+.squad-card .unit-icon {
+    width: 36px;
+    height: 36px;
+    margin-right: 12px;
+}
+
+.squad-card .unit-info {
+    flex: 1;
+}
+
+.squad-card .remove-btn {
+    width: 28px;
+    height: 28px;
+    background-color: rgba(127, 29, 29, 0.3);
+    border-width: 1px;
+    border-color: #7f1d1d;
+    border-radius: 14px;
+    align-items: center;
+    justify-content: center;
+    color: #ef4444;
+    font-size: 14px;
+}
+
+.squad-card .remove-btn:hover {
+    background-color: #7f1d1d;
+}

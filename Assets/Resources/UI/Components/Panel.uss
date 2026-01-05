@@ -1,0 +1,121 @@
+/* ===== PANEL: THE VOID MEDIEVAL IRON & GOLD ===== */
+/* No CSS variables - Unity doesn't support :root */
+
+/* Color Reference:
+   Medieval Gold: #C5A059
+   Stone 900: #1c1917
+   Stone 800: #292524
+   Stone 700: #44403c
+   Stone 500: #78716c
+   Stone 400: #a8a29e
+*/
+
+/* ===== BASE PANEL ===== */
+.panel {
+    background-color: #1c1917;
+    border-radius: 12px;
+    padding: 16px;
+    border-width: 1px;
+    border-color: #44403c;
+}
+
+/* ===== PANEL VARIANTS ===== */
+.panel--light {
+    background-color: #292524;
+    color: #a8a29e;
+}
+
+.panel--dark {
+    background-color: #0c0c0c;
+    border-color: #292524;
+}
+
+.panel--raised {
+    background-color: rgba(41, 37, 36, 0.9);
+    border-color: rgba(197, 160, 89, 0.15);
+}
+
+.panel--metal {
+    border-width: 2px;
+    border-color: #44403c;
+}
+
+.panel--gold {
+    border-width: 2px;
+    border-color: #C5A059;
+}
+
+.panel--glass {
+    background-color: rgba(28, 25, 23, 0.7);
+    border-color: rgba(197, 160, 89, 0.1);
+}
+
+/* ===== PANEL HEADER ===== */
+.panel-header {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    padding-bottom: 16px;
+    margin-bottom: 16px;
+    border-bottom-width: 1px;
+    border-bottom-color: #292524;
+}
+
+.panel-title {
+    font-size: 18px;
+    color: #C5A059;
+    -unity-font-style: bold;
+    letter-spacing: 2px;
+}
+
+/* ===== PANEL BODY ===== */
+.panel-body {
+    flex-grow: 1;
+    flex-direction: column;
+}
+
+/* ===== PANEL FOOTER ===== */
+.panel-footer {
+    flex-direction: row;
+    align-items: center;
+    justify-content: flex-end;
+    padding-top: 16px;
+    margin-top: 16px;
+    border-top-width: 1px;
+    border-top-color: #292524;
+}
+
+/* ===== CARD (SMALLER PANEL) ===== */
+.card {
+    background-color: #1c1917;
+    border-radius: 8px;
+    padding: 12px;
+    border-width: 1px;
+    border-color: #44403c;
+}
+
+.card:hover {
+    border-color: #C5A059;
+}
+
+/* ===== MODAL OVERLAY ===== */
+.modal-overlay {
+    position: absolute;
+    left: 0;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(5, 5, 5, 0.9);
+    align-items: center;
+    justify-content: center;
+}
+
+.modal-panel {
+    background-color: #1c1917;
+    border-width: 2px;
+    border-color: #44403c;
+    border-radius: 16px;
+    min-width: 400px;
+    max-width: 90%;
+    max-height: 90%;
+}

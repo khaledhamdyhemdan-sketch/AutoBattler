@@ -1,0 +1,24 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" editor-extension-mode="False">
+    <ui:Style src="../../USS/Variables.uss" />
+    <ui:Style src="../../USS/Base.uss" />
+    <ui:Style src="../../USS/UnitCard.uss" />
+
+    <ui:VisualElement name="CardRoot" class="unit-card panel">
+        <!-- Top: Cost & Name -->
+        <ui:VisualElement class="unit-card__header">
+            <ui:Label text="Knight" name="UnitName" class="unit-name" />
+            <ui:VisualElement class="cost-badge">
+                <ui:Label text="1" name="CostLabel" class="cost-text" />
+            </ui:VisualElement>
+        </ui:VisualElement>
+
+        <!-- Middle: Image Placeholder -->
+        <ui:VisualElement name="UnitImage" class="unit-card__image" />
+
+        <!-- Bottom: Traits & Stats -->
+        <ui:VisualElement class="unit-card__footer">
+            <ui:Label text="Human" name="Trait1" class="trait-label" />
+            <ui:Label text="Warrior" name="Trait2" class="trait-label" />
+        </ui:VisualElement>
+    </ui:VisualElement>
+</ui:UXML>

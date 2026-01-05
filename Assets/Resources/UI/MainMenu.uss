@@ -1,0 +1,237 @@
+/* ===== MAIN MENU - THE VOID STYLE ===== */
+/* Medieval iron & gold aesthetic - No CSS variables */
+
+/* Color Reference:
+   Medieval Gold: #C5A059
+   Stone 900: #1c1917
+   Stone 800: #292524
+   Stone 700: #44403c
+   Stone 500: #78716c
+   Stone 400: #a8a29e
+   Blood Deep: #7f1d1d
+   Emerald: #10b981
+*/
+
+/* ===== ROOT & BACKGROUND ===== */
+.root {
+    width: 100%;
+    height: 100%;
+    flex-direction: column;
+    align-items: center;
+    justify-content: space-between;
+    padding: 60px 40px;
+    background-color: #0c0c0c;
+}
+
+/* Decorative border frame */
+.root::before {
+    position: absolute;
+    left: 20px;
+    top: 20px;
+    right: 20px;
+    bottom: 20px;
+    border-width: 2px;
+    border-color: rgba(197, 160, 89, 0.15);
+    border-radius: 8px;
+}
+
+/* ===== HEADER ===== */
+.header {
+    flex-direction: column;
+    align-items: center;
+    margin-top: 60px;
+    flex: 0 0 auto;
+}
+
+.logo {
+    font-size: 80px;
+    color: #C5A059;
+    margin: 0;
+    margin-bottom: 24px;
+}
+
+.game-title {
+    font-size: 72px;
+    color: #C5A059;
+    -unity-font-style: bold;
+    -unity-text-align: middle-center;
+    letter-spacing: 12px;
+    margin: 0;
+}
+
+.subtitle {
+    font-size: 16px;
+    color: #78716c;
+    -unity-text-align: middle-center;
+    letter-spacing: 6px;
+    margin: 0;
+    margin-top: 16px;
+}
+
+/* ===== MENU CONTAINER ===== */
+.menu-container {
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    flex: 1;
+    min-width: 400px;
+    padding: 40px;
+}
+
+/* ===== IRON PANEL (Container) ===== */
+.iron-panel {
+    background-color: rgba(12, 12, 12, 0.95);
+    border-width: 1px;
+    border-color: #44403c;
+    border-radius: 8px;
+}
+
+/* ===== BUTTON STYLES ===== */
+.button {
+    height: 64px;
+    min-width: 320px;
+    font-size: 18px;
+    -unity-font-style: bold;
+    letter-spacing: 3px;
+    border-radius: 8px;
+    border-width: 2px;
+    margin-bottom: 16px;
+    -unity-text-align: middle-center;
+    transition-property: scale, background-color, border-color;
+    transition-duration: 0.15s;
+}
+
+/* Primary Button (Play) - Gold accent */
+.button-primary {
+    background-color: rgba(197, 160, 89, 0.15);
+    border-color: #C5A059;
+    color: #C5A059;
+}
+
+.button-primary:hover {
+    background-color: rgba(197, 160, 89, 0.25);
+    scale: 1.02;
+}
+
+.button-primary:active {
+    scale: 0.98;
+    background-color: #C5A059;
+    color: #0c0c0c;
+}
+
+/* Secondary Button (Settings) - Stone */
+.button-secondary {
+    background-color: rgba(0, 0, 0, 0.6);
+    border-color: #44403c;
+    color: #a8a29e;
+}
+
+.button-secondary:hover {
+    border-color: #78716c;
+    color: white;
+    scale: 1.02;
+}
+
+.button-secondary:active {
+    scale: 0.98;
+}
+
+/* Danger Button (Quit) - Blood */
+.button-danger {
+    background-color: rgba(127, 29, 29, 0.3);
+    border-color: #7f1d1d;
+    color: #ef4444;
+}
+
+.button-danger:hover {
+    background-color: rgba(127, 29, 29, 0.5);
+    scale: 1.02;
+}
+
+.button-danger:active {
+    scale: 0.98;
+    background-color: #7f1d1d;
+}
+
+/* ===== LOADING PANEL ===== */
+.loading-panel {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(5, 5, 5, 0.95);
+    align-items: center;
+    justify-content: center;
+}
+
+.loading-container {
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 40px;
+}
+
+.loading-label {
+    font-size: 24px;
+    color: #C5A059;
+    -unity-font-style: bold;
+    letter-spacing: 4px;
+    margin-bottom: 24px;
+}
+
+.loading-bar {
+    width: 320px;
+    height: 8px;
+    background-color: #1c1917;
+    border-radius: 4px;
+}
+
+.loading-bar .unity-progress-bar__progress {
+    background-color: #C5A059;
+    border-radius: 4px;
+}
+
+/* ===== FOOTER ===== */
+.footer {
+    flex-direction: column;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.credits-label {
+    font-size: 12px;
+    color: #44403c;
+    letter-spacing: 2px;
+}
+
+/* ===== VERSION INFO ===== */
+.version-label {
+    font-size: 10px;
+    color: #292524;
+    position: absolute;
+    bottom: 16px;
+    right: 24px;
+}
+
+/* ===== DECORATIVE ELEMENTS ===== */
+.divider {
+    width: 200px;
+    height: 1px;
+    background-color: rgba(197, 160, 89, 0.2);
+    margin-top: 24px;
+    margin-bottom: 24px;
+}
+
+.ornament {
+    width: 40px;
+    height: 40px;
+    border-width: 1px;
+    border-color: rgba(197, 160, 89, 0.3);
+    border-radius: 20px;
+    align-items: center;
+    justify-content: center;
+}
+
+.ornament-icon {
+    font-size: 20px;
+    color: #C5A059;
+}

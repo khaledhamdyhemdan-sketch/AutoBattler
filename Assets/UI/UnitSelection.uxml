@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ui:UXML
+    xmlns:ui="UnityEngine.UIElements"
+    xmlns:uie="UnityEditor.UIElements"
+    xsi:noNamespaceSchemaLocation="../../UIElementsSchema/UIElements.xsd"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+    
+    <ui:VisualElement name="root" class="root">
+        <ui:VisualElement class="shell">
+            <!-- Header -->
+            <ui:VisualElement class="header">
+                <ui:Label text="AUTOBATTLER" class="game-title"/>
+                <ui:Label text="Select a modern human squad and dive into battle" class="subtitle"/>
+            </ui:VisualElement>
+
+            <!-- Main Content -->
+            <ui:VisualElement class="main-content">
+                <!-- Available Units Section -->
+                <ui:VisualElement class="section available-section">
+                    <ui:VisualElement class="section-header">
+                        <ui:Label text="Available Classes" class="section-title"/>
+                        <ui:Label name="unit-count" text="5 Available" class="section-count"/>
+                    </ui:VisualElement>
+                    <ui:ScrollView class="scroll-view">
+                        <ui:VisualElement name="pool-container" class="units-grid"/>
+                    </ui:ScrollView>
+                </ui:VisualElement>
+
+                <!-- Selected Squad Section -->
+                <ui:VisualElement class="section squad-section">
+                    <ui:VisualElement class="section-header">
+                        <ui:Label text="Your Squad" class="section-title"/>
+                        <ui:Label name="squad-count" text="0 / 5 Selected" class="section-count"/>
+                    </ui:VisualElement>
+                    <ui:VisualElement name="squad-container" class="squad-grid"/>
+
+                    <!-- Squad Stats -->
+                    <ui:VisualElement class="squad-stats">
+                        <ui:VisualElement class="stat-item">
+                            <ui:Label text="Total HP" class="stat-label"/>
+                            <ui:Label name="total-hp" text="0" class="stat-value"/>
+                        </ui:VisualElement>
+                        <ui:VisualElement class="stat-item">
+                            <ui:Label text="Total DMG" class="stat-label"/>
+                            <ui:Label name="total-dmg" text="0" class="stat-value"/>
+                        </ui:VisualElement>
+                    </ui:VisualElement>
+                </ui:VisualElement>
+            </ui:VisualElement>
+
+            <!-- Footer -->
+            <ui:VisualElement class="footer">
+                <ui:Button name="clear-button" text="Clear Squad" class="footer-button button button-secondary focusable"/>
+                <ui:Button name="start-battle-button" text="Start Battle" class="footer-button button button-primary focusable"/>
+            </ui:VisualElement>
+        </ui:VisualElement>
+    </ui:VisualElement>
+</ui:UXML>

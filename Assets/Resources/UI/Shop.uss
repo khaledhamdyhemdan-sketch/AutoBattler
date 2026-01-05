@@ -1,0 +1,266 @@
+/* ===== SHOP: THE VOID MEDIEVAL IRON & GOLD ===== */
+/* No CSS variables - Unity doesn't support :root */
+
+/* Color Reference:
+   Medieval Gold: #C5A059
+   Stone 900: #1c1917
+   Stone 800: #292524
+   Stone 700: #44403c
+   Stone 500: #78716c
+   Stone 400: #a8a29e
+*/
+
+/* ===== SHOP ROOT ===== */
+.shop-root {
+    padding: 30px;
+    background-color: rgba(28, 25, 23, 0.95);
+    border-radius: 16px;
+    border-width: 2px;
+    border-color: #C5A059;
+    margin: 20px;
+}
+
+/* ===== SHOP HEADER ===== */
+.shop-header {
+    margin-bottom: 20px;
+    border-bottom-width: 1px;
+    border-bottom-color: rgba(197, 160, 89, 0.3);
+    padding-bottom: 16px;
+    align-items: center;
+    flex-direction: row;
+    justify-content: space-between;
+}
+
+.banner-title {
+    font-size: 36px;
+    color: #C5A059;
+    -unity-font-style: bold;
+    letter-spacing: 5px;
+}
+
+.shop-gold {
+    flex-direction: row;
+    align-items: center;
+    padding: 8px 16px;
+    background-color: rgba(197, 160, 89, 0.1);
+    border-width: 1px;
+    border-color: #C5A059;
+    border-radius: 8px;
+}
+
+.gold-icon {
+    font-size: 20px;
+    margin-right: 8px;
+}
+
+.gold-amount {
+    font-size: 20px;
+    color: #C5A059;
+    -unity-font-style: bold;
+}
+
+/* ===== SHOP POOL ===== */
+.shop-pool {
+    min-height: 400px;
+    background-color: rgba(12, 12, 12, 0.5);
+    border-radius: 12px;
+    padding: 16px;
+    border-width: 1px;
+    border-color: #292524;
+}
+
+.units-grid {
+    flex-direction: row;
+    flex-wrap: wrap;
+    justify-content: center;
+    align-items: flex-start;
+}
+
+/* ===== SHOP CARD ===== */
+.shop-card {
+    width: 160px;
+    margin: 12px;
+    background-color: #1c1917;
+    border-width: 2px;
+    border-color: #44403c;
+    border-radius: 12px;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.shop-card:hover {
+    border-color: #C5A059;
+    scale: 1.03;
+}
+
+.shop-card--sold {
+    opacity: 0.4;
+}
+
+.shop-card-image {
+    width: 100%;
+    height: 120px;
+    background-color: #292524;
+}
+
+.shop-card-body {
+    padding: 12px;
+}
+
+.shop-card-name {
+    font-size: 14px;
+    color: #a8a29e;
+    -unity-font-style: bold;
+    margin-bottom: 4px;
+}
+
+.shop-card-tier {
+    font-size: 12px;
+    color: #78716c;
+    margin-bottom: 8px;
+}
+
+.shop-card-stats {
+    flex-direction: row;
+    justify-content: space-between;
+    margin-bottom: 8px;
+}
+
+.shop-card-stat {
+    font-size: 12px;
+    color: #78716c;
+}
+
+.shop-card-stat-value {
+    color: #a8a29e;
+    -unity-font-style: bold;
+}
+
+.shop-card-cost {
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    padding: 8px;
+    background-color: rgba(197, 160, 89, 0.1);
+    border-top-width: 1px;
+    border-top-color: #292524;
+}
+
+.shop-card-cost-value {
+    font-size: 16px;
+    color: #C5A059;
+    -unity-font-style: bold;
+}
+
+/* ===== SHOP FOOTER ===== */
+.shop-footer {
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 20px;
+    padding-top: 16px;
+    border-top-width: 1px;
+    border-top-color: rgba(197, 160, 89, 0.2);
+}
+
+/* ===== SHOP BUTTONS ===== */
+.shop-button {
+    height: 48px;
+    min-width: 140px;
+    padding: 0 24px;
+    font-size: 14px;
+    -unity-font-style: bold;
+    letter-spacing: 2px;
+    border-radius: 8px;
+}
+
+.shop-button-reroll {
+    background-color: rgba(197, 160, 89, 0.15);
+    border-width: 2px;
+    border-color: #C5A059;
+    color: #C5A059;
+}
+
+.shop-button-reroll:hover {
+    background-color: rgba(197, 160, 89, 0.25);
+}
+
+.shop-button-close {
+    background-color: rgba(0, 0, 0, 0.6);
+    border-width: 1px;
+    border-color: #44403c;
+    color: #a8a29e;
+}
+
+.shop-button-close:hover {
+    background-color: rgba(68, 64, 60, 0.4);
+    border-color: #78716c;
+}
+
+/* ===== UNIT CARD IN SHOP ===== */
+.shop-pool .unit-card {
+    margin: 12px;
+}
+
+.shop-pool .unit-card:hover {
+    scale: 1.05;
+    border-color: #C5A059;
+}
+
+/* ===== REROLL COST ===== */
+.reroll-cost {
+    font-size: 12px;
+    color: #78716c;
+    margin-top: 4px;
+}
+
+/* ===== SHOP EMPTY STATE ===== */
+.shop-empty {
+    flex-grow: 1;
+    align-items: center;
+    justify-content: center;
+    padding: 40px;
+}
+
+.shop-empty-text {
+    font-size: 18px;
+    color: #78716c;
+    -unity-text-align: middle-center;
+}
+
+/* ===== SHOP TIER INDICATOR ===== */
+.tier-badge {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    padding: 4px 8px;
+    background-color: rgba(12, 12, 12, 0.9);
+    border-radius: 4px;
+    font-size: 10px;
+    color: #C5A059;
+    -unity-font-style: bold;
+}
+
+/* ===== SHOP TOOLTIP ===== */
+.shop-tooltip {
+    position: absolute;
+    background-color: #1c1917;
+    border-width: 1px;
+    border-color: #C5A059;
+    border-radius: 8px;
+    padding: 12px 16px;
+    max-width: 250px;
+}
+
+.shop-tooltip-title {
+    font-size: 16px;
+    color: #C5A059;
+    -unity-font-style: bold;
+    margin-bottom: 8px;
+}
+
+.shop-tooltip-desc {
+    font-size: 12px;
+    color: #a8a29e;
+    white-space: normal;
+}

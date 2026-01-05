@@ -1,0 +1,75 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" editor-extension-mode="False">
+    <ui:VisualElement class="hud-root pick-through">
+        
+        <!-- Top Bar: Resources & Phase -->
+        <ui:VisualElement class="hud-top-bar pointer-events-auto">
+            <ui:VisualElement class="glass-panel flex-row items-center">
+                <ui:VisualElement class="resource-display">
+                    <ui:Label text="GOLD" class="text-gold font-bold text-xs" style="margin-right: 4px;"/>
+                    <ui:Label name="gold-label" text="100" class="text-white font-bold text-lg"/>
+                </ui:VisualElement>
+                
+                <ui:VisualElement style="width: 1px; height: 20px; background-color: rgba(255,255,255,0.1); margin: 0 12px;"/>
+                
+                <ui:VisualElement class="resource-display" style="border-width: 0; background-color: transparent;">
+                    <ui:Label text="ROUND" class="text-muted font-bold text-xs" style="margin-right: 4px;"/>
+                    <ui:Label name="round-label" text="1" class="text-gold font-bold text-base"/>
+                </ui:VisualElement>
+            </ui:VisualElement>
+
+            <ui:VisualElement class="glass-panel flex-row items-center gap-3">
+                <ui:Label name="phase-label" text="PLANNING" class="font-bold tracking-wide"/>
+                <ui:Label name="timer-label" text="30" class="text-white font-bold text-lg"/>
+            </ui:VisualElement>
+        </ui:VisualElement>
+
+        <!-- Left Sidebar: Warband -->
+        <ui:VisualElement class="hud-sidebar-left pointer-events-auto">
+            <ui:Label text="WARBAND" class="text-muted font-bold" style="font-size: 10px; margin-bottom: 4px;"/>
+            <ui:ScrollView name="warband-list" class="medieval-scroll" style="background-color: rgba(0,0,0,0); border-width: 0; padding: 0;">
+                <!-- Unit Cards will be instantiated here -->
+            </ui:ScrollView>
+        </ui:VisualElement>
+
+        <!-- Right Sidebar: Unit Details / Inventory -->
+        <ui:VisualElement name="details-panel" class="hud-sidebar-right pointer-events-auto glass-panel" style="display: none;">
+            <ui:VisualElement style="flex-direction: row; justify-content: space-between; border-bottom-width: 1px; border-color: #3a3a3a; padding-bottom: 8px; margin-bottom: 8px;">
+                <ui:Label name="selected-unit-name" text="UNIT NAME" class="text-white font-bold"/>
+                <ui:Button name="close-details-btn" text="X" class="text-muted" style="background-color: rgba(0,0,0,0); border-width: 0;"/>
+            </ui:VisualElement>
+            
+            <ui:VisualElement style="flex-direction: row; justify-content: space-around; margin-bottom: 12px;">
+                <ui:VisualElement name="slot-head" class="inventory-slot"><ui:Label text="HEAD" style="font-size: 8px;"/></ui:VisualElement>
+                <ui:VisualElement name="slot-mainhand" class="inventory-slot"><ui:Label text="MAIN" style="font-size: 8px;"/></ui:VisualElement>
+                <ui:VisualElement name="slot-chest" class="inventory-slot"><ui:Label text="BODY" style="font-size: 8px;"/></ui:VisualElement>
+                <ui:VisualElement name="slot-offhand" class="inventory-slot"><ui:Label text="OFF" style="font-size: 8px;"/></ui:VisualElement>
+            </ui:VisualElement>
+
+            <ui:Label text="VAULT" class="text-muted font-bold" style="font-size: 10px; margin-bottom: 4px;"/>
+            <ui:VisualElement name="inventory-grid" style="flex-direction: row; flex-wrap: wrap;">
+                <!-- Inventory slots -->
+            </ui:VisualElement>
+        </ui:VisualElement>
+
+        <!-- Bottom Bar: Shop & Actions -->
+        <ui:VisualElement class="hud-bottom-bar pointer-events-auto">
+            <ui:Button name="reroll-btn" class="button-secondary" style="height: 70px; width: 80px; margin-right: 24px; flex-direction: column;">
+                <ui:Label text="REROLL" class="text-xs" style="margin-bottom: 2px;"/>
+                <ui:Label text="2g" class="text-gold font-bold text-base"/>
+            </ui:Button>
+
+            <ui:VisualElement class="glass-panel" style="padding: 12px;">
+                <ui:ScrollView mode="Horizontal" style="height: 120px; width: 600px;">
+                    <ui:VisualElement name="shop-container" style="flex-direction: row;">
+                        <!-- Shop Cards -->
+                    </ui:VisualElement>
+                </ui:ScrollView>
+            </ui:VisualElement>
+
+            <ui:Button name="battle-btn" class="button-primary" style="height: 70px; width: 140px; margin-left: 24px;">
+                <ui:Label text="BATTLE" class="font-bold text-lg"/>
+            </ui:Button>
+        </ui:VisualElement>
+
+    </ui:VisualElement>
+</ui:UXML>

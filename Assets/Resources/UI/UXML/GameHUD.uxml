@@ -1,0 +1,87 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" editor-extension-mode="False">
+    <Style src="project://database/Assets/Resources/UI/GameHUD.uss" />
+
+    <ui:VisualElement name="Root" class="absolute-fill" picking-mode="Ignore">
+        
+        <!-- Top Bar -->
+        <ui:VisualElement name="TopBar" class="top-bar" picking-mode="Ignore">
+            <ui:VisualElement class="iron-panel resource-panel">
+                <ui:VisualElement class="flex-row items-center" style="margin-right: 16px;">
+                    <ui:Label text="$" class="text-medieval-gold icon-placeholder" />
+                    <ui:Label name="GoldLabel" text="100" class="text-white font-black" style="font-size: 24px; margin-left: 8px;" />
+                </ui:VisualElement>
+                <ui:VisualElement style="width: 1px; height: 20px; background-color: #292524; margin-right: 16px;" />
+                <ui:VisualElement class="flex-row items-center">
+                    <ui:Label text="R" class="text-stone-500 icon-placeholder" />
+                    <ui:Label name="RoundLabel" text="1" class="text-medieval-gold font-black" style="font-size: 16px; margin-left: 8px;" />
+                </ui:VisualElement>
+            </ui:VisualElement>
+
+            <ui:VisualElement class="flex-row">
+                <ui:VisualElement class="iron-panel flex-row" style="padding: 4px; margin-right: 8px;">
+                    <ui:Button name="Speed1x" text="1x" class="game-speed-btn active" />
+                    <ui:Button name="Speed2x" text="2x" class="game-speed-btn" />
+                    <ui:Button name="Speed4x" text="4x" class="game-speed-btn" />
+                </ui:VisualElement>
+                <ui:Button name="SettingsBtn" text="S" class="iron-panel game-speed-btn" />
+            </ui:VisualElement>
+        </ui:VisualElement>
+
+        <!-- Character Sidebar -->
+        <ui:ScrollView name="CharacterSidebar" class="character-sidebar" />
+
+        <!-- Inventory Panel -->
+        <ui:VisualElement name="InventoryPanel" class="inventory-panel" style="display: none;">
+            <ui:VisualElement class="inventory-header">
+                <ui:VisualElement class="flex-row items-center">
+                    <ui:VisualElement class="unit-icon" style="width: 32px; height: 32px;">
+                        <ui:Label name="SelectedUnitIcon" text="T" class="text-medieval-gold" />
+                    </ui:VisualElement>
+                    <ui:VisualElement style="margin-left: 8px;">
+                        <ui:Label name="SelectedUnitName" text="Unit Name" class="text-white font-black" style="font-size: 16px;" />
+                        <ui:Label name="SelectedUnitClass" text="CLASS" class="text-medieval-gold" style="font-size: 10px;" />
+                    </ui:VisualElement>
+                </ui:VisualElement>
+                <ui:Button name="CloseInventoryBtn" text="X" class="text-stone-400" style="background-color: rgba(0,0,0,0); border-width: 0;" />
+            </ui:VisualElement>
+
+            <ui:VisualElement style="padding: 12px; background-color: #050505; flex-grow: 1;">
+                <ui:VisualElement name="EquipmentSlots" class="equipment-slots">
+                    <ui:VisualElement name="SlotHead" class="slot-icon"><ui:Label text="H" class="text-stone-500" /></ui:VisualElement>
+                    <ui:VisualElement name="SlotMainHand" class="slot-icon"><ui:Label text="M" class="text-stone-500" /></ui:VisualElement>
+                    <ui:VisualElement name="SlotChest" class="slot-icon"><ui:Label text="C" class="text-stone-500" /></ui:VisualElement>
+                    <ui:VisualElement name="SlotOffHand" class="slot-icon"><ui:Label text="O" class="text-stone-500" /></ui:VisualElement>
+                    <ui:VisualElement name="SlotRelic" class="slot-icon"><ui:Label text="R" class="text-stone-500" /></ui:VisualElement>
+                </ui:VisualElement>
+
+                <ui:VisualElement class="flex-row justify-between" style="margin-bottom: 12px;">
+                    <ui:Button name="StripBtn" text="STRIP" class="text-stone-500" style="background-color: black; border-color: #292524; font-size: 10px; padding: 4px 8px;" />
+                    <ui:Button name="AutoEquipBtn" text="BEST FIT" class="text-medieval-gold" style="background-color: rgba(197, 160, 89, 0.1); border-color: rgba(197, 160, 89, 0.3); font-size: 10px; padding: 4px 8px;" />
+                </ui:VisualElement>
+
+                <ui:Label text="VAULT" class="text-stone-500 font-black" style="font-size: 10px; margin-bottom: 8px;" />
+                <ui:ScrollView name="InventoryGrid" class="inventory-grid" />
+            </ui:VisualElement>
+        </ui:VisualElement>
+
+        <!-- Bottom Controls -->
+        <ui:VisualElement name="BottomControls" class="bottom-controls" picking-mode="Ignore">
+            <ui:VisualElement class="shop-container">
+                <ui:Button name="RerollBtn" class="reroll-btn">
+                    <ui:Label text="R" class="text-stone-500" style="font-size: 24px;" />
+                    <ui:Label name="RerollCost" text="$ 2" class="text-medieval-gold font-black" style="font-size: 12px;" />
+                </ui:Button>
+
+                <ui:ScrollView name="ShopList" mode="Horizontal" style="width: 600px; height: 110px;">
+                    <ui:VisualElement name="ShopContent" class="flex-row" style="height: 100%;" />
+                </ui:ScrollView>
+
+                <ui:Button name="BattleBtn" class="battle-btn">
+                    <ui:Label text="BATTLE" class="text-white font-black" style="font-size: 24px;" />
+                    <ui:Label name="FloorLabel" text="FLOOR 1" style="font-size: 12px; color: #991b1b;" />
+                </ui:Button>
+            </ui:VisualElement>
+        </ui:VisualElement>
+
+    </ui:VisualElement>
+</ui:UXML>
