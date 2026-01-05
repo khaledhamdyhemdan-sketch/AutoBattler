@@ -391,6 +391,19 @@ namespace AutoBattler.Core
             switch (currentPhase)
             {
                 case GamePhase.Preparation:
+                    // In Roguelike mode, we go to Draft phase first
+                    if (RoguelikeManager.Instance != null)
+                    {
+                        TransitionToPhase(GamePhase.Draft);
+                    }
+                    else
+                    {
+                        TransitionToPhase(GamePhase.Combat);
+                    }
+                    break;
+
+                case GamePhase.Draft:
+                    // Usually wait for player selection, but could have a timeout
                     TransitionToPhase(GamePhase.Combat);
                     break;
 
@@ -510,6 +523,7 @@ namespace AutoBattler.Core
         MainMenu,     // Main menu (new for multi-scene)
         Selection,    // Select units for squad
         Preparation,  // Placement, unit management
+        Draft,        // Equipment card drafting
         Combat,       // Battle simulation
         Results,      // Show results, calculate rewards
         GameOver

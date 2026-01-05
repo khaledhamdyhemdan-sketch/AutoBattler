@@ -17,11 +17,11 @@
 ## Phase 2: Roguelike Game Manager & Scene Wiring
 *Focus: Creating the Game Mode manager and hooking it into the existing Scene architecture.*
 
-- [ ] Task: Create Roguelike Manager
+- [x] Task: Create Roguelike Manager
     -   **Sub-task:** Create `RoguelikeManager.cs` (Singleton/Manager).
     -   **Sub-task:** Implement State Machine for Roguelike Loop (Prep -> **Draft** -> Combat).
     -   **Unity:** Create Empty GameObject `[Systems]/RoguelikeManager` in the Main Scene. Attach script.
-- [ ] Task: Integrate with Main Game Manager
+- [x] Task: Integrate with Main Game Manager
     -   **Sub-task:** Modify `GameManager.cs` to allow "Game Mode" overrides.
     -   **Sub-task:** Wire `RoguelikeManager` to listen to `OnPreparationPhaseStart`.
     -   **Unity:** In Inspector, link `RoguelikeManager` to `GameManager` (if referencing directly) or verify Event subscription in `Start()`.
@@ -30,16 +30,15 @@
 ## Phase 3: Card Drafting UI & Economy
 *Focus: The visual interface for picking items and the gold economy integration.*
 
-- [ ] Task: Create Drafting UI Layout (UI Toolkit)
-    -   **Unity:** Create `Assets/UI/Roguelike/DraftingHUD.uxml`.
-    -   **Unity:** Design 3-Card Layout + Reroll Button + Skip Button.
-    -   **Unity:** Create `DraftingHUD.uss` for styling (Neon-Gothic borders).
-- [ ] Task: Implement Drafting Controller
-    -   **Sub-task:** Create `DraftingUIController.cs`.
-    -   **Sub-task:** Bind UI Buttons (Reroll, Pick) to `RoguelikeManager`.
-    -   **Sub-task:** Bind Reroll to Gold currency (check affordability).
-    -   **Unity:** Create GameObject `[UI]/DraftingInterface`. Attach `UIDocument` (DraftingHUD) and `DraftingUIController`.
-    -   **Unity:** **WIRING:** Drag `RoguelikeManager` into `DraftingUIController`'s inspector reference.
+- [x] Task: Create Draft UI Layout (UXML/USS)
+    -   **Sub-task:** Design card template (Name, Icon, Stats, Reroll Button).
+    -   **Sub-task:** Implement layout in `Assets/UI/Draft/DraftUI.uxml`.
+    -   **Sub-task:** Style with `DraftUI.uss`.
+- [x] Task: Implement Draft Logic Integration
+    -   **Sub-task:** Create `DraftUIController.cs`.
+    -   **Sub-task:** Bind UI events to `RoguelikeManager` methods.
+    -   **Unity:** Create `[UI]/DraftScreen` GameObject with `UIDocument` and `DraftUIController`.
+
 - [ ] Task: Connect Logic to UI
     -   **Sub-task:** When `RoguelikeManager` enters Draft Phase, `DraftingUIController` Show().
     -   **Sub-task:** When Card Picked -> Call `SmartEquipSystem.AutoEquip()`.

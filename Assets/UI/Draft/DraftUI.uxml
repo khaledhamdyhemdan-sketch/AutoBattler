@@ -1,0 +1,36 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" editor-extension-mode="False">
+    <ui:Style src="DraftUI.uss" />
+    
+    <ui:VisualElement name="DraftRoot" class="draft-root">
+        <ui:Label text="CHOOSE YOUR EQUIPMENT" class="draft-title" />
+        <ui:Label text="Equip your squad for the next battle" class="draft-subtitle" />
+        
+        <ui:VisualElement name="CardsContainer" class="cards-container">
+            <!-- Cards will be instantiated here via script -->
+            <!-- Template for reference/Editor preview: -->
+            <!-- 
+            <ui:VisualElement class="equipment-card">
+                <ui:VisualElement class="card-icon" />
+                <ui:Label text="Iron Sword" class="card-name" />
+                <ui:Label text="Weapon" class="card-type" />
+                <ui:Label text="+10 Damage" class="card-stats" />
+                <ui:Button class="select-button">
+                    <ui:Label text="SELECT" class="select-button-label" />
+                </ui:Button>
+            </ui:VisualElement> 
+            -->
+        </ui:VisualElement>
+        
+        <ui:VisualElement class="actions-container">
+            <ui:Button name="RerollButton" class="action-button reroll-button">
+                <ui:Label text="REROLL" class="button-label" />
+                <ui:Label name="RerollCostLabel" text="2 Gold" class="gold-cost" />
+            </ui:Button>
+            
+            <ui:Button name="SkipButton" class="action-button skip-button">
+                <ui:Label text="SKIP" class="button-label" />
+                <ui:Label text="+1 Gold" class="gold-cost" />
+            </ui:Button>
+        </ui:VisualElement>
+    </ui:VisualElement>
+</ui:UXML>
