@@ -23,9 +23,12 @@ namespace AutoBattler.Core
         [Header("Runtime State")]
         private List<EquipmentSO> currentDraftOptions = new List<EquipmentSO>();
         private bool isRoguelikeModeActive = true;
+        private bool bossDefeatedThisRound = false;
+        private EquipmentSO pendingLotteryReward;
 
         public event System.Action<List<EquipmentSO>> OnDraftOptionsRefreshed;
         public event System.Action OnDraftPhaseEnded;
+        public event System.Action<EquipmentSO> OnLotteryTriggered;
 
         private void Awake()
         {
@@ -47,6 +50,23 @@ namespace AutoBattler.Core
             {
                 GameManager.Instance.OnPhaseChanged += HandlePhaseChanged;
             }
+
+            if (CombatManager.Instance != null)
+            {
+                CombatManager.Instance.OnBossDefeated += HandleBossDefeated;
+            }
+            else
+            {
+                // Retry in coroutine if CombatManager not ready? 
+                // Usually GameManager ensures managers are ready.
+                StartCoroutine(SubscribeToCombatManager());
+            }
+        }
+
+        private System.Collections.IEnumerator SubscribeToCombatManager()
+        {
+            while (CombatManager.Instance == null) yield return null;
+            CombatManager.Instance.OnBossDefeated += HandleBossDefeated;
         }
 
         private void OnDestroy()
@@ -55,6 +75,15 @@ namespace AutoBattler.Core
             {
                 GameManager.Instance.OnPhaseChanged -= HandlePhaseChanged;
             }
+            if (CombatManager.Instance != null)
+            {
+                CombatManager.Instance.OnBossDefeated -= HandleBossDefeated;
+            }
+        }
+
+        private void HandleBossDefeated(UnitController boss)
+        {
+            bossDefeatedThisRound = true;
         }
 
         private void HandlePhaseChanged(GamePhase newPhase)
@@ -65,7 +94,71 @@ namespace AutoBattler.Core
             {
                 StartDraftingPhase();
             }
+            else if (newPhase == GamePhase.Results)
+            {
+                if (bossDefeatedThisRound)
+                {
+                    TriggerLottery();
+                }
+            }
+            else if (newPhase == GamePhase.Preparation)
+            {
+                bossDefeatedThisRound = false;
+            }
         }
+
+        #region Drafting Phase
+        // ... (Existing code) ...
+        #endregion
+
+        #region Lottery Phase
+
+        private void TriggerLottery()
+        {
+            Debug.Log("[RoguelikeManager] Boss Defeated! Triggering Lottery...");
+            
+            // Pause game progression
+            GameManager.Instance.SetAutoProgress(false);
+
+            // Generate high-tier reward
+            // Use Min Rarity if possible, or just random
+            var rewards = equipmentDatabase.GetRandomEquipment(1, VoidGame.GearRarity.Rare);
+            if (rewards.Count == 0) rewards = equipmentDatabase.GetRandomEquipment(1);
+            
+            if (rewards.Count > 0)
+            {
+                pendingLotteryReward = rewards[0];
+                OnLotteryTriggered?.Invoke(pendingLotteryReward);
+            }
+            else
+            {
+                Debug.LogWarning("[RoguelikeManager] No rewards found for Lottery!");
+                GameManager.Instance.SetAutoProgress(true); // Fail safe
+            }
+        }
+
+        public void ClaimLotteryReward()
+        {
+            if (pendingLotteryReward != null)
+            {
+                Debug.Log($"[RoguelikeManager] Claimed Lottery Reward: {pendingLotteryReward.equipmentName}");
+                ExecuteSmartEquip(pendingLotteryReward);
+                pendingLotteryReward = null;
+            }
+
+            // Resume game
+            GameManager.Instance.SetAutoProgress(true);
+            
+            // Force transition to next round/prep if timer expired during lottery, 
+            // or just let timer finish naturally if we paused it?
+            // If we paused auto progress, timer stopped? 
+            // GameManager.UpdatePhaseTimer checks autoProgressPhases.
+            // So timer paused. We just resume it.
+        }
+
+        public EquipmentDatabaseSO GetDatabase() => equipmentDatabase;
+
+        #endregion
 
         #region Drafting Phase
 

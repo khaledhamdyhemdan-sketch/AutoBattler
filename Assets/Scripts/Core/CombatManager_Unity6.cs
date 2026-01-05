@@ -30,6 +30,7 @@ namespace AutoBattler.Core
         // Events for UI updates
         public event System.Action<int, int> OnUnitCountsChanged;
         public event System.Action OnCombatEnded;
+        public event System.Action<UnitController> OnBossDefeated;
 
         // Public accessors
         public int PlayerUnitCount => playerUnits.Count(u => u != null && !u.IsDead);
@@ -146,9 +147,19 @@ namespace AutoBattler.Core
             Debug.Log($"[CombatManager] Unit died: {unit.UnitStats.unitName}");
             
             // Track for roguelike progression (only count enemy kills)
-            if (unit != null && enemyUnits.Contains(unit) && RunManager.Instance != null)
+            if (unit != null && enemyUnits.Contains(unit))
             {
-                RunManager.Instance.IncrementEnemiesDefeated();
+                if (RunManager.Instance != null)
+                {
+                    RunManager.Instance.IncrementEnemiesDefeated();
+                }
+
+                // Check if it was a boss
+                if (unit.UnitStats.unitType == VoidGame.UnitType.EnemyBoss)
+                {
+                    Debug.Log($"[CombatManager] BOSS DEFEATED: {unit.UnitStats.unitName}");
+                    OnBossDefeated?.Invoke(unit);
+                }
             }
 
             // Check for combat end condition

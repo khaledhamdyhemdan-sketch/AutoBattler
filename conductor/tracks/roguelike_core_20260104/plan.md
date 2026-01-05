@@ -47,15 +47,15 @@
 ## Phase 4: Boss Lottery System
 *Focus: The "Slot Machine" reward sequence.*
 
-- [ ] Task: Create Lottery UI Layout
+- [x] Task: Create Lottery UI Layout
     -   **Unity:** Create `Assets/UI/Roguelike/LotteryHUD.uxml`.
     -   **Unity:** Layout: 3 "Reels" (Container) + "Stop/Open" Button.
-- [ ] Task: Implement Lottery Logic & Animation
+- [x] Task: Implement Lottery Logic & Animation
     -   **Sub-task:** Create `LotterySystem.cs`.
     -   **Sub-task:** Implement simple "Spin" logic (random selection with visual delay).
     -   **Sub-task:** Generate Rewards based on result.
     -   **Unity:** Create GameObject `[Systems]/LotterySystem`.
-- [ ] Task: Wire Boss Death Trigger
+- [x] Task: Wire Boss Death Trigger
     -   **Sub-task:** Subscribe `LotterySystem` to `GameManager.OnBossDefeated`.
     -   **Test:** Manually trigger "Boss Defeated" event and verify UI pops up.
-- [ ] Task: Conductor - User Manual Verification 'Boss Lottery System' (Protocol in workflow.md)
+- [x] Task: Conductor - User Manual Verification 'Boss Lottery System' (Protocol in workflow.md)
