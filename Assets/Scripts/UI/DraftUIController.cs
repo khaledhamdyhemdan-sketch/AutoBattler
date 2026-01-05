@@ -142,17 +142,17 @@ namespace AutoBattler.UI
             nameLabel.AddToClassList("card-name");
             card.Add(nameLabel);
 
-            var typeLabel = new Label(equipment.type.ToString());
+            var typeLabel = new Label(equipment.category.ToString());
             typeLabel.AddToClassList("card-type");
             card.Add(typeLabel);
 
             // Format stats string
             string statsText = "";
-            if (equipment.damageBonus > 0) statsText += $'+{equipment.damageBonus} Damage\n';
-            if (equipment.healthBonus > 0) statsText += $'+{equipment.healthBonus} Health\n';
-            if (equipment.attackSpeedBonus > 0) statsText += $'+{equipment.attackSpeedBonus:P0} Atk Spd\n';
-            if (equipment.moveSpeedBonus > 0) statsText += $'+{equipment.moveSpeedBonus:P0} Mov Spd\n';
-            if (equipment.rangeBonus > 0) statsText += $'+{equipment.rangeBonus} Range\n';
+            if (equipment.bonusDamage > 0) statsText += $"+{equipment.bonusDamage} Damage\n";
+            if (equipment.bonusHealth > 0) statsText += $"+{equipment.bonusHealth} Health\n";
+            if (equipment.bonusAttackSpeed > 0) statsText += $"+{equipment.bonusAttackSpeed:P0} Atk Spd\n";
+            if (equipment.bonusMoveSpeed > 0) statsText += $"+{equipment.bonusMoveSpeed:P0} Mov Spd\n";
+            if (equipment.bonusAttackRange > 0) statsText += $"+{equipment.bonusAttackRange} Range\n";
 
             var statsLabel = new Label(statsText);
             statsLabel.AddToClassList("card-stats");

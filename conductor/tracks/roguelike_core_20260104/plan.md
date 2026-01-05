@@ -7,7 +7,7 @@
     -   **Sub-task:** Create `EquipmentSO.cs` inheriting from ScriptableObject (Fields: Name, Icon, Stats, ClassTags, Rarity).
     -   **Sub-task:** Create `EquipmentDatabaseSO` to hold lists of all equipment for the drafted pool.
     -   **Unity:** Create ~5 dummy Equipment assets (Sword, Staff, Shield, etc.) in `Assets/Data/Equipment/`.
-- [~] Task: Implement Smart Equip Logic (Backend)
+- status: review Task: Implement Smart Equip Logic (Backend)
     -   **Sub-task:** Create `SmartEquipSystem.cs` (pure C# logic or Monobehavior).
     -   **Sub-task:** Implement `CalculateUtility(UnitStats, Equipment)` function.
     -   **Sub-task:** Implement `AutoEquip(Equipment, List<UnitController>)` function.
@@ -44,7 +44,7 @@
     -   **Sub-task:** When Card Picked -> Call `SmartEquipSystem.AutoEquip()`.
 - [ ] Task: Conductor - User Manual Verification 'Card Drafting UI & Economy' (Protocol in workflow.md)
 
-## Phase 4: Boss Lottery System
+## Phase 4: Boss Lottery System [checkpoint: a5a9b84]
 *Focus: The "Slot Machine" reward sequence.*
 
 - [x] Task: Create Lottery UI Layout
