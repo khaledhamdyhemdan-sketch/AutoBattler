@@ -1,6 +1,6 @@
 # Plan: Core Roguelike Mode Implementation
 
-## Phase 1: Data Architecture & Core Logic
+## Phase 1: Data Architecture & Core Logic [checkpoint: f48ea86]
 *Focus: Setting up ScriptableObjects for Equipment and the backend logic for Smart Auto-Equip.*
 
 - [x] Task: Create Equipment Data Structure
