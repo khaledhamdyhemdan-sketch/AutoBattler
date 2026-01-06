@@ -1,19 +1,25 @@
-# Unity 6.3 Auto-Battler Framework
+# AutoBattler - Dark Fantasy Auto-Battler
 
-A fully functional auto-battler game framework built for Unity 6.3 LTS, leveraging cutting-edge features like Render Graph API, UI Toolkit, Burst compilation, and Building Blocks.
+A strategic auto-battler built in Unity 6.3, blending deep tactical combat with dual-progression systems. Features a dark fantasy aesthetic with planned evolution into Void/Cyberpunk corruption themes.
 
 ![Unity Version](https://img.shields.io/badge/Unity-6.3%20LTS-blue)
 ![License](https://img.shields.io/badge/license-MIT-green)
 
-## ✨ Features
+> **📖 For detailed setup:** See [START_HERE.md](START_HERE.md)  
+> **🎯 Project Plan:** See [conductor/](conductor/) folder
 
-### Core Gameplay
-- **Phase-Based Game Loop**: Automatic transitions between Preparation and Combat phases
-- **ScriptableObject Architecture**: Data-driven unit stats, abilities, and shop pools
-- **Grid-Based Battlefield**: Responsive 4x7 grid for strategic unit placement
-- **Auto-Combat System**: Units automatically target and attack enemies
-- **Shop System**: Tier-based unit purchasing with dynamic level progression
-- **Resource Management**: Gold, health, experience, and leveling system
+## ✨ Core Features
+
+### Dual Game Modes
+- **Roguelike Mode**: Run-based gameplay with gold-based equipment rerolls
+- **Progression Mode**: Permanent gear farming that persists between runs
+
+### Gameplay Systems
+- **Phase-Based Combat**: Automatic transitions between Preparation and Battle phases
+- **Class Hierarchy**: Deep class trees (Void Knight, Pyromancer, etc.) without race restrictions
+- **Equipment System**: Card-based drops with smart auto-equip by class/stats
+- **Grid Battlefield**: Strategic 4x7 grid for unit placement
+- **Lottery Loot**: Slot-machine style boss chest rewards
 
 ### Unity 6.3 Technologies
 

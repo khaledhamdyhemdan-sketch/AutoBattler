@@ -174,6 +174,7 @@ GameObject:
   m_Component:
   - component: {fileID: 428630011}
   - component: {fileID: 428630010}
+  - component: {fileID: 428630012}
   m_Layer: 0
   m_Name: Roguelike System Setup
   m_TagString: Untagged
@@ -196,6 +197,13 @@ MonoBehaviour:
   createRunManager: 1
   createUnlockManager: 1
   createAchievementSystem: 1
+  createRoguelikeManager: 1
+  createDraftUI: 1
+  createLotteryUI: 1
+  panelSettings: {fileID: 11400000, guid: 4e9c9c31e05c36f40a319175353c9ad6, type: 2}
+  draftUXML: {fileID: 9197481963319205126, guid: 63b515e53be5af04097259e7ca7e68a6, type: 3}
+  lotteryUXML: {fileID: 9197481963319205126, guid: 0c17a26be2bd8e44ebb6dafa8083fca2, type: 3}
+  equipmentDatabase: {fileID: 11400000, guid: ee1ec790aa014b04b970c27606630209, type: 2}
 --- !u!4 &428630011
 Transform:
   m_ObjectHideFlags: 0
@@ -211,6 +219,18 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &428630012
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 428630009}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c47c79c0d1ea27546bff888a4109e8a2, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::AutoBattler.Core.RoguelikeResourceLoader
 --- !u!1 &524416584
 GameObject:
   m_ObjectHideFlags: 0
@@ -424,7 +444,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 2f0d996f43962634fade1c334cb9da04, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::AutoBattler.Core.ShopManager
-  shopPool: {fileID: 11400000, guid: d4e5f6789012345678901234d4e5f678, type: 2}
+  shopPool: {fileID: 11400000, guid: 762a0107e7358474395f55c2725862da, type: 2}
   shopSlotContainer: {fileID: 1032741757}
 --- !u!4 &1032741757
 Transform:
@@ -770,8 +790,9 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1644126337}
+  - component: {fileID: 1644126338}
   m_Layer: 0
-  m_Name: GameObject
+  m_Name: Void Game Manager
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -792,6 +813,23 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1644126338
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1644126336}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4a5dc40a9ad8b394b9fdbf02911775f3, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::AutoBattler.Core.VoidGame.VoidGameManager
+  combatTickRate: 0.1
+  useAdvancedAI: 1
+  debugLogging: 1
+  arenaBounds: {x: 20, y: 20}
+  gameMode: 0
 --- !u!1 &1696078553
 GameObject:
   m_ObjectHideFlags: 0

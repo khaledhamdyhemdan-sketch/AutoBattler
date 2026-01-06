@@ -7,12 +7,12 @@
     -   **Sub-task:** Create `EquipmentSO.cs` inheriting from ScriptableObject (Fields: Name, Icon, Stats, ClassTags, Rarity).
     -   **Sub-task:** Create `EquipmentDatabaseSO` to hold lists of all equipment for the drafted pool.
     -   **Unity:** Create ~5 dummy Equipment assets (Sword, Staff, Shield, etc.) in `Assets/Data/Equipment/`.
-- status: review Task: Implement Smart Equip Logic (Backend)
+- [x] Task: Implement Smart Equip Logic (Backend)
     -   **Sub-task:** Create `SmartEquipSystem.cs` (pure C# logic or Monobehavior).
     -   **Sub-task:** Implement `CalculateUtility(UnitStats, Equipment)` function.
     -   **Sub-task:** Implement `AutoEquip(Equipment, List<UnitController>)` function.
     -   **Test:** Write Unit Test ensuring Mages prioritize Staffs over Swords.
-- [ ] Task: Conductor - User Manual Verification 'Data Architecture & Core Logic' (Protocol in workflow.md)
+- [x] Task: Conductor - User Manual Verification 'Data Architecture & Core Logic' (Protocol in workflow.md)
 
 ## Phase 2: Roguelike Game Manager & Scene Wiring
 *Focus: Creating the Game Mode manager and hooking it into the existing Scene architecture.*
@@ -25,7 +25,7 @@
     -   **Sub-task:** Modify `GameManager.cs` to allow "Game Mode" overrides.
     -   **Sub-task:** Wire `RoguelikeManager` to listen to `OnPreparationPhaseStart`.
     -   **Unity:** In Inspector, link `RoguelikeManager` to `GameManager` (if referencing directly) or verify Event subscription in `Start()`.
-- [ ] Task: Conductor - User Manual Verification 'Roguelike Game Manager & Scene Wiring' (Protocol in workflow.md)
+- [x] Task: Conductor - User Manual Verification 'Roguelike Game Manager & Scene Wiring' (Protocol in workflow.md)
 
 ## Phase 3: Card Drafting UI & Economy
 *Focus: The visual interface for picking items and the gold economy integration.*
@@ -39,10 +39,10 @@
     -   **Sub-task:** Bind UI events to `RoguelikeManager` methods.
     -   **Unity:** Create `[UI]/DraftScreen` GameObject with `UIDocument` and `DraftUIController`.
 
-- [ ] Task: Connect Logic to UI
+- [x] Task: Connect Logic to UI
     -   **Sub-task:** When `RoguelikeManager` enters Draft Phase, `DraftingUIController` Show().
     -   **Sub-task:** When Card Picked -> Call `SmartEquipSystem.AutoEquip()`.
-- [ ] Task: Conductor - User Manual Verification 'Card Drafting UI & Economy' (Protocol in workflow.md)
+- [x] Task: Conductor - User Manual Verification 'Card Drafting UI & Economy' (Protocol in workflow.md)
 
 ## Phase 4: Boss Lottery System [checkpoint: a5a9b84]
 *Focus: The "Slot Machine" reward sequence.*

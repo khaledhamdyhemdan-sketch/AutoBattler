@@ -76,5 +76,7 @@ namespace AutoBattler.Core
         }
 
         public List<UnitStatsSO> GetSelectedSquad() => selectedSquad;
+        
+        public List<UnitStatsSO> GetAvailableUnits() => availableUnits;
     }
 }

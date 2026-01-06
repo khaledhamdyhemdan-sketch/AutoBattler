@@ -26,6 +26,13 @@ namespace AutoBattler.Core
         [SerializeField] private bool createAchievementSystem = true;
         [SerializeField] private bool createRoguelikeManager = true;
 
+        [Header("UI Configuration")]
+        [SerializeField] private bool createDraftUI = true;
+        [SerializeField] private bool createLotteryUI = true;
+        [SerializeField] private UnityEngine.UIElements.PanelSettings panelSettings;
+        [SerializeField] private UnityEngine.UIElements.VisualTreeAsset draftUXML;
+        [SerializeField] private UnityEngine.UIElements.VisualTreeAsset lotteryUXML;
+
         [Header("Data References")]
         [SerializeField] private Data.EquipmentDatabaseSO equipmentDatabase;
         
@@ -49,6 +56,72 @@ namespace AutoBattler.Core
                 yield return null;
             }
             InitializeSystems();
+        }
+
+        private void OnEnable()
+        {
+            UnityEngine.SceneManagement.SceneManager.sceneLoaded += OnSceneLoaded;
+        }
+
+        private void OnDisable()
+        {
+            UnityEngine.SceneManagement.SceneManager.sceneLoaded -= OnSceneLoaded;
+        }
+
+        private void OnSceneLoaded(UnityEngine.SceneManagement.Scene scene, UnityEngine.SceneManagement.LoadSceneMode mode)
+        {
+            if (scene.name == "GameHUD")
+            {
+                InitializeHUDUI(scene);
+            }
+        }
+
+        private void InitializeHUDUI(UnityEngine.SceneManagement.Scene hudScene)
+        {
+            if (createDraftUI)
+            {
+                // Check if already exists in the scene to prevent duplicates (though uncommon with fresh load)
+                bool exists = false;
+                foreach (var root in hudScene.GetRootGameObjects())
+                {
+                    if (root.GetComponent<UI.DraftUIController>()) { exists = true; break; }
+                }
+
+                if (!exists)
+                {
+                    var go = new GameObject("DraftUI");
+                    var doc = go.AddComponent<UnityEngine.UIElements.UIDocument>();
+                    doc.panelSettings = panelSettings;
+                    doc.visualTreeAsset = draftUXML;
+                    doc.sortingOrder = 100; // Ensure it renders on top of HUD
+                    go.AddComponent<UI.DraftUIController>();
+                    
+                    UnityEngine.SceneManagement.SceneManager.MoveGameObjectToScene(go, hudScene);
+                    Debug.Log("[RoguelikeSystemSetup] Injected DraftUI into GameHUD");
+                }
+            }
+
+            if (createLotteryUI)
+            {
+                bool exists = false;
+                foreach (var root in hudScene.GetRootGameObjects())
+                {
+                    if (root.GetComponent<UI.LotteryUIController>()) { exists = true; break; }
+                }
+
+                if (!exists)
+                {
+                    var go = new GameObject("LotteryUI");
+                    var doc = go.AddComponent<UnityEngine.UIElements.UIDocument>();
+                    doc.panelSettings = panelSettings;
+                    doc.visualTreeAsset = lotteryUXML;
+                    doc.sortingOrder = 200; // Ensure it renders on top of everything
+                    go.AddComponent<UI.LotteryUIController>();
+                    
+                    UnityEngine.SceneManagement.SceneManager.MoveGameObjectToScene(go, hudScene);
+                    Debug.Log("[RoguelikeSystemSetup] Injected LotteryUI into GameHUD");
+                }
+            }
         }
 
         private void InitializeSystems()
@@ -84,8 +157,6 @@ namespace AutoBattler.Core
                 var roguelikeManager = roguelikeManagerGO.AddComponent<RoguelikeManager>();
                 
                 // Assign Equipment Database via reflection or public method if available
-                // We need to modify RoguelikeManager to allow external initialization of database if it's private serializable
-                // For now, let's assume we can set it via reflection if it's private serialized
                 var dbField = typeof(RoguelikeManager).GetField("equipmentDatabase", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
                 if (dbField != null && equipmentDatabase != null)
                 {
@@ -94,7 +165,7 @@ namespace AutoBattler.Core
 
                 Debug.Log("[RoguelikeSystemSetup] Created RoguelikeManager");
             }
-            
+
             Debug.Log("[RoguelikeSystemSetup] Roguelike progression systems initialized successfully!");
         }
     }

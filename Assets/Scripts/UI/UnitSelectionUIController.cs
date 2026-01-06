@@ -59,6 +59,14 @@ namespace AutoBattler.UI
         private void OnEnable()
         {
             if (uiDocument == null) uiDocument = GetComponent<UIDocument>();
+            
+            // Initialize the unit pool in the manager
+            if (UnitSelectionManager.Instance != null)
+            {
+                UnitSelectionManager.Instance.RefreshAvailableUnits();
+                Debug.Log("[UnitSelectionUI] Refreshed available units in manager");
+            }
+            
             BuildUI();
             BindEvents();
         }
@@ -695,14 +703,34 @@ namespace AutoBattler.UI
             if (poolContainer == null) return;
             poolContainer.Clear();
 
-            // Populate with demo data since UnitSelectionManager manages its own pool internally
-            for (int i = 0; i < 8; i++)
+            // Get units from UnitSelectionManager instead of creating demo data
+            if (UnitSelectionManager.Instance == null)
             {
-                string className = unitClasses[i];
+                Debug.LogWarning("[UnitSelectionUI] UnitSelectionManager not found! Cannot populate pool.");
+                return;
+            }
+
+            var availableUnits = UnitSelectionManager.Instance.GetAvailableUnits();
+            if (availableUnits == null || availableUnits.Count == 0)
+            {
+                Debug.LogWarning("[UnitSelectionUI] No available units from manager!");
+                return;
+            }
+
+            Debug.Log($"[UnitSelectionUI] Populating pool with {availableUnits.Count} units from manager");
+
+            for (int i = 0; i < availableUnits.Count; i++)
+            {
+                var unit = availableUnits[i];
+                if (unit == null)
+                {
+                    Debug.LogWarning($"[UnitSelectionUI] Unit at index {i} is null, skipping");
+                    continue;
+                }
+
+                string className = unit.unitType.ToString();
                 string role = classRoles.GetValueOrDefault(className, "Specialist");
-                int hp = 100 + i * 20;
-                int dmg = 15 + i * 5;
-                var card = CreateUnitCard(i, $"{className} Unit", className, role, hp, dmg, (i % 3) + 1);
+                var card = CreateUnitCard(i, unit.unitName, className, role, unit.maxHealth, unit.attackDamage, 1);
                 poolContainer.Add(card);
             }
         }
@@ -821,6 +849,8 @@ namespace AutoBattler.UI
                 card.style.borderBottomColor = Stone800;
                 card.style.borderLeftColor = Stone800;
                 card.style.borderRightColor = Stone800;
+                
+                Debug.Log($"[UnitSelectionUI] Deselected unit at pool index {index}");
             }
             else
             {
@@ -832,7 +862,8 @@ namespace AutoBattler.UI
                 card.style.borderRightColor = Emerald;
 
                 // Also notify manager
-                UnitSelectionManager.Instance?.SelectUnit(index);
+                bool success = UnitSelectionManager.Instance?.SelectUnit(index) ?? false;
+                Debug.Log($"[UnitSelectionUI] Selected unit at pool index {index}, Manager notified: {success}");
             }
 
             UpdateSquadDisplay();
@@ -896,14 +927,26 @@ namespace AutoBattler.UI
 
         private void OnStartBattleClicked()
         {
-            int count = UnitSelectionManager.Instance?.GetSelectedSquad()?.Count ?? selectedIndices.Count;
-            if (count == 0)
+            // Check both the UI's tracking and the manager's squad
+            var squad = UnitSelectionManager.Instance?.GetSelectedSquad();
+            int managerCount = squad?.Count ?? 0;
+            int uiCount = selectedIndices.Count;
+            
+            Debug.Log($"[UnitSelectionUI] Start Battle - Manager squad: {managerCount}, UI selected: {uiCount}");
+            
+            if (managerCount == 0 && uiCount == 0)
             {
                 Debug.LogWarning("[UnitSelectionUI] Select at least one unit!");
                 return;
             }
 
-            Debug.Log("[UnitSelectionUI] Starting battle!");
+            // If counts don't match, log a warning but still proceed if manager has units
+            if (managerCount != uiCount)
+            {
+                Debug.LogWarning($"[UnitSelectionUI] Mismatch between UI ({uiCount}) and Manager ({managerCount}) counts!");
+            }
+
+            Debug.Log($"[UnitSelectionUI] Starting battle with {managerCount} units!");
             if (SceneLoader.Instance != null)
             {
                 SceneLoader.Instance.LoadGameplay();

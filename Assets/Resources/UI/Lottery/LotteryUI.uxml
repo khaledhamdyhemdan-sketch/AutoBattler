@@ -1,0 +1,20 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" editor-extension-mode="False">
+    <ui:Style src="LotteryUI.uss" />
+    
+    <ui:VisualElement name="LotteryRoot" class="lottery-root">
+        <ui:Label text="BOSS DEFEATED!" class="lottery-title" />
+        <ui:Label text="The Void yields its treasure..." class="lottery-subtitle" />
+        
+        <ui:VisualElement name="SlotMachine" class="slot-machine-container">
+            <ui:VisualElement name="SlotContent" class="slot-content">
+                <ui:VisualElement name="SlotIcon" class="slot-icon" />
+                <ui:Label name="ItemName" text="Spinning..." class="slot-item-name" />
+                <ui:Label name="ItemRarity" text="..." class="slot-item-rarity" />
+            </ui:VisualElement>
+        </ui:VisualElement>
+        
+        <ui:Button name="ClaimButton" class="claim-button">
+            <ui:Label text="CLAIM REWARD" class="claim-label" />
+        </ui:Button>
+    </ui:VisualElement>
+</ui:UXML>
