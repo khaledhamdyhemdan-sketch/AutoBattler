@@ -39,6 +39,7 @@ namespace MythicChronicles
         private GUIStyle heading, subtitle, tiny;
         private GUIStyle bigButton;
         private Texture2D panelTex;
+        private Texture2D buttonNormalTex, buttonHoverTex, buttonPressedTex, boxTex;
         private float panelWidth = 540f;
 
         private void Awake()
@@ -89,16 +90,89 @@ namespace MythicChronicles
             subtitle.normal.textColor = new Color(.87f, .86f, .99f);
             tiny = new GUIStyle(GUI.skin.label) { fontSize = 14, wordWrap = true };
             tiny.normal.textColor = new Color(.84f, .83f, .94f);
-            bigButton = new GUIStyle(GUI.skin.button) { fontSize = 19, fontStyle = FontStyle.Bold,
+            // Original dark-violet / antique-gold Alpha theme. Only lightweight
+            // runtime textures are used, so no third-party game art is copied.
+            buttonNormalTex = MakePlate(new Color(.19f, .16f, .35f),
+                new Color(.105f, .09f, .215f), new Color(.60f, .46f, .29f), 9);
+            buttonHoverTex = MakePlate(new Color(.30f, .22f, .46f),
+                new Color(.18f, .14f, .30f), new Color(.90f, .71f, .38f), 9);
+            buttonPressedTex = MakePlate(new Color(.13f, .10f, .26f),
+                new Color(.10f, .07f, .20f), new Color(.93f, .76f, .44f), 9);
+            boxTex = MakePlate(new Color(.12f, .095f, .22f, .91f),
+                new Color(.075f, .065f, .16f, .88f),
+                new Color(.37f, .29f, .45f, .87f), 8);
+
+            GUI.skin.button.normal.background = buttonNormalTex;
+            GUI.skin.button.hover.background = buttonHoverTex;
+            GUI.skin.button.active.background = buttonPressedTex;
+            GUI.skin.button.focused.background = buttonHoverTex;
+            GUI.skin.button.border = new RectOffset(10, 10, 10, 10);
+            GUI.skin.button.fontSize = 15;
+            GUI.skin.button.wordWrap = true;
+            GUI.skin.button.normal.textColor = new Color(.96f, .93f, .84f);
+            GUI.skin.button.hover.textColor = Color.white;
+            GUI.skin.button.active.textColor = new Color(1f, .87f, .49f);
+            GUI.skin.box.normal.background = boxTex;
+            GUI.skin.box.border = new RectOffset(10, 10, 10, 10);
+            GUI.skin.box.fontSize = 14;
+            GUI.skin.box.wordWrap = true;
+            GUI.skin.box.normal.textColor = new Color(.90f, .87f, .98f);
+            bigButton = new GUIStyle(GUI.skin.button) {
+                fontSize = 18, fontStyle = FontStyle.Bold,
                 alignment = TextAnchor.MiddleCenter, wordWrap = true };
-            panelTex = new Texture2D(1, 1, TextureFormat.RGBA32, false);
-            panelTex.SetPixel(0, 0, new Color(.09f, .08f, .18f, .96f));
-            panelTex.Apply();
+            panelTex = new Texture2D(2, 128, TextureFormat.RGBA32, false);
+            panelTex.wrapMode = TextureWrapMode.Clamp;
+            panelTex.filterMode = FilterMode.Bilinear;
+            for (int y = 0; y < 128; y++)
+            {
+                float p = y / 127f;
+                Color shade = Color.Lerp(new Color(.060f, .044f, .13f),
+                    new Color(.135f, .105f, .24f), p);
+                shade = Color.Lerp(shade,
+                    new Color(.08f, .06f, .17f), .18f + .19f * Mathf.Sin(p * 3f));
+                panelTex.SetPixel(0, y, shade);
+                panelTex.SetPixel(1, y, shade);
+            }
+            panelTex.Apply(false);
+        }
+
+        private static Texture2D MakePlate(Color top, Color bottom,
+            Color outline, int radius)
+        {
+            const int width = 96, height = 56;
+            Texture2D texture = new Texture2D(width, height,
+                TextureFormat.RGBA32, false);
+            texture.wrapMode = TextureWrapMode.Clamp;
+            texture.filterMode = FilterMode.Bilinear;
+            for (int y = 0; y < height; y++)
+                for (int x = 0; x < width; x++)
+                {
+                    float nearestX = Mathf.Clamp(x, radius, width - radius - 1);
+                    float nearestY = Mathf.Clamp(y, radius, height - radius - 1);
+                    float dx = x - nearestX, dy = y - nearestY;
+                    float distance = Mathf.Sqrt(dx * dx + dy * dy);
+                    if (distance > radius + .2f)
+                    {
+                        texture.SetPixel(x, y, Color.clear);
+                        continue;
+                    }
+                    Color fill = Color.Lerp(bottom, top, y / (float)(height - 1));
+                    if (distance > radius - 1.8f ||
+                        x < 2 || y < 2 || x >= width - 2 || y >= height - 2)
+                        fill = Color.Lerp(fill, outline, .87f);
+                    texture.SetPixel(x, y, fill);
+                }
+            texture.Apply(false);
+            return texture;
         }
 
         private void OnDestroy()
         {
             if (panelTex != null) Destroy(panelTex);
+            if (boxTex != null) Destroy(boxTex);
+            if (buttonNormalTex != null) Destroy(buttonNormalTex);
+            if (buttonHoverTex != null) Destroy(buttonHoverTex);
+            if (buttonPressedTex != null) Destroy(buttonPressedTex);
             ChroniclesHeroPortrait.Clear();
         }
 
