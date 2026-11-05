@@ -770,6 +770,7 @@ namespace MythicChronicles
                 return result;
             }
             ResetDailyIfNeeded();
+            ResetWeeklyIfNeeded(); // Avoid writing a partially completed batch at a weekly boundary.
             int tickets = banner == SummonBannerType.Standard ?
                 Data.summonTickets : Data.astralSeals;
             int free = Math.Min(count, tickets);
