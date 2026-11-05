@@ -12,6 +12,8 @@ namespace MythicChronicles
         public int level = 1;
         public int stars = 1;
         public int weaponLevel, armorLevel;
+        public int activeSkillLevel = 1, ultimateSkillLevel = 1, passiveSkillLevel = 1;
+        public int attackTalents, defenseTalents;
         public int fragments;
         public string skin = "default";
     }
@@ -38,6 +40,8 @@ namespace MythicChronicles
         public List<string> claimedDailyQuests = new List<string>();
         public List<string> claimedWeeklyQuests = new List<string>();
         public List<string> ownedSkins = new List<string>();
+        public List<GearInstance> equipment = new List<GearInstance>();
+        public List<RuneInstance> runes = new List<RuneInstance>();
     }
 
     public sealed class QuestInfo
@@ -121,6 +125,8 @@ namespace MythicChronicles
             if (Data.claimedDailyQuests == null) Data.claimedDailyQuests = new List<string>();
             if (Data.claimedWeeklyQuests == null) Data.claimedWeeklyQuests = new List<string>();
             if (Data.ownedSkins == null) Data.ownedSkins = new List<string>();
+            if (Data.equipment == null) Data.equipment = new List<GearInstance>();
+            if (Data.runes == null) Data.runes = new List<RuneInstance>();
             Data.gold = Math.Max(0, Data.gold);
             Data.gems = Math.Max(0, Data.gems);
             Data.summonTickets = Math.Max(0, Data.summonTickets);
@@ -133,7 +139,39 @@ namespace MythicChronicles
             Data.heroes.RemoveAll(h => h == null || WorldsCatalog.FindHero(h.id) == null);
             var seen = new HashSet<string>(StringComparer.Ordinal);
             Data.heroes.RemoveAll(h => !seen.Add(h.id));
-            foreach (var h in Data.heroes) { h.level = Mathf.Clamp(h.level, 1, 200); h.stars = Mathf.Clamp(h.stars, 1, 6); h.weaponLevel = Mathf.Clamp(h.weaponLevel, 0, 30); h.armorLevel = Mathf.Clamp(h.armorLevel, 0, 30); if (HeroSkinCatalog.Find(h.id, h.skin) == null) h.skin = "default"; }
+            foreach (var h in Data.heroes) { h.level = Mathf.Clamp(h.level, 1, 200); h.stars = Mathf.Clamp(h.stars, 1, 6); h.weaponLevel = Mathf.Clamp(h.weaponLevel, 0, 30); h.armorLevel = Mathf.Clamp(h.armorLevel, 0, 30); if (HeroSkinCatalog.Find(h.id, h.skin) == null) h.skin = "default";
+                h.activeSkillLevel = Mathf.Clamp(h.activeSkillLevel, 1, ChroniclesGrowth.SkillCap);
+                h.ultimateSkillLevel = Mathf.Clamp(h.ultimateSkillLevel, 1, ChroniclesGrowth.SkillCap);
+                h.passiveSkillLevel = Mathf.Clamp(h.passiveSkillLevel, 1, ChroniclesGrowth.SkillCap);
+                h.attackTalents = Mathf.Clamp(h.attackTalents, 0, ChroniclesGrowth.MaxTalents);
+                h.defenseTalents = Mathf.Clamp(h.defenseTalents, 0, ChroniclesGrowth.MaxTalents);
+                if (h.attackTalents + h.defenseTalents > ChroniclesGrowth.MaxTalents)
+                    h.defenseTalents = ChroniclesGrowth.MaxTalents - h.attackTalents;
+            }
+            var itemIds = new HashSet<string>(StringComparer.Ordinal);
+            var occupiedSlots = new HashSet<string>(StringComparer.Ordinal);
+            Data.equipment.RemoveAll(item => item == null ||
+                string.IsNullOrEmpty(item.instanceId) || !itemIds.Add(item.instanceId) ||
+                ChroniclesEquipment.Find(item.templateId) == null);
+            foreach (GearInstance item in Data.equipment)
+            {
+                item.level = Mathf.Clamp(item.level, 0, 30);
+                GearTemplate definition = ChroniclesEquipment.Find(item.templateId);
+                if (!OwnsHero(item.equippedHeroId) ||
+                    !occupiedSlots.Add(item.equippedHeroId + ":" + definition.slot))
+                    item.equippedHeroId = "";
+            }
+            itemIds.Clear();
+            var runeSlots = new HashSet<string>(StringComparer.Ordinal);
+            Data.runes.RemoveAll(item => item == null ||
+                string.IsNullOrEmpty(item.instanceId) || !itemIds.Add(item.instanceId));
+            foreach (RuneInstance rune in Data.runes)
+            {
+                rune.level = Mathf.Clamp(rune.level, 1, 20);
+                if (!OwnsHero(rune.assignedHeroId) ||
+                    !runeSlots.Add(rune.assignedHeroId + ":" + rune.type))
+                    rune.assignedHeroId = "";
+            }
             seen.Clear();
             Data.selectedTeam.RemoveAll(id => !OwnsHero(id) || !seen.Add(id));
             if (Data.selectedTeam.Count > 5) Data.selectedTeam.RemoveRange(5, Data.selectedTeam.Count - 5);
@@ -294,8 +332,8 @@ namespace MythicChronicles
         public bool UpgradeHero(string id)
         {
             OwnedHero hero = FindOwnedHero(id);
-            if (hero == null || hero.level >= 200) return false;
-            int cost = 75 + (hero.level * 35);
+            if (hero == null || hero.level >= ChroniclesGrowth.LevelCap) return false;
+            int cost = ChroniclesGrowth.LevelCost(hero.level);
             if (Data.gold < cost) return false;
             Data.gold -= cost;
             hero.level++;
@@ -303,6 +341,178 @@ namespace MythicChronicles
             IncrementWeekly("upgrade_7");
             Save();
             return true;
+        }
+
+        public int ResonanceLevel() { return ChroniclesGrowth.ResonanceLevel(Data); }
+
+        public bool ResetHeroLevel(string id)
+        {
+            OwnedHero hero = FindOwnedHero(id);
+            if (hero == null || hero.level <= 1) return false;
+            int refunded = ChroniclesGrowth.RefundForLevelReset(hero.level);
+            hero.level = 1; // Keeps stars, cosmetics, equipment and skill investment.
+            Data.gold += refunded;
+            return Save();
+        }
+
+        public bool UpgradeSkill(string id, string kind)
+        {
+            OwnedHero hero = FindOwnedHero(id);
+            if (hero == null) return false;
+            int previous;
+            switch (kind)
+            {
+                case "active": previous = hero.activeSkillLevel; break;
+                case "ultimate": previous = hero.ultimateSkillLevel; break;
+                case "passive": previous = hero.passiveSkillLevel; break;
+                default: return false;
+            }
+            if (previous >= ChroniclesGrowth.SkillCap ||
+                previous >= hero.stars + 4) return false;
+            int cost = ChroniclesGrowth.SkillCost(previous);
+            if (Data.gold < cost) return false;
+            Data.gold -= cost;
+            switch (kind)
+            {
+                case "active": hero.activeSkillLevel++; break;
+                case "ultimate": hero.ultimateSkillLevel++; break;
+                case "passive": hero.passiveSkillLevel++; break;
+            }
+            IncrementQuest("upgrade_1");
+            IncrementWeekly("upgrade_7");
+            return Save();
+        }
+
+        public bool BuyTalent(string id, bool offensive)
+        {
+            OwnedHero hero = FindOwnedHero(id);
+            if (hero == null) return false;
+            int count = hero.attackTalents + hero.defenseTalents;
+            int allowed = Mathf.Min(ChroniclesGrowth.MaxTalents,
+                hero.level / 10 + hero.stars);
+            int cost = ChroniclesGrowth.TalentCost(count);
+            if (count >= allowed || Data.gold < cost) return false;
+            Data.gold -= cost;
+            if (offensive) hero.attackTalents++;
+            else hero.defenseTalents++;
+            IncrementQuest("upgrade_1");
+            IncrementWeekly("upgrade_7");
+            return Save();
+        }
+
+        public bool ResetTalents(string id)
+        {
+            OwnedHero hero = FindOwnedHero(id);
+            if (hero == null) return false;
+            int total = hero.attackTalents + hero.defenseTalents;
+            if (total == 0) return false;
+            long refund = 0;
+            for (int i = 0; i < total; i++)
+                refund += ChroniclesGrowth.TalentCost(i);
+            if (refund > int.MaxValue - Data.gold) return false;
+            hero.attackTalents = 0; hero.defenseTalents = 0;
+            Data.gold += (int)refund;
+            return Save();
+        }
+
+        public bool EquipGear(string instanceId, string heroId)
+        {
+            if (!OwnsHero(heroId)) return false;
+            GearInstance chosen = Data.equipment.Find(x => x.instanceId == instanceId);
+            if (chosen == null) return false;
+            GearTemplate definition = ChroniclesEquipment.Find(chosen.templateId);
+            if (definition == null) return false;
+            foreach (GearInstance item in Data.equipment)
+            {
+                if (item == chosen || item.equippedHeroId != heroId) continue;
+                GearTemplate existing = ChroniclesEquipment.Find(item.templateId);
+                if (existing != null && existing.slot == definition.slot)
+                    item.equippedHeroId = "";
+            }
+            chosen.equippedHeroId = heroId;
+            return Save();
+        }
+
+        public bool UnequipGear(string instanceId)
+        {
+            GearInstance item = Data.equipment.Find(x => x.instanceId == instanceId);
+            if (item == null || string.IsNullOrEmpty(item.equippedHeroId)) return false;
+            item.equippedHeroId = "";
+            return Save();
+        }
+
+        public bool UpgradeGear(string instanceId)
+        {
+            GearInstance item = Data.equipment.Find(x => x.instanceId == instanceId);
+            if (item == null || item.level >= 30) return false;
+            int cost = ChroniclesEquipment.UpgradeCost(item);
+            if (cost < 1 || Data.gold < cost) return false;
+            Data.gold -= cost;
+            item.level++;
+            IncrementQuest("upgrade_1");
+            IncrementWeekly("upgrade_7");
+            return Save();
+        }
+
+        public EquipmentBonuses GearBonus(string heroId)
+        {
+            return ChroniclesEquipment.Calculate(Data.equipment, heroId);
+        }
+
+        public bool EquipRune(string instanceId, string heroId)
+        {
+            if (!OwnsHero(heroId)) return false;
+            RuneInstance chosen = Data.runes.Find(x => x.instanceId == instanceId);
+            if (chosen == null) return false;
+            // One rune of each type per hero; swap old ownership cleanly.
+            foreach (RuneInstance rune in Data.runes)
+                if (rune != chosen && rune.assignedHeroId == heroId &&
+                    rune.type == chosen.type) rune.assignedHeroId = "";
+            chosen.assignedHeroId = heroId;
+            return Save();
+        }
+
+        public bool UnequipRune(string instanceId)
+        {
+            RuneInstance item = Data.runes.Find(x => x.instanceId == instanceId);
+            if (item == null || string.IsNullOrEmpty(item.assignedHeroId)) return false;
+            item.assignedHeroId = "";
+            return Save();
+        }
+
+        public bool UpgradeRune(string instanceId)
+        {
+            RuneInstance rune = Data.runes.Find(x => x.instanceId == instanceId);
+            if (rune == null || rune.level >= 20) return false;
+            int cost = ChroniclesGrowth.RuneUpgradeCost(rune.level);
+            if (Data.gold < cost) return false;
+            Data.gold -= cost;
+            rune.level++;
+            IncrementQuest("upgrade_1");
+            IncrementWeekly("upgrade_7");
+            return Save();
+        }
+
+        private void GrantStageEquipment(int id)
+        {
+            GearTemplate reward = ChroniclesEquipment.RewardForStage(id);
+            if (reward != null)
+                Data.equipment.Add(new GearInstance
+                {
+                    instanceId = "stage_gear_" + id,
+                    templateId = reward.id,
+                    level = 0,
+                    equippedHeroId = ""
+                });
+            // First rune after the fifth stage, more as the player progresses.
+            if (id % 5 == 0)
+                Data.runes.Add(new RuneInstance
+                {
+                    instanceId = "stage_rune_" + id,
+                    type = (RuneType)((id / 5 - 1) % 4),
+                    level = 1,
+                    assignedHeroId = ""
+                });
         }
 
         public bool UpgradeEquipment(string id, bool weapon)
@@ -375,6 +585,7 @@ namespace MythicChronicles
             {
                 var stage = WorldsCatalog.GetStage(stageId);
                 Data.stageRewardsClaimed.Add(stageId);
+                GrantStageEquipment(stageId);
                 Data.gold += stage.gold;
                 Data.gems += stage.gems;
             }
