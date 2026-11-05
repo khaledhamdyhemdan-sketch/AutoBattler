@@ -24,8 +24,6 @@ namespace MythicChronicles
         }
         private static readonly Dictionary<string, Layers> Cache =
             new Dictionary<string, Layers>(StringComparer.Ordinal);
-        private static readonly Dictionary<string, Texture2D[]> Frames =
-            new Dictionary<string, Texture2D[]>(StringComparer.Ordinal);
 
         public static bool HasIdentity(string heroId)
         {
@@ -41,20 +39,9 @@ namespace MythicChronicles
                 if (entry.still != null) UnityEngine.Object.Destroy(entry.still);
             }
             Cache.Clear();
-            Frames.Clear();
+            ChroniclesPortraitAssets.Clear();
         }
 
-        private static Texture2D[] AnimationFrames(string id)
-        {
-            Texture2D[] frames;
-            if (!Frames.TryGetValue(id, out frames))
-            {
-                frames = Resources.LoadAll<Texture2D>("Chronicles/Portraits/Animated/" + id);
-                Array.Sort(frames, (a,b) => string.CompareOrdinal(a.name, b.name));
-                Frames[id] = frames;
-            }
-            return frames;
-        }
 
         public static void Draw(string heroId, Rect frame, bool animated, float phase = 0f)
         {
@@ -63,10 +50,9 @@ namespace MythicChronicles
 
             GUI.BeginGroup(frame);
             Rect local = new Rect(0, 0, frame.width, frame.height);
-            Texture2D authoredStill = Resources.Load<Texture2D>(
-                "Chronicles/Portraits/Static/" + heroId);
-            if (authoredStill == null) authoredStill = ChroniclesStageArt.HeroCard(heroId);
-            Texture2D[] frames = animated ? AnimationFrames(heroId) : null;
+            Texture2D authoredStill = ChroniclesPortraitAssets.Static(heroId);
+            Texture2D[] frames = animated ?
+                ChroniclesPortraitAssets.AnimatedFrames(heroId) : null;
             if (frames != null && frames.Length > 0)
             {
                 int index = Mathf.FloorToInt(Time.unscaledTime * 8f + phase * 3f) % frames.Length;
