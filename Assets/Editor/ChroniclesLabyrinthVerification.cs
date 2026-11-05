@@ -55,8 +55,8 @@ namespace MythicChronicles.Editor
                 Check(player.LabyrinthState().nextRoom == 2 &&
                     player.LabyrinthState().blessingStacks == 1,
                     "Shrine choice did not advance once.");
-                Check(!player.ChooseLabyrinthEvent(1),
-                    "Room two's treasure must not be treated as the old shrine.");
+                Check(!player.ChooseLabyrinthEvent(0),
+                    "Battle path must not be claimable as an event reward.");
                 // Labyrinth room 2 has a treasure route, which should only pay once.
                 int priorGold = player.Data.gold;
                 Check(player.ChooseLabyrinthEvent(1) &&
