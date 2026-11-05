@@ -26,18 +26,18 @@ namespace MythicChronicles
             new Dictionary<string, HeroElement>(StringComparer.Ordinal)
             {
                 { "horus", HeroElement.Wind },
-                { "anubis", HeroElement.Darkness },
-                { "ra", HeroElement.Light },
+                { "anubis", HeroElement.Wind },
+                { "ra", HeroElement.Fire },
                 { "sobek", HeroElement.Water },
                 { "set", HeroElement.Fire },
-                { "isis", HeroElement.Light },
+                { "isis", HeroElement.Water },
                 { "sekhmet", HeroElement.Fire },
                 { "nephthys", HeroElement.Wind },
                 { "bastet", HeroElement.Nature },
                 { "maat", HeroElement.Nature },
                 { "athena", HeroElement.Wind },
                 { "artemis", HeroElement.Nature },
-                { "hades", HeroElement.Darkness },
+                { "hades", HeroElement.Water },
                 { "persephone", HeroElement.Nature },
                 { "heracles", HeroElement.Fire },
                 { "freyja", HeroElement.Nature },
@@ -54,7 +54,17 @@ namespace MythicChronicles
                 { "merlin", HeroElement.Wind },
                 { "arthur", HeroElement.Water },
                 { "cleopatra", HeroElement.Water },
-                { "joan", HeroElement.Fire }
+                { "joan", HeroElement.Fire },
+                { "amun", HeroElement.Light },
+                { "apep", HeroElement.Darkness },
+                { "zeus", HeroElement.Light },
+                { "nyx", HeroElement.Darkness },
+                { "baldr", HeroElement.Light },
+                { "fenrir", HeroElement.Darkness },
+                { "izanagi", HeroElement.Light },
+                { "izanami", HeroElement.Darkness },
+                { "nuwa", HeroElement.Light },
+                { "hundun", HeroElement.Darkness }
             };
 
         public static bool IsSpecial(HeroElement kind)
