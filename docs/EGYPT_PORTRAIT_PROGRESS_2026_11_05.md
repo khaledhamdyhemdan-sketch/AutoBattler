@@ -32,4 +32,10 @@ visible, spectral weighing gate and protective barrier. Static1024x1536 and
 eight362x543 frames. Candidate loop; minor detail drift and subtle blink need
 Unity review. Source sheet/prompts/GIF retained in `art-source/anubis`.
 
-Ra production has not yet started; review his kit/brief first.
+## Ra delivery
+
+Reviewed full art brief, URCardCatalog, UR hero bible, Solar Flare, Suncrown,
+Eternal Day. Male human solar sovereign with falcon solar crown, sun scepter,
+solar sphere, gold feather mantle and solar barque over cosmic Nile. Both hands
+visible. Static1024x1536 and eight362x543 frames. Candidate idle with minor detail
+drift; Unity/device review pending. Source/prompts/GIF retained in `art-source/ra`.
