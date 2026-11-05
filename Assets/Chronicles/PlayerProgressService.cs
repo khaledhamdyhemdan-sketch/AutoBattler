@@ -29,7 +29,7 @@ namespace MythicChronicles
         public string lastDailyUtc;
         public string lastWeeklyUtc;
         public long lastIdleClaimTicks;
-        public int gold = 2500, gems = 350, summonTickets = 3, heroFragments;
+        public int gold = 2500, gems = 350, summonTickets = 3, heroFragments, forgeDust, nextItemSerial = 1;
         public int lastClearedStage;
         public float musicVolume = .8f, effectsVolume = .9f;
         public List<OwnedHero> heroes = new List<OwnedHero>();
@@ -131,6 +131,8 @@ namespace MythicChronicles
             Data.gems = Math.Max(0, Data.gems);
             Data.summonTickets = Math.Max(0, Data.summonTickets);
             Data.heroFragments = Math.Max(0, Data.heroFragments);
+            Data.forgeDust = Math.Max(0, Data.forgeDust);
+            Data.nextItemSerial = Math.Max(1, Data.nextItemSerial);
             Data.lastClearedStage = Mathf.Clamp(Data.lastClearedStage, 0, 60);
             Data.musicVolume = Mathf.Clamp01(Data.musicVolume);
             Data.effectsVolume = Mathf.Clamp01(Data.effectsVolume);
@@ -457,6 +459,75 @@ namespace MythicChronicles
         public EquipmentBonuses GearBonus(string heroId)
         {
             return ChroniclesEquipment.Calculate(Data.equipment, heroId);
+        }
+
+        public bool DismantleGear(string instanceId)
+        {
+            GearInstance item = Data.equipment.Find(x => x.instanceId == instanceId);
+            if (item == null || !string.IsNullOrEmpty(item.equippedHeroId)) return false;
+            GearTemplate definition = ChroniclesEquipment.Find(item.templateId);
+            if (definition == null) return false;
+            int dust = 5 + ((int)definition.rarity + 1) * 5 + item.level * 2;
+            if (Data.forgeDust > int.MaxValue - dust) return false;
+            Data.equipment.Remove(item);
+            Data.forgeDust += dust;
+            return Save();
+        }
+
+        public bool CraftGear(string templateId)
+        {
+            GearTemplate template = ChroniclesEquipment.Find(templateId);
+            if (template == null) return false;
+            int dust = 20 + (int)template.rarity * 35;
+            int price = 200 + (int)template.rarity * 300;
+            if (Data.forgeDust < dust || Data.gold < price ||
+                Data.nextItemSerial == int.MaxValue) return false;
+            Data.forgeDust -= dust;
+            Data.gold -= price;
+            Data.equipment.Add(new GearInstance
+            {
+                instanceId = "crafted_" + Data.nextItemSerial++,
+                templateId = template.id, equippedHeroId = ""
+            });
+            return Save();
+        }
+
+        public bool AutoEquip(string heroId)
+        {
+            if (!OwnsHero(heroId)) return false;
+            bool changed = false;
+            foreach (GearSlot slot in Enum.GetValues(typeof(GearSlot)))
+            {
+                GearInstance best = null;
+                float score = -1f;
+                foreach (GearInstance item in Data.equipment)
+                {
+                    if (!string.IsNullOrEmpty(item.equippedHeroId) && item.equippedHeroId != heroId)
+                        continue; // never steal gear from another hero
+                    GearTemplate definition = ChroniclesEquipment.Find(item.templateId);
+                    if (definition == null || definition.slot != slot) continue;
+                    float rating = definition.attack * 4f + definition.health * .1f +
+                        definition.defense * 3f + item.level * 12f;
+                    if (rating > score) { score = rating; best = item; }
+                }
+                if (best == null) continue;
+                foreach (GearInstance item in Data.equipment)
+                {
+                    if (item == best || item.equippedHeroId != heroId) continue;
+                    GearTemplate other = ChroniclesEquipment.Find(item.templateId);
+                    if (other != null && other.slot == slot)
+                    {
+                        item.equippedHeroId = "";
+                        changed = true;
+                    }
+                }
+                if (best.equippedHeroId != heroId)
+                {
+                    best.equippedHeroId = heroId;
+                    changed = true;
+                }
+            }
+            return !changed || Save();
         }
 
         public bool EquipRune(string instanceId, string heroId)
