@@ -279,14 +279,22 @@ namespace MythicChronicles
                     ? "UR " + hero.name.ToUpperInvariant() + " | " + element + " | " + urCard.title
                     : hero.name + " | " + hero.rarity + " | " + element +
                         " | " + hero.origin + scarcity;
-                string text = title + "\n" + hero.role +
-                    (owned == null ? " — NOT OWNED" : " — LEVEL " + owned.level);
+                Texture2D cardArt = hero.rarity == Rarity.UR ?
+                    ChroniclesStageArt.HeroCard(hero.id) : null;
+                string text = cardArt == null
+                    ? title + "\n" + hero.role +
+                        (owned == null ? " — NOT OWNED" : " — LEVEL " + owned.level)
+                    : hero.name + " | UR " + element + "\n" + hero.role +
+                        (owned == null ? " — NOT OWNED" : " — LEVEL " + owned.level);
                 Color previousBackground = GUI.backgroundColor;
                 if (urCard != null)
                     GUI.backgroundColor = urCard.element == HeroElement.Light
                         ? new Color(1f, .84f, .45f) : new Color(.64f, .46f, .82f);
                 bool selected = GUI.Button(new Rect(4, i * 76, 461, 69), text);
                 GUI.backgroundColor = previousBackground;
+                if (cardArt != null)
+                    GUI.DrawTexture(new Rect(387, i * 76 + 4, 75, 61),
+                        cardArt, ScaleMode.ScaleToFit);
                 if (urCard != null)
                 {
                     Color previousColor = GUI.color;
