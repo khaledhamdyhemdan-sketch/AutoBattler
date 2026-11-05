@@ -48,6 +48,9 @@ namespace MythicChronicles
         public List<int> eliteClears = new List<int>();
         public List<int> darkClears = new List<int>();
         public List<TowerProgressRecord> towerProgress = new List<TowerProgressRecord>();
+        public string raidUtcDay = "";
+        public string raidPendingRunId = "";
+        public int raidAttemptsUsed, raidBestDamage, raidRewardTier;
         public List<QuestCounter> quests = new List<QuestCounter>();
         public List<QuestCounter> weeklyQuests = new List<QuestCounter>();
         public List<string> claimedDailyQuests = new List<string>();
@@ -139,6 +142,12 @@ namespace MythicChronicles
             if (Data.darkClears == null) Data.darkClears = new List<int>();
             if (Data.towerProgress == null)
                 Data.towerProgress = new List<TowerProgressRecord>();
+            if (Data.raidUtcDay == null) Data.raidUtcDay = "";
+            if (Data.raidPendingRunId == null) Data.raidPendingRunId = "";
+            Data.raidAttemptsUsed = Mathf.Clamp(Data.raidAttemptsUsed, 0,
+                ChroniclesRaids.AttemptsPerDay);
+            Data.raidBestDamage = Math.Max(0, Data.raidBestDamage);
+            Data.raidRewardTier = Mathf.Clamp(Data.raidRewardTier, 0, 5);
             var seenTowers = new HashSet<string>(StringComparer.Ordinal);
             Data.towerProgress.RemoveAll(t => t == null ||
                 string.IsNullOrEmpty(t.origin) ||
@@ -875,6 +884,87 @@ namespace MythicChronicles
                 result.error = "Summon could not be saved: " + ex.Message;
                 return result;
             }
+        }
+
+        private void RefreshRaidDay()
+        {
+            string today = ChroniclesRaids.CurrentUtcDay();
+            if (Data.raidUtcDay == today) return;
+            Data.raidUtcDay = today;
+            Data.raidAttemptsUsed = 0;
+            Data.raidBestDamage = 0;
+            Data.raidRewardTier = 0;
+            Data.raidPendingRunId = "";
+            Save();
+        }
+
+        public int RaidAttemptsRemaining()
+        {
+            RefreshRaidDay();
+            return Math.Max(0, ChroniclesRaids.AttemptsPerDay - Data.raidAttemptsUsed);
+        }
+
+        public string BeginRaid()
+        {
+            RefreshRaidDay();
+            if (Data.lastClearedStage < 10 ||
+                Data.raidAttemptsUsed >= ChroniclesRaids.AttemptsPerDay ||
+                !string.IsNullOrEmpty(Data.raidPendingRunId)) return null;
+            string before = JsonUtility.ToJson(Data);
+            Data.raidAttemptsUsed++;
+            Data.raidPendingRunId = Guid.NewGuid().ToString("N");
+            if (Save()) return Data.raidPendingRunId;
+            Data = JsonUtility.FromJson<PlayerSave>(before);
+            return null;
+        }
+
+        public bool CompleteRaid(string runId, int damageScore)
+        {
+            RefreshRaidDay();
+            if (string.IsNullOrEmpty(runId) || runId != Data.raidPendingRunId ||
+                Data.lastClearedStage < 10 ||
+                Data.raidAttemptsUsed < 1 || damageScore < 0) return false;
+            ResetDailyIfNeeded();
+            ResetWeeklyIfNeeded();
+            string before = JsonUtility.ToJson(Data);
+            try
+            {
+                int score = Math.Min(2000000, damageScore);
+                Data.raidBestDamage = Math.Max(Data.raidBestDamage, score);
+                int tier = ChroniclesRaids.RewardTier(Data.raidBestDamage);
+                int gems = ChroniclesRaids.GemsForTierUpgrade(
+                    Data.raidRewardTier, tier);
+                int seals = ChroniclesRaids.SealsForTierUpgrade(
+                    Data.raidRewardTier, tier);
+                Data.gold = checked(Data.gold + ChroniclesRaids.GoldForAttempt(score));
+                Data.gems = checked(Data.gems + gems);
+                Data.astralSeals = checked(Data.astralSeals + seals);
+                Data.raidRewardTier = Math.Max(Data.raidRewardTier, tier);
+                Data.raidPendingRunId = ""; // consume even when no new best was reached
+                if (score > 0)
+                {
+                    IncrementQuest("win_1");
+                    IncrementQuest("win_3");
+                }
+                if (!Save()) throw new IOException(LastError ?? "Save failed.");
+                return true;
+            }
+            catch (Exception ex)
+            {
+                Data = JsonUtility.FromJson<PlayerSave>(before);
+                LastError = ex.Message;
+                return false;
+            }
+        }
+
+        public bool AbandonRaid(string runId)
+        {
+            RefreshRaidDay();
+            if (string.IsNullOrEmpty(runId) || runId != Data.raidPendingRunId)
+                return false;
+            // The attempt is consumed when started. Prevent quitting to reroll.
+            Data.raidPendingRunId = "";
+            return Save();
         }
 
         public bool CanEnterTower(Origin origin, int floor, IList<string> team)
