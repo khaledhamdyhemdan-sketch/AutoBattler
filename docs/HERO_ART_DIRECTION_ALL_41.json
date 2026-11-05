@@ -111,7 +111,7 @@
       "staticPath": "Assets/Resources/Chronicles/Portraits/Static/isis.png",
       "framesFolder": "Assets/Resources/Chronicles/Portraits/Animated/isis",
       "prefab": "Assets/Resources/Chronicles/Heroes/isis/default.prefab",
-      "productionStatus": "NOT_PRODUCED"
+      "productionStatus": "CANDIDATE_STATIC_AND_8_FRAMES_UNITY_REVIEW_PENDING"
     },
     {
       "id": "sekhmet",
