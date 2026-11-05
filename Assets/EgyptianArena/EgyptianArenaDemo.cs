@@ -32,7 +32,7 @@ namespace EgyptianArena
         }
 
         [Header("Prototype")]
-        [SerializeField] private bool startAutomatically = true;
+        [SerializeField] private bool startAutomatically = false;
         [SerializeField, Range(0.25f, 3f)] private float battleSpeed = 1f;
         [SerializeField] private float durationSeconds = 90f;
         // Initial balance values: these are NOT final production numbers.
@@ -64,15 +64,24 @@ namespace EgyptianArena
         private readonly List<Fighter> fighters = new List<Fighter>(10);
         private readonly List<string> events = new List<string>();
         private Camera arenaCamera;
+        private const string SavedTeamKey = "EgyptianArena.SelectedTeam.v1";
+        // Choose any five heroes, regardless of gender. The remaining five form the demo rival team.
+        private readonly List<Hero> selectedHeroes = new List<Hero>(5);
+        private bool showFormation = true;
+        private string selectionMessage = "Pick five heroes and start the battle.";
         private float elapsed;
         private bool running, paused;
         private string result = "READY";
 
         private void Start()
         {
+            #if UNITY_ANDROID || UNITY_IOS
+            Screen.orientation = ScreenOrientation.LandscapeLeft;
+            #endif
+            LoadLineup();
             MakeArena();
             ResetMatch();
-            if (startAutomatically) BeginMatch();
+            if (startAutomatically) { showFormation = false; BeginMatch(); }
         }
 
         private static Material Mat(Color color)
@@ -122,6 +131,77 @@ namespace EgyptianArena
             }
         }
 
+        private void SetDefaultLineup()
+        {
+            selectedHeroes.Clear();
+            selectedHeroes.Add(Hero.Sobek);
+            selectedHeroes.Add(Hero.Anubis);
+            selectedHeroes.Add(Hero.Sekhmet);
+            selectedHeroes.Add(Hero.Isis);
+            selectedHeroes.Add(Hero.Ra);
+            selectionMessage = "Balanced starter team loaded: two tanks, warrior, healer and mage.";
+        }
+
+        private void LoadLineup()
+        {
+            SetDefaultLineup();
+            string stored = PlayerPrefs.GetString(SavedTeamKey, "");
+            if (string.IsNullOrEmpty(stored)) return;
+            List<Hero> restored = new List<Hero>();
+            foreach (string token in stored.Split(','))
+            {
+                int value;
+                if (!int.TryParse(token, out value) || !Enum.IsDefined(typeof(Hero), value))
+                    continue;
+                Hero hero = (Hero)value;
+                if (!restored.Contains(hero)) restored.Add(hero);
+            }
+            if (restored.Count == 5)
+            {
+                selectedHeroes.Clear();
+                selectedHeroes.AddRange(restored);
+                selectionMessage = "Your saved team was restored.";
+            }
+        }
+
+        private void SaveLineup()
+        {
+            if (selectedHeroes.Count != 5) return;
+            string[] keys = new string[5];
+            for (int i = 0; i < 5; i++) keys[i] = ((int)selectedHeroes[i]).ToString();
+            PlayerPrefs.SetString(SavedTeamKey, string.Join(",", keys));
+            PlayerPrefs.Save();
+            selectionMessage = "Lineup saved on this device.";
+        }
+
+        private void ToggleLineupHero(Hero hero)
+        {
+            if (selectedHeroes.Contains(hero))
+            {
+                selectedHeroes.Remove(hero);
+                selectionMessage = "Hero removed. Select five to begin.";
+            }
+            else if (selectedHeroes.Count < 5)
+            {
+                selectedHeroes.Add(hero);
+                selectionMessage = "Hero selected. " + selectedHeroes.Count + "/5";
+            }
+            else selectionMessage = "Five slots filled. Remove a hero first.";
+        }
+
+        private void StartWithSelection()
+        {
+            if (selectedHeroes.Count != 5)
+            {
+                selectionMessage = "Choose exactly five heroes.";
+                return;
+            }
+            SaveLineup();
+            ResetMatch();
+            showFormation = false;
+            BeginMatch();
+        }
+
         private void ResetMatch()
         {
             foreach (Fighter old in fighters)
@@ -129,14 +209,16 @@ namespace EgyptianArena
             fighters.Clear(); events.Clear(); running = false; paused = false;
             elapsed = 0f; result = "READY";
 
-            Hero[] men = { Hero.Sobek, Hero.Anubis, Hero.Set, Hero.Horus, Hero.Ra };
-            Hero[] women = { Hero.Sekhmet, Hero.Bastet, Hero.Nephthys, Hero.Isis, Hero.Maat };
-            for (int i = 0; i < 5; i++)
+            // Each hero appears once: the five chosen by the player vs the five not chosen.
+            int yourSlot = 0, rivalSlot = 0;
+            foreach (HeroData hero in Roster)
             {
-                Spawn(men[i], 0, i);
-                Spawn(women[i], 1, i);
+                if (selectedHeroes.Contains(hero.id))
+                    Spawn(hero.id, 0, yourSlot++);
+                else
+                    Spawn(hero.id, 1, rivalSlot++);
             }
-            Log("10 Egyptian heroes loaded | 5 vs 5");
+            Log("10 Egyptian heroes ready | YOUR TEAM vs RIVALS | 5 vs 5");
         }
 
         private void Spawn(Hero id, int team, int index)
@@ -431,7 +513,7 @@ namespace EgyptianArena
             float a = 0f, b = 0f;
             foreach (Fighter f in left) a += f.health;
             foreach (Fighter f in right) b += f.health;
-            result = a > b ? "MEN WIN" : b > a ? "WOMEN WIN" : "DRAW";
+            result = a > b ? "VICTORY" : b > a ? "DEFEAT" : "DRAW";
             Log("MATCH END - " + result);
         }
         private void Log(string message)
@@ -441,14 +523,72 @@ namespace EgyptianArena
             Debug.Log("[EgyptianArena] " + message);
         }
 
+        private void DrawFormationUI()
+        {
+            GUI.Box(new Rect(60, 24, 840, 493), "EGYPTIAN ARENA  |  TEAM FORMATION  |  " + selectedHeroes.Count + "/5 HEROES");
+            GUI.Label(new Rect(94, 57, 760, 24), "Tap any hero to choose or remove them. Five selected heroes fight five unselected rivals.");
+
+            for (int i = 0; i < Roster.Length; i++)
+            {
+                HeroData hero = Roster[i];
+                bool picked = selectedHeroes.Contains(hero.id);
+                int col = i % 5, row = i / 5;
+                float x = 94 + col * 154f;
+                float y = 87 + row * 143f;
+                Color previous = GUI.backgroundColor;
+                GUI.backgroundColor = picked ? new Color(.92f, .71f, .24f) : new Color(.48f, .54f, .66f);
+                if (GUI.Button(new Rect(x, y, 143, 128),
+                    hero.displayName + "\n" + hero.role + "   " + (hero.female ? "F" : "M") +
+                    "\nHP " + hero.hp + " / ATK " + hero.attack +
+                    "\n" + (picked ? "SELECTED #" + (selectedHeroes.IndexOf(hero.id) + 1) : "TAP TO SELECT")))
+                    ToggleLineupHero(hero.id);
+                GUI.backgroundColor = previous;
+            }
+
+            string selectedNames = "YOUR TEAM: ";
+            for (int i = 0; i < selectedHeroes.Count; i++)
+            {
+                if (i != 0) selectedNames += "  +  ";
+                selectedNames += Roster[(int)selectedHeroes[i]].displayName;
+            }
+            GUI.Box(new Rect(94, 386, 769, 38), selectedNames);
+            GUI.Label(new Rect(96, 425, 765, 24), selectionMessage);
+            if (GUI.Button(new Rect(94, 462, 145, 39), "DEFAULT TEAM"))
+                SetDefaultLineup();
+            if (GUI.Button(new Rect(250, 462, 145, 39), "CLEAR TEAM"))
+            {
+                selectedHeroes.Clear();
+                selectionMessage = "Choose any five heroes.";
+            }
+            GUI.enabled = selectedHeroes.Count == 5;
+            if (GUI.Button(new Rect(530, 462, 146, 39), "SAVE TEAM"))
+                SaveLineup();
+            if (GUI.Button(new Rect(688, 462, 175, 39), "SAVE & FIGHT"))
+                StartWithSelection();
+            GUI.enabled = true;
+        }
+
         private void OnGUI()
         {
-            float factor = Mathf.Max(.5f, Mathf.Min(Screen.width / 960f, Screen.height / 540f));
+            // Scale the complete interface into the available mobile screen area.
+            float factor = Mathf.Min(Screen.width / 960f, Screen.height / 540f);
             Matrix4x4 before = GUI.matrix;
             GUI.matrix = Matrix4x4.TRS(Vector3.zero, Quaternion.identity, Vector3.one * factor);
+            if (showFormation)
+            {
+                DrawFormationUI();
+                GUI.matrix = before;
+                return;
+            }
             GUI.Box(new Rect(10, 10, 530, 66), "EGYPTIAN ARENA | AUTO BATTLE 5 vs 5");
-            GUI.Label(new Rect(25, 42, 490, 25), "MEN " + Team(0).Count + "/5  |  WOMEN " + Team(1).Count + "/5  |  " + Mathf.CeilToInt(Mathf.Max(0, durationSeconds - elapsed)) + "s");
+            GUI.Label(new Rect(25, 42, 490, 25), "YOUR TEAM " + Team(0).Count + "/5  |  RIVALS " + Team(1).Count + "/5  |  " + Mathf.CeilToInt(Mathf.Max(0, durationSeconds - elapsed)) + "s");
             if (GUI.Button(new Rect(740, 14, 200, 38), "START / RESTART")) { ResetMatch(); BeginMatch(); }
+            if (GUI.Button(new Rect(648, 57, 159, 32), "CHANGE TEAM"))
+            {
+                running = false;
+                paused = false;
+                showFormation = true;
+            }
             if (GUI.Button(new Rect(815, 57, 125, 32), paused ? "RESUME" : "PAUSE")) paused = !paused;
 
             foreach (Fighter f in fighters)
