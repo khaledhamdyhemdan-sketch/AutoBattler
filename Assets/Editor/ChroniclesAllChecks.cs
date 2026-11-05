@@ -33,6 +33,7 @@ namespace MythicChronicles.Editor
             RunStep("Offline Shop and Mailbox", ChroniclesEconomyVerification.Run, failures);
             RunStep("Labyrinth", ChroniclesLabyrinthVerification.Run, failures);
             RunStep("Arena Training", ChroniclesArenaTrainingVerification.Run, failures);
+            RunStep("Portrait & Onboarding UX", ChroniclesUXVerification.Run, failures);
             RunStep("Portrait and English Audit", ChroniclesPortraitAudit.Audit, failures);
 
             if (failures.Count > 0)
