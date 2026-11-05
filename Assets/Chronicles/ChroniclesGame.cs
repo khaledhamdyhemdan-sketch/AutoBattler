@@ -8,7 +8,7 @@ namespace MythicChronicles
     // to be replaced by production UI Toolkit art without changing progression logic.
     public sealed class ChroniclesGame : MonoBehaviour
     {
-        private enum Page { Home, Chapters, Trials, Towers, StageStory, Heroes, HeroDetails, Formation, Skins, Gear, Forge, Training, Runes, SignatureWeapon, RelicVault, Summon, Quests, WeeklyQuests, Idle, Login, Settings, Battle, Results }
+        private enum Page { Home, Chapters, Trials, Towers, Raid, StageStory, Heroes, HeroDetails, Formation, Skins, Gear, Forge, Training, Runes, SignatureWeapon, RelicVault, Summon, Quests, WeeklyQuests, Idle, Login, Settings, Battle, Results }
         private Page page = Page.Home;
         private PlayerProgressService progress;
         private ChroniclesAudioDirector audio;
@@ -18,7 +18,9 @@ namespace MythicChronicles
         private AudioListener menuAudio;
         private int stageId = 1;
         private TrialMode activeTrialMode = TrialMode.Normal;
-        private bool inTower;
+        private bool inTower, inRaid;
+        private string raidRunId = "";
+        private int lastRaidDamage;
         private Origin selectedTowerOrigin = Origin.Egypt;
         private int selectedTowerFloor = 1;
         private string selectedHero = "horus";
@@ -120,6 +122,7 @@ namespace MythicChronicles
                 case Page.Chapters: Chapters(); break;
                 case Page.Trials: Trials(); break;
                 case Page.Towers: Towers(); break;
+                case Page.Raid: Raid(); break;
                 case Page.StageStory: StageStory(); break;
                 case Page.Heroes: Heroes(); break;
                 case Page.HeroDetails: HeroDetails(); break;
@@ -179,12 +182,52 @@ namespace MythicChronicles
             if (GUI.Button(new Rect(274, 722, 226, 56),
                 progress.CanClaimDailyLogin() ? "DAILY GIFT!" : "LOGIN REWARDS", bigButton))
                 page = Page.Login;
-            if (GUI.Button(new Rect(40, 796, 222, 49), "RELIC VAULT"))
+            if (GUI.Button(new Rect(40, 796, 147, 49), "WORLD BOSS"))
+            { inTower = false; inRaid = false; page = Page.Raid; }
+            if (GUI.Button(new Rect(195, 796, 149, 49), "RELICS"))
                 page = Page.RelicVault;
-            if (GUI.Button(new Rect(274, 796, 226, 49), "SETTINGS"))
+            if (GUI.Button(new Rect(352, 796, 148, 49), "SETTINGS"))
                 page = Page.Settings;
             GUI.Label(new Rect(40, 854, 460, 36),
                 "Six chapters • 41 heroes • One original world.", subtitle);
+        }
+
+        private void Raid()
+        {
+            int attemptsLeft = progress.RaidAttemptsRemaining();
+            StageDefinition today = ChroniclesRaids.StageForDay(DateTime.UtcNow);
+            GUI.Label(new Rect(24, 219, 492, 60), "DAILY WORLD BOSS", heading);
+            GUI.Label(new Rect(28, 280, 480, 83),
+                "90-SECOND SOLO DAMAGE CHALLENGE\n" +
+                "Boss rotation changes every UTC day. This is not an online leaderboard.",
+                subtitle);
+            GUI.Box(new Rect(34, 388, 472, 188), "");
+            GUI.Label(new Rect(44, 400, 450, 162),
+                "TODAY'S GUARDIAN\n" + today.name +
+                "\nATTEMPTS: " + attemptsLeft + "/" + ChroniclesRaids.AttemptsPerDay +
+                "\nBEST DAMAGE: " + progress.Data.raidBestDamage +
+                "\nRANK: " + ChroniclesRaids.Rank(progress.Data.raidBestDamage),
+                subtitle);
+            GUI.Box(new Rect(34, 597, 471, 143), "");
+            GUI.Label(new Rect(43, 606, 452, 124),
+                "MILESTONE RANKS\n3000: BOSS HUNTER  •  15000: MASTER\n" +
+                "40000: LEGENDARY  •  80000: WORLD BREAKER\n" +
+                "150000: MYTHIC SLAYER", tiny);
+            GUI.enabled = progress.Data.lastClearedStage >= 10 &&
+                attemptsLeft > 0 && string.IsNullOrEmpty(progress.Data.raidPendingRunId);
+            if (GUI.Button(new Rect(40, 787, 460, 73), "CHALLENGE TODAY'S BOSS", bigButton))
+            {
+                inRaid = true;
+                inTower = false;
+                activeTrialMode = TrialMode.Normal;
+                stageId = today.id;
+                notice = "Attempt is consumed when the battle starts.";
+                page = Page.Formation;
+            }
+            GUI.enabled = true;
+            if (progress.Data.lastClearedStage < 10)
+                GUI.Label(new Rect(38, 864, 464, 37),
+                    "Clear the first story chapter to unlock World Boss.", tiny);
         }
 
         private void Trials()
@@ -1119,19 +1162,39 @@ namespace MythicChronicles
             }
             StageDefinition stage = WorldsCatalog.GetStage(stageId);
             bool unlocked = stage != null &&
-                (inTower ?
+                (inRaid ? progress.Data.lastClearedStage >= 10 &&
+                    progress.RaidAttemptsRemaining() > 0 :
+                inTower ?
                     progress.CanEnterTower(selectedTowerOrigin, selectedTowerFloor,
                         progress.Data.selectedTeam) :
                     activeTrialMode == TrialMode.Normal ?
                         stageId <= progress.Data.lastClearedStage + 1 :
                         progress.CanPlayTrial(stageId, activeTrialMode));
             if (!unlocked)
-            { notice = "Stage is locked."; return; }
+            { notice = "Stage is locked or no attempts remain."; return; }
+            if (inRaid)
+            {
+                raidRunId = progress.BeginRaid();
+                if (string.IsNullOrEmpty(raidRunId))
+                { notice = "Unable to start a World Boss attempt."; return; }
+            }
             if (battle != null) Destroy(battle.gameObject);
-            battle = new GameObject("Chronicles - Campaign Battle").AddComponent<ChroniclesBattle>();
-            battle.Initialize(stage, chosen, progress.Data, OnBattleFinished,
-                activeTrialMode, inTower ? (Origin?)selectedTowerOrigin : null,
-                inTower ? selectedTowerFloor : 0);
+            battle = new GameObject("Chronicles - Battle").AddComponent<ChroniclesBattle>();
+            try
+            {
+                battle.Initialize(stage, chosen, progress.Data, OnBattleFinished,
+                    activeTrialMode, inTower ? (Origin?)selectedTowerOrigin : null,
+                    inTower ? selectedTowerFloor : 0, inRaid);
+            }
+            catch (Exception ex)
+            {
+                if (inRaid && !string.IsNullOrEmpty(raidRunId))
+                    progress.AbandonRaid(raidRunId);
+                raidRunId = "";
+                CleanupBattle();
+                notice = "Failed to create battle: " + ex.Message;
+                return;
+            }
             if (menuCamera != null) menuCamera.enabled = false;
             if (menuAudio != null) menuAudio.enabled = false;
             page = Page.Battle; notice = "";
@@ -1141,7 +1204,16 @@ namespace MythicChronicles
         private void OnBattleFinished(bool victory)
         {
             lastVictory = victory;
-            if (victory)
+            if (inRaid)
+            {
+                lastRaidDamage = battle == null ? 0 : battle.RaidDamageScore;
+                bool savedRaid = progress.CompleteRaid(raidRunId, lastRaidDamage);
+                raidRunId = "";
+                lastVictory = lastRaidDamage > 0;
+                if (!savedRaid) notice = "World Boss result could not be saved.";
+                else notice = "World Boss attempt recorded.";
+            }
+            else if (victory)
             {
                 bool saved = inTower ?
                     progress.CompleteTower(selectedTowerOrigin, selectedTowerFloor,
@@ -1161,11 +1233,15 @@ namespace MythicChronicles
             battle.DrawWorldLabels(scale);
             GUI.Box(new Rect(12, 22, 516, 106), "");
             GUI.Label(new Rect(20, 29, 500, 45),
+                inRaid ? "DAILY WORLD BOSS" :
                 inTower ? ChroniclesTowers.DisplayName(selectedTowerOrigin) +
                     " • FLOOR " + selectedTowerFloor :
                 activeTrialMode.ToString().ToUpperInvariant() + " • " +
                 WorldsCatalog.GetStage(stageId).name, subtitle);
-            GUI.Label(new Rect(29, 73, 460, 36), "TIME " + Mathf.CeilToInt(battle.SecondsLeft) + " s", subtitle);
+            GUI.Label(new Rect(29, 73, 460, 36),
+                "TIME " + Mathf.CeilToInt(battle.SecondsLeft) + " s" +
+                (inRaid ? "   •   BOSS DAMAGE " + battle.RaidDamageScore : ""),
+                subtitle);
             if (GUI.Button(new Rect(20, 837, 153, 65), battle.Paused ? "RESUME" : "PAUSE"))
                 battle.Paused = !battle.Paused;
             if (GUI.Button(new Rect(184, 837, 159, 65), "SPEED x" + battle.Speed))
@@ -1180,6 +1256,27 @@ namespace MythicChronicles
         private void Results()
         {
             GUI.DrawTexture(new Rect(0, 0, 540, 960), panelTex);
+            if (inRaid)
+            {
+                GUI.Label(new Rect(25, 255, 490, 90), "WORLD BOSS COMPLETE", heading);
+                GUI.Label(new Rect(34, 390, 472, 135),
+                    "DAMAGE DEALT: " + lastRaidDamage +
+                    "\nBEST TODAY: " + progress.Data.raidBestDamage +
+                    "\nPERSONAL RANK: " + ChroniclesRaids.Rank(progress.Data.raidBestDamage),
+                    subtitle);
+                GUI.Box(new Rect(39, 542, 462, 115),
+                    "Attempts remaining: " + progress.RaidAttemptsRemaining() +
+                    "\nRewards depend on your damage and highest new tier.");
+                if (GUI.Button(new Rect(40, 718, 462, 77), "RETURN TO WORLD BOSS", bigButton))
+                {
+                    CleanupBattle();
+                    inRaid = false;
+                    page = Page.Raid;
+                }
+                if (GUI.Button(new Rect(40, 817, 462, 62), "RETURN HOME"))
+                    GoHome();
+                return;
+            }
             GUI.Label(new Rect(25, 248, 490, 95), lastVictory ? "VICTORY!" : "DEFEAT", heading);
             StageDefinition stage = WorldsCatalog.GetStage(stageId);
             GUI.Label(new Rect(35, 362, 470, 100),
@@ -1236,6 +1333,11 @@ namespace MythicChronicles
         {
             if (battle != null) Destroy(battle.gameObject);
             battle = null;
+            if (inRaid && !string.IsNullOrEmpty(raidRunId))
+            {
+                progress.AbandonRaid(raidRunId);
+                raidRunId = "";
+            }
             if (menuCamera != null) menuCamera.enabled = true;
             if (menuAudio != null) menuAudio.enabled = true;
         }
@@ -1256,6 +1358,8 @@ namespace MythicChronicles
             notice = "";
             activeTrialMode = TrialMode.Normal;
             inTower = false;
+            inRaid = false;
+            raidRunId = "";
             page = Page.Home;
             if (audio != null) audio.SetState(AudioScene.Menu);
         }
