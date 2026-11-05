@@ -78,8 +78,9 @@ namespace MythicChronicles
             var opponents = new List<HeroDefinition>();
             Origin origin = WorldsCatalog.Chapters[stage.chapter - 1].origin;
             foreach (var hero in WorldsCatalog.Heroes)
-                if (hero.origin == origin || (origin == Origin.EastAsia &&
-                    (hero.origin == Origin.Japan || hero.origin == Origin.China)))
+                if (hero.rarity != Rarity.UR &&
+                    (hero.origin == origin || (origin == Origin.EastAsia &&
+                    (hero.origin == Origin.Japan || hero.origin == Origin.China))))
                     opponents.Add(hero);
             if (opponents.Count == 0) throw new InvalidOperationException("Chapter needs opponents.");
             for (int i = 0; i < 5; i++)
