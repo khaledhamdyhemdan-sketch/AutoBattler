@@ -17,7 +17,7 @@ namespace MythicChronicles.Editor
             try
             {
                 var service = new PlayerProgressService(folder);
-                Check(service.Data.heroes.Count == 10, "Starter collection must contain ten heroes.");
+                Check(service.Data.heroes.Count == 5, "Starter collection must contain five accessible heroes.");
                 Check(service.Data.lastClearedStage == 0, "New player must begin before stage 1.");
                 Check(!service.CompleteStage(2), "Locked stages must not be claimable.");
 
@@ -31,18 +31,18 @@ namespace MythicChronicles.Editor
                 Check(service.Data.equipment.Count == 1,
                     "First clear must generate one item and replay must not duplicate it.");
                 GearInstance firstGear = service.Data.equipment[0];
-                Check(service.EquipGear(firstGear.instanceId, "horus"),
+                Check(service.EquipGear(firstGear.instanceId, "sobek"),
                     "Hero should equip the first gear drop.");
-                Check(service.GearBonus("horus").equippedCount == 1,
+                Check(service.GearBonus("sobek").equippedCount == 1,
                     "Equipped gear must contribute combat bonuses.");
                 service.Data.gold = 100000; // test-only currency in isolated directory
                 Check(service.UpgradeGear(firstGear.instanceId) && firstGear.level == 1,
                     "Equipped gear enhancement failed.");
                 Check(service.UnequipGear(firstGear.instanceId),
                     "Unequipping gear failed.");
-                Check(service.GearBonus("horus").equippedCount == 0,
+                Check(service.GearBonus("sobek").equippedCount == 0,
                     "Unequipped gear must not contribute stats.");
-                Check(service.EquipGear(firstGear.instanceId, "horus"),
+                Check(service.EquipGear(firstGear.instanceId, "sobek"),
                     "Re-equipping acquired gear failed.");
                 Check(ChroniclesEquipment.RewardForStage(31) != null,
                     "Deterministic campaign gear table is incomplete.");
@@ -52,62 +52,62 @@ namespace MythicChronicles.Editor
                 Check(!service.ClaimDailyQuest("win_1"), "Daily quest must not be claimable twice.");
                 Check(service.Data.gold == rewardedGold, "Duplicate daily claim changed currency.");
 
-                Check(!service.SetTeam(new[] { "horus", "horus", "ra", "isis", "set" }),
+                Check(!service.SetTeam(new[] { "sobek", "sobek", "ra", "isis", "set" }),
                     "Duplicate team heroes must be rejected.");
-                Check(service.SetTeam(new[] { "horus", "anubis", "ra", "isis", "set" }),
+                Check(service.SetTeam(WorldsCatalog.StartingHeroes),
                     "Valid five-hero formation must save.");
 
-                OwnedHero horus = service.FindOwnedHero("horus");
-                Check(horus != null, "Starter Horus is missing.");
-                Check(service.UpgradeHero("horus") && horus.level == 2, "Hero level upgrade failed.");
-                Check(service.UpgradeEquipment("horus", true) && horus.weaponLevel == 1,
+                OwnedHero sobek = service.FindOwnedHero("sobek");
+                Check(sobek != null, "Starter Sobek is missing.");
+                Check(service.UpgradeHero("sobek") && sobek.level == 2, "Hero level upgrade failed.");
+                Check(service.UpgradeEquipment("sobek", true) && sobek.weaponLevel == 1,
                     "Weapon upgrade did not persist.");
-                Check(!service.AscendHero("horus"), "Ascension must require fragments.");
+                Check(!service.AscendHero("sobek"), "Ascension must require fragments.");
                 int tickets = service.Data.summonTickets;
                 Check(service.SummonHero() != null, "Available summon ticket failed.");
                 Check(service.Data.summonTickets == tickets - 1, "Summon ticket was not consumed.");
 
-                HeroSkin alternate = HeroSkinCatalog.Find("horus", "ascendant");
+                HeroSkin alternate = HeroSkinCatalog.Find("sobek", "ascendant");
                 Check(alternate != null, "Hero alternate skin metadata missing.");
                 int beforeSkinGems = service.Data.gems;
-                Check(service.UnlockSkin("horus", "ascendant"), "Unable to unlock owned hero skin.");
+                Check(service.UnlockSkin("sobek", "ascendant"), "Unable to unlock owned hero skin.");
                 Check(service.Data.gems == beforeSkinGems - alternate.gemCost,
                     "Incorrect gem charge for skin.");
-                Check(!service.UnlockSkin("horus", "ascendant"), "Skin must not charge a second time.");
-                Check(service.EquipSkin("horus", "ascendant"), "Owned skin must be equippable.");
+                Check(!service.UnlockSkin("sobek", "ascendant"), "Skin must not charge a second time.");
+                Check(service.EquipSkin("sobek", "ascendant"), "Owned skin must be equippable.");
 
-                Check(service.UpgradeSkill("horus", "active"), "Skill upgrade did not work.");
-                Check(service.FindOwnedHero("horus").activeSkillLevel == 2,
+                Check(service.UpgradeSkill("sobek", "active"), "Skill upgrade did not work.");
+                Check(service.FindOwnedHero("sobek").activeSkillLevel == 2,
                     "Active skill level must increase.");
-                Check(service.BuyTalent("horus", true), "Attack talent cannot be purchased.");
-                Check(service.ResetTalents("horus"), "Talent reset should refund investment.");
-                Check(ChroniclesGrowth.EffectiveLevel(service.Data, horus) >= 2,
+                Check(service.BuyTalent("sobek", true), "Attack talent cannot be purchased.");
+                Check(service.ResetTalents("sobek"), "Talent reset should refund investment.");
+                Check(ChroniclesGrowth.EffectiveLevel(service.Data, sobek) >= 2,
                     "Resonance must not reduce trained hero level.");
                 int beforeRefund = service.Data.gold;
-                int expectedRefund = ChroniclesGrowth.RefundForLevelReset(horus.level);
-                Check(service.ResetHeroLevel("horus"), "Level reset failed.");
-                Check(horus.level == 1 && service.Data.gold == beforeRefund + expectedRefund,
+                int expectedRefund = ChroniclesGrowth.RefundForLevelReset(sobek.level);
+                Check(service.ResetHeroLevel("sobek"), "Level reset failed.");
+                Check(sobek.level == 1 && service.Data.gold == beforeRefund + expectedRefund,
                     "Level reset did not refund the exact training gold.");
-                Check(!service.ResetHeroLevel("horus"), "Double reset must not produce gold.");
-                Check(service.UpgradeHero("horus"), "Hero level upgrade after reset failed.");
+                Check(!service.ResetHeroLevel("sobek"), "Double reset must not produce gold.");
+                Check(service.UpgradeHero("sobek"), "Hero level upgrade after reset failed.");
                 for (int stage = 2; stage <= 5; stage++)
                     Check(service.CompleteStage(stage), "Sequential stage reward failed at " + stage);
                 Check(service.Data.runes.Count == 1, "Stage five should award one rune.");
                 RuneInstance rune = service.Data.runes[0];
-                Check(service.EquipRune(rune.instanceId, "horus"), "Rune equip failed.");
+                Check(service.EquipRune(rune.instanceId, "sobek"), "Rune equip failed.");
                 Check(service.UpgradeRune(rune.instanceId), "Rune enhancement failed.");
                 Check(service.UnequipRune(rune.instanceId), "Rune removal failed.");
-                Check(service.EquipRune(rune.instanceId, "horus"), "Rune re-equip failed.");
-                Check(ChroniclesGrowth.Calculate(service.Data, horus).attackMultiplier > 1f,
+                Check(service.EquipRune(rune.instanceId, "sobek"), "Rune re-equip failed.");
+                Check(ChroniclesGrowth.Calculate(service.Data, sobek).attackMultiplier > 1f,
                     "Attack talent/rune modifiers should be observable.");
-                Check(service.AutoEquip("horus"), "Auto-equip should work for an owned hero.");
-                Check(service.GearBonus("horus").equippedCount >= 1,
+                Check(service.AutoEquip("sobek"), "Auto-equip should work for an owned hero.");
+                Check(service.GearBonus("sobek").equippedCount >= 1,
                     "Auto-equip should fill open slots.");
                 GearInstance equipped = service.Data.equipment.Find(x =>
-                    x.equippedHeroId == "horus");
+                    x.equippedHeroId == "sobek");
                 Check(equipped != null, "Auto-equip left hero empty.");
-                Check(service.AutoEquip("anubis"), "Auto-equip another hero failed.");
-                Check(equipped.equippedHeroId == "horus",
+                Check(service.AutoEquip("bastet"), "Auto-equip another hero failed.");
+                Check(equipped.equippedHeroId == "sobek",
                     "Auto-equip must not steal another hero's equipment.");
 
                 service.Data.forgeDust = 500; // Test-only materials; no live grant
@@ -132,18 +132,68 @@ namespace MythicChronicles.Editor
                 Check(service.Save(), "Failed to save progress.");
                 var restored = new PlayerProgressService(folder);
                 Check(restored.Data.lastClearedStage == 5, "Stage progression did not reload.");
-                Check(restored.FindOwnedHero("horus").level == 2, "Hero level did not reload.");
-                Check(restored.FindOwnedHero("horus").weaponLevel == 1, "Gear progression did not reload.");
-                Check(restored.FindOwnedHero("horus").skin == "ascendant",
+                Check(restored.FindOwnedHero("sobek").level == 2, "Hero level did not reload.");
+                Check(restored.FindOwnedHero("sobek").weaponLevel == 1, "Gear progression did not reload.");
+                Check(restored.FindOwnedHero("sobek").skin == "ascendant",
                     "Equipped skin did not reload.");
                 Check(restored.Data.selectedTeam.Count == 5, "Formation did not reload.");
                 Check(restored.Data.stageRewardsClaimed.Count == 5, "Cleared stage log did not reload.");
                 Check(restored.Data.equipment.Count == 5, "Five unique gear rewards did not reload.");
                 Check(restored.Data.runes.Count == 1 &&
-                    restored.Data.runes[0].assignedHeroId == "horus",
+                    restored.Data.runes[0].assignedHeroId == "sobek",
                     "Equipped rune did not persist.");
-                Check(restored.FindOwnedHero("horus").activeSkillLevel == 2,
+                Check(restored.FindOwnedHero("sobek").activeSkillLevel == 2,
                     "Upgraded skills did not persist.");
+
+                Check(HeroElements.DamageMultiplier(HeroElement.Fire, HeroElement.Nature) > 1f,
+                    "Fire should counter Nature.");
+                Check(HeroElements.DamageMultiplier(HeroElement.Nature, HeroElement.Fire) < 1f,
+                    "Nature should be disadvantaged against Fire.");
+                Check(HeroElements.DamageMultiplier(HeroElement.Nature, HeroElement.Wind) > 1f,
+                    "Nature should counter Wind.");
+                Check(HeroElements.DamageMultiplier(HeroElement.Wind, HeroElement.Water) > 1f,
+                    "Wind should counter Water.");
+                Check(HeroElements.DamageMultiplier(HeroElement.Water, HeroElement.Fire) > 1f,
+                    "Water should counter Fire.");
+                Check(HeroElements.DamageMultiplier(HeroElement.Light, HeroElement.Darkness) > 1f &&
+                    HeroElements.DamageMultiplier(HeroElement.Darkness, HeroElement.Light) > 1f,
+                    "Light and Darkness must counter each other.");
+                var mono = new System.Collections.Generic.List<HeroDefinition>
+                {
+                    WorldsCatalog.FindHero("set"), WorldsCatalog.FindHero("sekhmet"),
+                    WorldsCatalog.FindHero("heracles"), WorldsCatalog.FindHero("sobek"),
+                    WorldsCatalog.FindHero("bastet")
+                };
+                Check(HeroElements.Calculate(mono).matchingCount == 3,
+                    "Three Fire heroes must activate a covenant.");
+                mono[2] = WorldsCatalog.FindHero("isis");
+                Check(HeroElements.Calculate(mono).matchingCount == 3,
+                    "Light wildcard should complete the strongest core element.");
+                mono[3] = WorldsCatalog.FindHero("anubis");
+                ElementalTeamBonus pair = HeroElements.Calculate(mono);
+                Check(pair.lightCount == 1 && pair.darkCount == 1 &&
+                    pair.startingEnergy > 0f, "Light/Dark pairing must grant Equinox energy.");
+                int rCount = 0, srCount = 0, ssrCount = 0, rareElements = 0;
+                foreach (HeroDefinition hero in WorldsCatalog.Heroes)
+                {
+                    switch (hero.rarity)
+                    {
+                        case Rarity.R: rCount++; break;
+                        case Rarity.SR: srCount++; break;
+                        case Rarity.SSR: ssrCount++; break;
+                    }
+                    if (HeroElements.IsSpecial(hero))
+                    {
+                        rareElements++;
+                        Check(hero.rarity == Rarity.SSR,
+                            "Light/Dark must be top available rank.");
+                    }
+                }
+                Check(rCount == 2 && srCount == 8 && ssrCount == 20 && rareElements == 4,
+                    "Launch rarity or special-element distribution mismatch.");
+                foreach (string starterId in WorldsCatalog.StartingHeroes)
+                    Check(!HeroElements.IsSpecial(WorldsCatalog.FindHero(starterId)),
+                        "A rare Light/Dark hero must not be a free starter.");
 
                 Debug.Log("[Chronicles] Offline progress checks passed. " +
                     "This does NOT mean that the game has passed a Unity/Android playtest.");
