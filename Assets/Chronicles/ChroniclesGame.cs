@@ -8,7 +8,7 @@ namespace MythicChronicles
     // to be replaced by production UI Toolkit art without changing progression logic.
     public sealed class ChroniclesGame : MonoBehaviour
     {
-        private enum Page { Home, Chapters, StageStory, Heroes, HeroDetails, Formation, Skins, Gear, Forge, Training, Runes, SignatureWeapon, RelicVault, Summon, Quests, WeeklyQuests, Idle, Settings, Battle, Results }
+        private enum Page { Home, Chapters, StageStory, Heroes, HeroDetails, Formation, Skins, Gear, Forge, Training, Runes, SignatureWeapon, RelicVault, Summon, Quests, WeeklyQuests, Idle, Login, Settings, Battle, Results }
         private Page page = Page.Home;
         private PlayerProgressService progress;
         private ChroniclesAudioDirector audio;
@@ -129,6 +129,7 @@ namespace MythicChronicles
                 case Page.Quests: Quests(false); break;
                 case Page.WeeklyQuests: Quests(true); break;
                 case Page.Idle: Idle(); break;
+                case Page.Login: Login(); break;
                 case Page.Settings: Settings(); break;
                 case Page.Battle: BattleHud(scale); break;
                 case Page.Results: Results(); break;
@@ -166,11 +167,13 @@ namespace MythicChronicles
                 page = Page.Idle;
             if (GUI.Button(new Rect(40, 722, 222, 56), "RELIC VAULT", bigButton))
                 page = Page.RelicVault;
-            if (GUI.Button(new Rect(274, 722, 226, 56), "SETTINGS", bigButton))
+            if (GUI.Button(new Rect(274, 722, 226, 56),
+                progress.CanClaimDailyLogin() ? "DAILY GIFT!" : "LOGIN REWARDS", bigButton))
+                page = Page.Login;
+            if (GUI.Button(new Rect(40, 796, 460, 49), "SETTINGS"))
                 page = Page.Settings;
-            GUI.Label(new Rect(40, 798, 460, 80),
-                "Six connected chapters • 41 collectible heroes\n" +
-                "Different myths, one original storyline.", subtitle);
+            GUI.Label(new Rect(40, 854, 460, 36),
+                "Six chapters • 41 heroes • One original world.", subtitle);
         }
 
         private void Chapters()
@@ -880,6 +883,47 @@ namespace MythicChronicles
                 int gold = progress.ClaimIdleGold();
                 notice = gold > 0 ? "Collected " + gold + " gold." : "Not enough time elapsed yet.";
             }
+        }
+
+        private void Login()
+        {
+            GUI.Label(new Rect(25, 228, 490, 62), "28-DAY LOGIN REWARDS", heading);
+            GUI.Label(new Rect(25, 283, 490, 56),
+                "Claim one reward per UTC day. Missing a day never resets your progress.",
+                subtitle);
+            int next = progress.NextLoginRewardDay();
+            for (int i = 0; i < ChroniclesLoginRewards.Days; i++)
+            {
+                LoginReward gift = ChroniclesLoginRewards.ForDay(i + 1);
+                int column = i % 7, row = i / 7;
+                float x = 22 + column * 71f, y = 357 + row * 97f;
+                bool received = i + 1 <= progress.Data.loginDaysClaimed;
+                Color previous = GUI.backgroundColor;
+                if (i + 1 == next && progress.CanClaimDailyLogin())
+                    GUI.backgroundColor = new Color(.92f, .77f, .44f);
+                else if (received)
+                    GUI.backgroundColor = new Color(.49f, .61f, .60f);
+                GUI.Box(new Rect(x, y, 67, 89), "");
+                GUI.Label(new Rect(x + 2, y + 7, 62, 26),
+                    "DAY " + (i + 1), tiny);
+                GUI.Label(new Rect(x + 4, y + 29, 62, 56),
+                    received ? "CLAIMED" : gift.Label, tiny);
+                GUI.backgroundColor = previous;
+            }
+
+            LoginReward current = ChroniclesLoginRewards.ForDay(next);
+            GUI.Label(new Rect(30, 754, 480, 55),
+                "NEXT: DAY " + next + " • " + current.Label, subtitle);
+            GUI.enabled = progress.CanClaimDailyLogin();
+            if (GUI.Button(new Rect(39, 830, 462, 62),
+                progress.CanClaimDailyLogin() ? "CLAIM TODAY'S REWARD" :
+                    "ALREADY CLAIMED TODAY", bigButton))
+            {
+                LoginReward claimed = progress.ClaimDailyLogin();
+                notice = claimed == null ? "Could not save login reward." :
+                    "Claimed Day " + claimed.day + ": " + claimed.Label;
+            }
+            GUI.enabled = true;
         }
 
         private void Settings()
