@@ -77,7 +77,10 @@ namespace MythicChronicles
             }
             var opponents = new List<HeroDefinition>();
             Origin origin = WorldsCatalog.Chapters[stage.chapter - 1].origin;
-            foreach (var hero in WorldsCatalog.Heroes) if (hero.origin == origin) opponents.Add(hero);
+            foreach (var hero in WorldsCatalog.Heroes)
+                if (hero.origin == origin || (origin == Origin.EastAsia &&
+                    (hero.origin == Origin.Japan || hero.origin == Origin.China)))
+                    opponents.Add(hero);
             if (opponents.Count == 0) throw new InvalidOperationException("Chapter needs opponents.");
             for (int i = 0; i < 5; i++)
             {
@@ -162,6 +165,8 @@ namespace MythicChronicles
                 case Origin.Greece: c = new Color(.50f, .71f, 1f); break;
                 case Origin.Norse: c = new Color(.58f, .87f, 1f); break;
                 case Origin.EastAsia: c = new Color(1f, .32f, .49f); break;
+                case Origin.Japan: c = new Color(.94f, .48f, .68f); break;
+                case Origin.China: c = new Color(.35f, .85f, .70f); break;
                 case Origin.Folklore: c = new Color(.67f, .47f, .95f); break;
                 default: c = new Color(.62f, .92f, .59f); break;
             }
@@ -219,7 +224,9 @@ namespace MythicChronicles
             float x = front ? (slot == 0 ? -1.55f : 1.55f) : (slot - 3) * 2.45f;
             float z = (front ? 1.6f : 3.9f) * (side == 0 ? -1f : 1f);
             Vector3 destination = new Vector3(x, 1.0f, z);
-            float tier = hero.rarity == Rarity.Legendary ? 1.20f : 1f;
+            float tier = hero.rarity == Rarity.UR ? 1.30f :
+                hero.rarity == Rarity.SSR ? 1.20f :
+                hero.rarity == Rarity.SR ? 1.08f : 1f;
             float roleHp = hero.role == CombatRole.Tank ? 1.8f : hero.role == CombatRole.Warrior ? 1.35f : 1f;
             float roleAttack = hero.role == CombatRole.Assassin ? 1.4f : hero.role == CombatRole.Mage ? 1.35f : 1f;
             float chapterScale = side == 1 ? 1f + stage.id * .042f : 1f;
