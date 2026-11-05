@@ -163,7 +163,7 @@ namespace MythicChronicles
             if (GUI.Button(new Rect(274, 722, 226, 56), "SETTINGS", bigButton))
                 page = Page.Settings;
             GUI.Label(new Rect(40, 798, 460, 80),
-                "Six connected chapters • 40 collectible heroes\n" +
+                "Six connected chapters • 41 collectible heroes\n" +
                 "Different myths, one original storyline.", subtitle);
         }
 
@@ -274,11 +274,27 @@ namespace MythicChronicles
                 OwnedHero owned = progress.FindOwnedHero(hero.id);
                 string element = hero.element.ToString().ToUpperInvariant();
                 string scarcity = HeroElements.IsSpecial(hero) ? " • RARE ELEMENT" : "";
-                string title = hero.name + " | " + hero.rarity + " | " + element +
-                    " | " + hero.origin + scarcity;
+                URCardIdentity urCard = hero.rarity == Rarity.UR ? URCardCatalog.For(hero.id) : null;
+                string title = urCard != null
+                    ? "UR " + hero.name.ToUpperInvariant() + " | " + element + " | " + urCard.title
+                    : hero.name + " | " + hero.rarity + " | " + element +
+                        " | " + hero.origin + scarcity;
                 string text = title + "\n" + hero.role +
                     (owned == null ? " — NOT OWNED" : " — LEVEL " + owned.level);
-                if (GUI.Button(new Rect(4, i * 76, 461, 69), text))
+                Color previousBackground = GUI.backgroundColor;
+                if (urCard != null)
+                    GUI.backgroundColor = urCard.element == HeroElement.Light
+                        ? new Color(1f, .84f, .45f) : new Color(.64f, .46f, .82f);
+                bool selected = GUI.Button(new Rect(4, i * 76, 461, 69), text);
+                GUI.backgroundColor = previousBackground;
+                if (urCard != null)
+                {
+                    Color previousColor = GUI.color;
+                    GUI.color = urCard.border;
+                    GUI.DrawTexture(new Rect(4, i * 76, 5, 69), Texture2D.whiteTexture);
+                    GUI.color = previousColor;
+                }
+                if (selected)
                 { selectedHero = hero.id; notice = ""; page = Page.HeroDetails; }
             }
             GUI.EndScrollView();
@@ -292,6 +308,14 @@ namespace MythicChronicles
             HeroKit kit = HeroAbilityCatalog.For(hero.id);
             GUI.Label(new Rect(25, 243, 490, 62), hero.name.ToUpperInvariant(), heading);
             GUI.Label(new Rect(28, 309, 484, 39), hero.origin + "  •  " + hero.element + "  •  " + hero.role + "  •  " + hero.rarity, subtitle);
+            URCardIdentity card = hero.rarity == Rarity.UR ? URCardCatalog.For(hero.id) : null;
+            if (card != null)
+            {
+                Color prior = GUI.color;
+                GUI.color = card.border;
+                GUI.DrawTexture(new Rect(42, 346, 455, 5), Texture2D.whiteTexture);
+                GUI.color = prior;
+            }
             GUI.Box(new Rect(36, 358, 465, 197), "");
             if (GUI.Button(new Rect(49, 367, 216, 37), "STORY")) showHeroSkills = false;
             if (GUI.Button(new Rect(275, 367, 216, 37), "ABILITIES")) showHeroSkills = true;
@@ -302,7 +326,9 @@ namespace MythicChronicles
                     "\nUltimate: " + kit.ultimateName + " — " + kit.ultimateDescription +
                     "\nPassive: " + kit.passiveName + " — " + kit.passiveDescription, tiny);
             }
-            else GUI.Label(new Rect(52, 421, 438, 120), hero.story, subtitle);
+            else GUI.Label(new Rect(52, 409, 438, 144),
+                card == null ? hero.story : card.title + "\n" + card.scene +
+                    "\nEntrance: " + card.introCue, subtitle);
 
             if (owned == null)
                 GUI.Label(new Rect(32, 569, 476, 67),
