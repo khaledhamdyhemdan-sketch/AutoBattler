@@ -334,7 +334,24 @@ namespace MythicChronicles
         private void Chapters()
         {
             GUI.Label(new Rect(130, 177, 380, 54), "STORY CAMPAIGN", heading);
-            chapterScroll = GUI.BeginScrollView(new Rect(20, 242, 505, 635), chapterScroll,
+            GUI.Label(new Rect(27, 236, 481, 32), "CAMPAIGN MILESTONE CHESTS", tiny);
+            for (int i = 0; i < ChroniclesMilestones.All.Length; i++)
+            {
+                CampaignMilestoneReward reward = ChroniclesMilestones.All[i];
+                bool claimed = progress.Data.campaignMilestonesClaimed.Contains(reward.stage);
+                bool unlocked = progress.CanClaimCampaignMilestone(reward.stage);
+                Color previous = GUI.backgroundColor;
+                if (unlocked) GUI.backgroundColor = new Color(.91f, .77f, .45f);
+                GUI.enabled = unlocked;
+                if (GUI.Button(new Rect(23 + i * 166, 275, 158, 57),
+                    "STAGE " + reward.stage + " CHEST\n" +
+                    (claimed ? "CLAIMED" : unlocked ? "CLAIM NOW" : "LOCKED")))
+                    notice = progress.ClaimCampaignMilestone(reward.stage) ?
+                        "Milestone collected: " + reward.Summary : "Claim unavailable.";
+                GUI.enabled = true;
+                GUI.backgroundColor = previous;
+            }
+            chapterScroll = GUI.BeginScrollView(new Rect(20, 348, 505, 538), chapterScroll,
                 new Rect(0, 0, 475, 6 * 498));
             for (int c = 0; c < WorldsCatalog.Chapters.Length; c++)
             {
