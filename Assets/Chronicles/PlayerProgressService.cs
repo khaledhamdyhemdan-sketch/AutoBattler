@@ -29,6 +29,7 @@ namespace MythicChronicles
         public long lastIdleClaimTicks;
         public int gold = 2500, gems = 350, summonTickets = 3, heroFragments;
         public int lastClearedStage;
+        public float musicVolume = .8f, effectsVolume = .9f;
         public List<OwnedHero> heroes = new List<OwnedHero>();
         public List<string> selectedTeam = new List<string>();
         public List<int> stageRewardsClaimed = new List<int>();
@@ -125,6 +126,8 @@ namespace MythicChronicles
             Data.summonTickets = Math.Max(0, Data.summonTickets);
             Data.heroFragments = Math.Max(0, Data.heroFragments);
             Data.lastClearedStage = Mathf.Clamp(Data.lastClearedStage, 0, 60);
+            Data.musicVolume = Mathf.Clamp01(Data.musicVolume);
+            Data.effectsVolume = Mathf.Clamp01(Data.effectsVolume);
             if (Data.lastIdleClaimTicks <= 0 || Data.lastIdleClaimTicks > DateTime.UtcNow.Ticks)
                 Data.lastIdleClaimTicks = DateTime.UtcNow.Ticks;
             Data.heroes.RemoveAll(h => h == null || WorldsCatalog.FindHero(h.id) == null);
@@ -265,6 +268,13 @@ namespace MythicChronicles
             OwnedHero hero = FindOwnedHero(heroId);
             if (hero == null || !OwnsSkin(heroId, skinId)) return false;
             hero.skin = skinId;
+            return Save();
+        }
+
+        public bool SetAudioLevels(float music, float effects)
+        {
+            Data.musicVolume = Mathf.Clamp01(music);
+            Data.effectsVolume = Mathf.Clamp01(effects);
             return Save();
         }
 
