@@ -119,7 +119,7 @@ const artBible = JSON.parse(read('docs/HERO_ART_DIRECTION_ALL_41.json'));
 assert.equal(artBible.language, 'en-US');
 assert.equal(artBible.heroes.length, 41, 'Every character needs art direction');
 assert.deepEqual(artBible.heroes.map(h => h.id), shared.heroes.map(h => h.id),
-  'Art production roster diverges from Unity's hero IDs');
+  "Art production roster diverges from Unity hero IDs");
 for (const hero of artBible.heroes) {
   for (const field of ['silhouette','weapon','setting','idle','ultimateVfx'])
     assert.ok(typeof hero[field] === 'string' && hero[field].length > 20,
