@@ -922,10 +922,29 @@ namespace MythicChronicles
             }
             else
             {
-                GUI.Box(new Rect(68, 427, 404, 263),
-                    astral ? "THE ASTRAL COVENANT\n16 UR heroes: 9 Light / 7 Dark\n" +
-                        "Each UR has an equal share of the 1.5% rate." :
-                        "STANDARD SUMMON\nCollect heroes from R, SR and SSR." );
+                if (astral)
+                {
+                    // These two portraits illustrate elements only.
+                    // This is not a featured-unit rate-up banner.
+                    GUI.Box(new Rect(68, 427, 404, 263), "");
+                    ChroniclesHeroPortrait.Draw("ra", new Rect(79, 440, 182, 219),
+                        !progress.Data.reducePortraitMotion);
+                    ChroniclesHeroPortrait.Draw("hades", new Rect(280, 440, 182, 219),
+                        !progress.Data.reducePortraitMotion);
+                    Color old = GUI.color;
+                    GUI.color = new Color(1f, .82f, .39f);
+                    GUI.DrawTexture(new Rect(82, 439, 174, 5), Texture2D.whiteTexture);
+                    GUI.color = new Color(.58f, .38f, .91f);
+                    GUI.DrawTexture(new Rect(284, 439, 174, 5), Texture2D.whiteTexture);
+                    GUI.color = old;
+                    GUI.Label(new Rect(82, 666, 176, 27), "LIGHT  •  9 UR", tiny);
+                    GUI.Label(new Rect(285, 666, 176, 27), "DARK  •  7 UR", tiny);
+                }
+                else
+                {
+                    GUI.Box(new Rect(68, 427, 404, 263),
+                        "STANDARD SUMMON\nCollect heroes from R, SR and SSR.");
+                }
             }
             int cost = ChroniclesSummonRules.GemCost(activeSummonBanner);
             string type = astral ? "ASTRAL SEAL" : "TICKET";
