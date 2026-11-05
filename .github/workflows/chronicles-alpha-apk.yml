@@ -18,6 +18,8 @@ jobs:
     timeout-minutes: 90
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: feature/egyptian-heroes-5v5
 
       - name: Check source before launching Unity
         run: node tools/chronicles-source-audit.mjs
