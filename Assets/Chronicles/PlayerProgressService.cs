@@ -46,6 +46,7 @@ namespace MythicChronicles
         public List<string> selectedTeam = new List<string>();
         public List<int> stageRewardsClaimed = new List<int>();
         public List<int> campaignMilestonesClaimed = new List<int>();
+        public List<string> claimedAchievements = new List<string>();
         public List<int> eliteClears = new List<int>();
         public List<int> darkClears = new List<int>();
         public List<TowerProgressRecord> towerProgress = new List<TowerProgressRecord>();
@@ -141,6 +142,11 @@ namespace MythicChronicles
             if (Data.stageRewardsClaimed == null) Data.stageRewardsClaimed = new List<int>();
             if (Data.campaignMilestonesClaimed == null)
                 Data.campaignMilestonesClaimed = new List<int>();
+            if (Data.claimedAchievements == null)
+                Data.claimedAchievements = new List<string>();
+            var uniqueAchievements = new HashSet<string>(StringComparer.Ordinal);
+            Data.claimedAchievements.RemoveAll(id =>
+                ChroniclesAchievements.Find(id) == null || !uniqueAchievements.Add(id));
             if (Data.eliteClears == null) Data.eliteClears = new List<int>();
             if (Data.darkClears == null) Data.darkClears = new List<int>();
             if (Data.towerProgress == null)
@@ -972,6 +978,37 @@ namespace MythicChronicles
             // The attempt is consumed when started. Prevent quitting to reroll.
             Data.raidPendingRunId = "";
             return Save();
+        }
+
+        public bool CanClaimAchievement(string id)
+        {
+            AchievementDefinition achievement = ChroniclesAchievements.Find(id);
+            return achievement != null &&
+                !Data.claimedAchievements.Contains(id) &&
+                ChroniclesAchievements.Progress(Data, id) >= achievement.target;
+        }
+
+        public bool ClaimAchievement(string id)
+        {
+            if (!CanClaimAchievement(id)) return false;
+            AchievementDefinition achievement = ChroniclesAchievements.Find(id);
+            string before = JsonUtility.ToJson(Data);
+            try
+            {
+                Data.gold = checked(Data.gold + achievement.gold);
+                Data.gems = checked(Data.gems + achievement.gems);
+                Data.summonTickets = checked(Data.summonTickets + achievement.tickets);
+                Data.astralSeals = checked(Data.astralSeals + achievement.astralSeals);
+                Data.claimedAchievements.Add(id);
+                if (!Save()) throw new IOException(LastError ?? "Save failed.");
+                return true;
+            }
+            catch (Exception ex)
+            {
+                Data = JsonUtility.FromJson<PlayerSave>(before);
+                LastError = ex.Message;
+                return false;
+            }
         }
 
         public bool CanClaimCampaignMilestone(int stage)
