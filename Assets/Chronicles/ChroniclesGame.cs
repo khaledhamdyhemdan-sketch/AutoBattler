@@ -25,6 +25,8 @@ namespace MythicChronicles
         private float storyStartedAt;
         private string notice = "";
         private string lastSummoned = "";
+        private SummonBannerType activeSummonBanner = SummonBannerType.Standard;
+        private readonly List<string> lastSummonBatch = new List<string>();
         private bool lastVictory;
         private Vector2 chapterScroll, rosterScroll, formationScroll, gearScroll, runeScroll;
         private GUIStyle heading, subtitle, tiny;
@@ -740,33 +742,105 @@ namespace MythicChronicles
 
         private void Summon()
         {
-            GUI.Label(new Rect(25, 242, 490, 60), "SUMMONING CHAMBER", heading);
-            GUI.Label(new Rect(27, 310, 482, 78),
-                "Standard banner: R 20% • SR 65% • SSR 15%" +
-                "\nUR light/dark banner is not active yet.", subtitle);
-            if (!string.IsNullOrEmpty(lastSummoned))
+            GUI.Label(new Rect(25, 223, 490, 55), "SUMMONING CHAMBER", heading);
+            if (GUI.Button(new Rect(28, 282, 230, 52), "STANDARD"))
+                SelectBanner(SummonBannerType.Standard);
+            if (GUI.Button(new Rect(274, 282, 236, 52), "LIGHT / DARK UR"))
+                SelectBanner(SummonBannerType.AstralCovenant);
+            bool astral = activeSummonBanner == SummonBannerType.AstralCovenant;
+            GUI.Label(new Rect(22, 337, 494, 75),
+                ChroniclesSummonRules.DisplayName(activeSummonBanner) + "\n" +
+                ChroniclesSummonRules.Rates(activeSummonBanner) + "\n" +
+                (astral ?
+                    "UR PITY " + progress.Data.astralPity + "/" +
+                    ChroniclesSummonRules.AstralUrPity + "  •  ASTRAL SEALS " +
+                    progress.Data.astralSeals :
+                    "SSR PITY " + progress.Data.standardPity + "/" +
+                    ChroniclesSummonRules.StandardSsrPity + "  •  TICKETS " +
+                    progress.Data.summonTickets), subtitle);
+
+            if (lastSummonBatch.Count == 1)
             {
-                HeroDefinition summoned = WorldsCatalog.FindHero(lastSummoned);
-                if (summoned != null)
+                string id = lastSummonBatch[0];
+                HeroDefinition hero = WorldsCatalog.FindHero(id);
+                if (hero != null)
                 {
-                    ChroniclesHeroPortrait.Draw(summoned.id,
-                        new Rect(141, 390, 258, 343),
+                    ChroniclesHeroPortrait.Draw(id,
+                        new Rect(165, 424, 210, 258),
                         !progress.Data.reducePortraitMotion);
-                    GUI.Label(new Rect(70, 735, 400, 50),
-                        summoned.name + " • " + summoned.rarity +
-                        " • " + summoned.element, heading);
+                    GUI.Label(new Rect(30, 680, 480, 38),
+                        hero.name.ToUpperInvariant() + "  •  " + hero.rarity +
+                        "  •  " + hero.element, subtitle);
                 }
             }
-            else GUI.Box(new Rect(118, 394, 304, 332),
-                "Summon a hero to reveal\nan animated portrait.");
-            if (GUI.Button(new Rect(40, 803, 460, 70),
-                "SUMMON ONE HERO • 1 TICKET / 120 GEMS", bigButton))
+            else if (lastSummonBatch.Count > 1)
             {
-                string chosen = progress.SummonHero();
-                lastSummoned = chosen ?? "";
-                notice = chosen == null ? "Not enough earned tickets or gems." :
-                    "Summoned: " + WorldsCatalog.FindHero(chosen).name;
+                GUI.Box(new Rect(36, 415, 468, 278), "");
+                for (int i = 0; i < lastSummonBatch.Count; i++)
+                {
+                    HeroDefinition hero = WorldsCatalog.FindHero(lastSummonBatch[i]);
+                    if (hero == null) continue;
+                    int column = i % 5, row = i / 5;
+                    float x = 45 + column * 92, y = 424 + row * 133;
+                    ChroniclesHeroPortrait.Draw(hero.id,
+                        new Rect(x, y, 83, 98), false);
+                    GUI.Label(new Rect(x, y + 99, 89, 34),
+                        hero.name + "\n" + hero.rarity, tiny);
+                }
             }
+            else
+            {
+                GUI.Box(new Rect(68, 427, 404, 263),
+                    astral ? "THE ASTRAL COVENANT\n16 UR heroes: 9 Light / 7 Dark\n" +
+                        "Each UR has an equal share of the 1.5% rate." :
+                        "STANDARD SUMMON\nCollect heroes from R, SR and SSR." );
+            }
+            int cost = ChroniclesSummonRules.GemCost(activeSummonBanner);
+            string type = astral ? "ASTRAL SEAL" : "TICKET";
+            if (GUI.Button(new Rect(34, 714, 230, 58),
+                "SUMMON ×1\n1 " + type + " / " + cost + " GEMS"))
+                DoSummon(1);
+            if (GUI.Button(new Rect(274, 714, 229, 58),
+                "SUMMON ×10\n10 " + type + " / " + (cost * 10) + " GEMS"))
+                DoSummon(10);
+
+            GUI.Box(new Rect(30, 784, 482, 107), "");
+            GUI.Label(new Rect(36, 788, 462, 30), "RECENT SUMMON HISTORY", subtitle);
+            int first = Math.Max(0, progress.Data.summonHistory.Count - 3);
+            for (int i = first; i < progress.Data.summonHistory.Count; i++)
+            {
+                SummonHistoryRecord record = progress.Data.summonHistory[i];
+                HeroDefinition hero = WorldsCatalog.FindHero(record.heroId);
+                if (hero == null) continue;
+                int index = i - first;
+                GUI.Label(new Rect(48, 817 + index * 22, 451, 24),
+                    hero.name + "  •  " + hero.rarity + "  •  " +
+                    record.banner + (record.guaranteed ? "  [PITY]" : ""), tiny);
+            }
+        }
+
+        private void SelectBanner(SummonBannerType banner)
+        {
+            activeSummonBanner = banner;
+            lastSummonBatch.Clear();
+            notice = "";
+        }
+
+        private void DoSummon(int count)
+        {
+            SummonBatchResult result = progress.DrawHeroes(activeSummonBanner, count);
+            lastSummonBatch.Clear();
+            if (!result.success)
+            {
+                lastSummoned = "";
+                notice = result.error;
+                return;
+            }
+            lastSummonBatch.AddRange(result.heroIds);
+            lastSummoned = result.heroIds.Count > 0 ?
+                result.heroIds[result.heroIds.Count - 1] : "";
+            notice = result.heroIds.Count + (result.heroIds.Count == 1 ?
+                " hero summoned." : " heroes summoned.");
         }
 
         private void Quests(bool weekly)
