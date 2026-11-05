@@ -30,7 +30,7 @@ namespace MythicChronicles.Editor
             if (AssetDatabase.LoadAssetAtPath<SceneAsset>(MainScene) == null)
                 throw new InvalidOperationException(
                     "The main Chronicles scene cannot be imported by Unity.");
-            PlayerSettings.defaultInterfaceOrientation = ScreenOrientation.Portrait;
+            PlayerSettings.defaultInterfaceOrientation = UIOrientation.Portrait;
 
             if (bundle && (!PlayerSettings.Android.useCustomKeystore ||
                            string.IsNullOrEmpty(PlayerSettings.Android.keystoreName)))
