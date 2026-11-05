@@ -115,6 +115,21 @@ for (const text of ['StandardCostGems = 120', 'AstralCostGems = 300',
   assert.ok(summonSource.includes(text),
     'Unity summon rules have drifted from disclosed shared catalog: ' + text);
 
+const artBible = JSON.parse(read('docs/HERO_ART_DIRECTION_ALL_41.json'));
+assert.equal(artBible.language, 'en-US');
+assert.equal(artBible.heroes.length, 41, 'Every character needs art direction');
+assert.deepEqual(artBible.heroes.map(h => h.id), shared.heroes.map(h => h.id),
+  'Art production roster diverges from Unity's hero IDs');
+for (const hero of artBible.heroes) {
+  for (const field of ['silhouette','weapon','setting','idle','ultimateVfx'])
+    assert.ok(typeof hero[field] === 'string' && hero[field].length > 20,
+      'Character lacks individual ' + field + ' art direction: ' + hero.id);
+  assert.ok(hero.staticPath.endsWith('/' + hero.id + '.png'),
+    'Portrait source path must match hero ID');
+  assert.equal(hero.productionStatus, 'NOT_PRODUCED',
+    'Concept specs cannot claim final art exists until validated');
+}
+
 const tiers = Object.fromEntries(['R','SR','SSR','UR','EX'].map(t =>
   [t, roster.filter(h => h.rarity === t).length]));
 assert.deepEqual(tiers, { R:2, SR:7, SSR:16, UR:16, EX:0 },
