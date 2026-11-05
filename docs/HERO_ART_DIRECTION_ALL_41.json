@@ -536,7 +536,7 @@
       "staticPath": "Assets/Resources/Chronicles/Portraits/Static/amun.png",
       "framesFolder": "Assets/Resources/Chronicles/Portraits/Animated/amun",
       "prefab": "Assets/Resources/Chronicles/Heroes/amun/default.prefab",
-      "productionStatus": "NOT_PRODUCED"
+      "productionStatus": "CANDIDATE_STATIC_AND_8_FRAMES_UNITY_REVIEW_PENDING"
     },
     {
       "id": "apep",

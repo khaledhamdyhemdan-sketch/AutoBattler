@@ -767,9 +767,46 @@
     },
     {
       "hero_id": "amun",
-      "static": false,
-      "frames": 0,
-      "dimensions": [],
+      "static": true,
+      "frames": 8,
+      "dimensions": [
+        [
+          1024,
+          1536
+        ],
+        [
+          362,
+          543
+        ],
+        [
+          362,
+          543
+        ],
+        [
+          362,
+          543
+        ],
+        [
+          362,
+          543
+        ],
+        [
+          362,
+          543
+        ],
+        [
+          362,
+          543
+        ],
+        [
+          362,
+          543
+        ],
+        [
+          362,
+          543
+        ]
+      ],
       "visual_approval": "MANUAL_REVIEW_REQUIRED"
     },
     {
