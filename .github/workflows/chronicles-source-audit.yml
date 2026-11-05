@@ -28,5 +28,10 @@ jobs:
           name: chronicles-readiness
           path: build-reports/chronicles-readiness.*
           retention-days: 14
+      - name: Check backend syntax and security behavior
+        working-directory: server
+        run: |
+          npm run check
+          npm test
       - name: Explain build boundary
         run: echo "Source checks only; actual Unity Editor and Android APK/AAB validation still required."
