@@ -106,10 +106,11 @@ namespace MythicChronicles
         {
             if (progress == null) return;
             InitializeStyles();
-            float scale = Mathf.Min(Screen.width / panelWidth, Screen.height / 960f);
             Matrix4x4 matrix = GUI.matrix;
             Color oldColor = GUI.color;
-            GUI.matrix = Matrix4x4.TRS(Vector3.zero, Quaternion.identity, Vector3.one * scale);
+            float scale;
+            GUI.matrix = ChroniclesViewport.Matrix(
+                Screen.safeArea, Screen.width, Screen.height, out scale);
             GUI.color = Color.white;
 
             if (page != Page.Battle && page != Page.Results)
