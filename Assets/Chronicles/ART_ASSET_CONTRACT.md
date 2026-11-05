@@ -1,3 +1,5 @@
+> **Roster expansion:** This art brief originally covered 30 heroes. Production now requires **40** launch heroes, including 10 premium UR Light/Dark rigs and entrance cinematics. **EX remains locked** with no model. See [UR/EX roster v2](../../docs/UR_EX_MYTHOLOGY_ROSTER_V2.md). Older 30 counts below are historical.
+
 # Original artwork / animations / audio: integration contract
 
 **State:** Art and audio production specification. These assets are **NOT** in the repository yet.
