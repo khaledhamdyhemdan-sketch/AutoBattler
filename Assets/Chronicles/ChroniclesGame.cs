@@ -309,8 +309,18 @@ namespace MythicChronicles
                 }
             }
             GUI.EndScrollView();
-            GUI.Label(new Rect(30, 738, 480, 45),
-                "Selected: " + progress.Data.selectedTeam.Count + "/5", subtitle);
+            var synergyHeroes = new List<HeroDefinition>();
+            foreach (string id in progress.Data.selectedTeam)
+            {
+                HeroDefinition hero = WorldsCatalog.FindHero(id);
+                if (hero != null) synergyHeroes.Add(hero);
+            }
+            TeamSynergyBonus bonus = TeamSynergy.Calculate(synergyHeroes);
+            GUI.Label(new Rect(30, 737, 480, 63),
+                "Selected: " + progress.Data.selectedTeam.Count + "/5  |  " + bonus.description +
+                "\nHP +" + Mathf.RoundToInt((bonus.hpMultiplier - 1f) * 100f) +
+                "% • ATK +" + Mathf.RoundToInt((bonus.attackMultiplier - 1f) * 100f) +
+                "% • Start energy +" + bonus.startingEnergy, subtitle);
             GUI.enabled = progress.Data.selectedTeam.Count == 5;
             if (GUI.Button(new Rect(40, 803, 460, 70), "START STAGE " + stageId, bigButton))
                 BeginBattle();
