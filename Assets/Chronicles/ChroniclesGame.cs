@@ -8,7 +8,7 @@ namespace MythicChronicles
     // to be replaced by production UI Toolkit art without changing progression logic.
     public sealed class ChroniclesGame : MonoBehaviour
     {
-        private enum Page { Home, Chapters, Trials, Towers, Raid, StageStory, Heroes, HeroDetails, Formation, Skins, Gear, Forge, Training, Runes, SignatureWeapon, RelicVault, Summon, Quests, WeeklyQuests, Idle, Login, Settings, Battle, Results }
+        private enum Page { Home, Chapters, Trials, Towers, Raid, StageStory, Heroes, HeroDetails, Formation, Skins, Gear, Forge, Training, Runes, SignatureWeapon, RelicVault, Summon, Quests, WeeklyQuests, Achievements, Idle, Login, Settings, Battle, Results }
         private Page page = Page.Home;
         private PlayerProgressService progress;
         private ChroniclesAudioDirector audio;
@@ -137,6 +137,7 @@ namespace MythicChronicles
                 case Page.Summon: Summon(); break;
                 case Page.Quests: Quests(false); break;
                 case Page.WeeklyQuests: Quests(true); break;
+                case Page.Achievements: Achievements(); break;
                 case Page.Idle: Idle(); break;
                 case Page.Login: Login(); break;
                 case Page.Settings: Settings(); break;
@@ -1057,8 +1058,10 @@ namespace MythicChronicles
         private void Quests(bool weekly)
         {
             GUI.Label(new Rect(22, 249, 490, 60), weekly ? "WEEKLY MISSIONS" : "DAILY MISSIONS", heading);
-            if (GUI.Button(new Rect(25, 306, 244, 40), "DAILY")) page = Page.Quests;
-            if (GUI.Button(new Rect(276, 306, 244, 40), "WEEKLY")) page = Page.WeeklyQuests;
+            if (GUI.Button(new Rect(25, 306, 153, 40), "DAILY")) page = Page.Quests;
+            if (GUI.Button(new Rect(193, 306, 154, 40), "WEEKLY")) page = Page.WeeklyQuests;
+            if (GUI.Button(new Rect(360, 306, 160, 40), "ACHIEVEMENTS"))
+                page = Page.Achievements;
             QuestInfo[] quests = weekly ? PlayerProgressService.WeeklyQuests : PlayerProgressService.DailyQuests;
             for (int i = 0; i < quests.Length; i++)
             {
@@ -1079,7 +1082,43 @@ namespace MythicChronicles
             }
         }
 
-                private void Idle()
+                private void Achievements()
+        {
+            GUI.Label(new Rect(22, 244, 490, 60), "ACHIEVEMENTS", heading);
+            if (GUI.Button(new Rect(25, 306, 153, 40), "DAILY")) page = Page.Quests;
+            if (GUI.Button(new Rect(193, 306, 154, 40), "WEEKLY")) page = Page.WeeklyQuests;
+            if (GUI.Button(new Rect(360, 306, 160, 40), "ACHIEVEMENTS"))
+                page = Page.Achievements;
+            chapterScroll = GUI.BeginScrollView(
+                new Rect(20, 360, 503, 522), chapterScroll,
+                new Rect(0, 0, 473, ChroniclesAchievements.All.Length * 101));
+            for (int i = 0; i < ChroniclesAchievements.All.Length; i++)
+            {
+                AchievementDefinition entry = ChroniclesAchievements.All[i];
+                int completed = ChroniclesAchievements.Progress(progress.Data, entry.id);
+                bool claimed = progress.Data.claimedAchievements.Contains(entry.id);
+                bool available = progress.CanClaimAchievement(entry.id);
+                float y = i * 101f;
+                GUI.Box(new Rect(5, y, 461, 94), "");
+                GUI.Label(new Rect(14, y + 8, 288, 77),
+                    entry.title + "\n" + Math.Min(entry.target, completed) + "/" +
+                    entry.target + "  •  " + entry.gems + " Gems" +
+                    (entry.astralSeals > 0 ? "\n+" + entry.astralSeals + " Astral Seals" : ""),
+                    tiny);
+                Color beforeColor = GUI.backgroundColor;
+                if (available) GUI.backgroundColor = new Color(.91f, .76f, .45f);
+                GUI.enabled = available;
+                if (GUI.Button(new Rect(308, y + 23, 145, 53),
+                    claimed ? "CLAIMED" : available ? "CLAIM" : "LOCKED"))
+                    notice = progress.ClaimAchievement(entry.id) ?
+                        "Achievement reward claimed!" : "Achievement not complete.";
+                GUI.enabled = true;
+                GUI.backgroundColor = beforeColor;
+            }
+            GUI.EndScrollView();
+        }
+
+        private void Idle()
         {
             GUI.Label(new Rect(30, 275, 480, 76), "AFK TREASURY", heading);
             GUI.Box(new Rect(41, 388, 459, 177), "Your adventurers gather resources while you are away.");
