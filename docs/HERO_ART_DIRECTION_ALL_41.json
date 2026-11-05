@@ -485,7 +485,7 @@
       "staticPath": "Assets/Resources/Chronicles/Portraits/Static/arthur.png",
       "framesFolder": "Assets/Resources/Chronicles/Portraits/Animated/arthur",
       "prefab": "Assets/Resources/Chronicles/Heroes/arthur/default.prefab",
-      "productionStatus": "NOT_PRODUCED"
+      "productionStatus": "CANDIDATE_STATIC_AND_8_FRAMES_UNITY_REVIEW_PENDING"
     },
     {
       "id": "cleopatra",
