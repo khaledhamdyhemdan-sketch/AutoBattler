@@ -191,14 +191,16 @@ namespace MythicChronicles.Editor
                 };
                 Check(HeroElements.Calculate(mono).matchingCount == 3,
                     "Three Fire heroes must activate a covenant.");
-                mono[2] = WorldsCatalog.FindHero("isis");
+                mono[2] = WorldsCatalog.FindHero("amun");
                 Check(HeroElements.Calculate(mono).matchingCount == 3,
                     "Light wildcard should complete the strongest core element.");
-                mono[3] = WorldsCatalog.FindHero("anubis");
+                mono[3] = WorldsCatalog.FindHero("apep");
                 ElementalTeamBonus pair = HeroElements.Calculate(mono);
                 Check(pair.lightCount == 1 && pair.darkCount == 1 &&
                     pair.startingEnergy > 0f, "Light/Dark pairing must grant Equinox energy.");
-                int rCount = 0, srCount = 0, ssrCount = 0, rareElements = 0;
+                int rCount = 0, srCount = 0, ssrCount = 0, urCount = 0, exCount = 0;
+                int light = 0, dark = 0;
+                var urPairByRealm = new System.Collections.Generic.Dictionary<Origin, int[]>();
                 foreach (HeroDefinition hero in WorldsCatalog.Heroes)
                 {
                     switch (hero.rarity)
@@ -206,16 +208,35 @@ namespace MythicChronicles.Editor
                         case Rarity.R: rCount++; break;
                         case Rarity.SR: srCount++; break;
                         case Rarity.SSR: ssrCount++; break;
+                        case Rarity.UR: urCount++; break;
+                        case Rarity.EX: exCount++; break;
                     }
-                    if (HeroElements.IsSpecial(hero))
+                    if (hero.element == HeroElement.Light) light++;
+                    if (hero.element == HeroElement.Darkness) dark++;
+                    Check(HeroElements.IsSpecial(hero) == (hero.rarity == Rarity.UR),
+                        "Light/Dark must be reserved for UR heroes.");
+                    if (hero.rarity == Rarity.UR)
                     {
-                        rareElements++;
-                        Check(hero.rarity == Rarity.SSR,
-                            "Light/Dark must be top available rank.");
+                        int[] count;
+                        if (!urPairByRealm.TryGetValue(hero.origin, out count))
+                        {
+                            count = new int[2];
+                            urPairByRealm.Add(hero.origin, count);
+                        }
+                        if (hero.element == HeroElement.Light) count[0]++;
+                        else if (hero.element == HeroElement.Darkness) count[1]++;
                     }
                 }
-                Check(rCount == 2 && srCount == 8 && ssrCount == 20 && rareElements == 4,
-                    "Launch rarity or special-element distribution mismatch.");
+                Check(rCount == 2 && srCount == 8 && ssrCount == 20 &&
+                    urCount == 10 && exCount == 0 &&
+                    light == 5 && dark == 5 && urPairByRealm.Count == 5,
+                    "40-character tier distribution or UR element balance mismatch.");
+                foreach (var realm in urPairByRealm)
+                    Check(realm.Value[0] == 1 && realm.Value[1] == 1,
+                        "Each UR mythology must have exactly one Light and one Dark.");
+                Check(WorldsCatalog.Heroes.Length == 40 &&
+                    HeroAbilityCatalog.All.Length == 40,
+                    "All forty characters must have skill kits.");
                 foreach (string starterId in WorldsCatalog.StartingHeroes)
                     Check(!HeroElements.IsSpecial(WorldsCatalog.FindHero(starterId)),
                         "A rare Light/Dark hero must not be a free starter.");
