@@ -52,6 +52,9 @@ def brief(hid):
                  'Only small hair/fur/cloth/feather movement and gentle character-specific glow pulse; no camera zoom, large particles or attack scene. '
                  'First/last nearly identical for looping. Preserve both hands and all props fully visible in every frame; for nonhumanoid creatures no added human hands. '
                  'No labels, typography, UI, numbers, borders, dividers, watermark, new objects or extra limbs. Consistent original premium anime details.')
+    if hid == 'apep':
+        animation = animation.replace('Eyes if present: open1-2, halfclosed3, closed4, halfopen5, open6-8.',
+            'Snake eyes stay OPEN and identical throughout: NO blinking, no eyelids. Only slight coil breathing and glow.')
     return dict(hero=hero, static=static, animation=animation)
 
 
