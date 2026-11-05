@@ -30,6 +30,7 @@ namespace MythicChronicles.Editor
             RunStep("World Boss", ChroniclesRaidVerification.Run, failures);
             RunStep("Milestones", ChroniclesMilestoneVerification.Run, failures);
             RunStep("Achievements", ChroniclesAchievementVerification.Run, failures);
+            RunStep("Offline Shop and Mailbox", ChroniclesEconomyVerification.Run, failures);
             RunStep("Labyrinth", ChroniclesLabyrinthVerification.Run, failures);
             RunStep("Arena Training", ChroniclesArenaTrainingVerification.Run, failures);
             RunStep("Portrait and English Audit", ChroniclesPortraitAudit.Audit, failures);
