@@ -64,9 +64,9 @@ namespace MythicChronicles.Editor
                     errors++;
                 }
             }
-            if (WorldsCatalog.Heroes.Length != 30)
+            if (WorldsCatalog.Heroes.Length != 40)
             {
-                Debug.LogError("[Chronicles] Expected 30 named heroes."); errors++;
+                Debug.LogError("[Chronicles] Expected 40 named heroes."); errors++;
             }
             var kitIds = new HashSet<string>(StringComparer.Ordinal);
             foreach (HeroKit kit in HeroAbilityCatalog.All)
@@ -83,33 +83,56 @@ namespace MythicChronicles.Editor
                     Debug.LogError("[Chronicles] Hero has no skill kit: " + hero.id);
                     errors++;
                 }
-            int rCount = 0, srCount = 0, ssrCount = 0, special = 0;
+            int rCount = 0, srCount = 0, ssrCount = 0, urCount = 0, exCount = 0;
+            int lightCount = 0, darknessCount = 0;
+            var urByOrigin = new Dictionary<Origin, int[]>();
             foreach (HeroDefinition hero in WorldsCatalog.Heroes)
             {
                 if (hero.element != HeroElements.For(hero.id))
                 {
-                    Debug.LogError("[Chronicles] Hero element is not initialized: " + hero.id);
+                    Debug.LogError("[Chronicles] Hero element mapping mismatch: " + hero.id);
                     errors++;
                 }
-                if (HeroElements.IsSpecial(hero))
+                switch (hero.rarity)
                 {
-                    special++;
-                    if (hero.rarity != Rarity.SSR)
-                    {
-                        Debug.LogError("[Chronicles] Special hero must be SSR: " + hero.id);
-                        errors++;
-                    }
+                    case Rarity.R: rCount++; break;
+                    case Rarity.SR: srCount++; break;
+                    case Rarity.SSR: ssrCount++; break;
+                    case Rarity.UR: urCount++; break;
+                    case Rarity.EX: exCount++; break;
                 }
-                if (hero.rarity == Rarity.R) rCount++;
-                else if (hero.rarity == Rarity.SR) srCount++;
-                else if (hero.rarity == Rarity.SSR) ssrCount++;
-                else { Debug.LogError("[Chronicles] Future ranks must stay locked."); errors++; }
+                if (hero.element == HeroElement.Light) lightCount++;
+                if (hero.element == HeroElement.Darkness) darknessCount++;
+                if (HeroElements.IsSpecial(hero) != (hero.rarity == Rarity.UR))
+                {
+                    Debug.LogError("[Chronicles] Only UR heroes may have Light/Dark: " + hero.id);
+                    errors++;
+                }
+                if (hero.rarity == Rarity.UR)
+                {
+                    int[] counts;
+                    if (!urByOrigin.TryGetValue(hero.origin, out counts))
+                    {
+                        counts = new int[2];
+                        urByOrigin.Add(hero.origin, counts);
+                    }
+                    if (hero.element == HeroElement.Light) counts[0]++;
+                    else if (hero.element == HeroElement.Darkness) counts[1]++;
+                }
             }
-            if (rCount != 2 || srCount != 8 || ssrCount != 20 || special != 4)
+            if (rCount != 2 || srCount != 8 || ssrCount != 20 ||
+                urCount != 10 || exCount != 0 || lightCount != 5 || darknessCount != 5 ||
+                urByOrigin.Count != 5)
             {
-                Debug.LogError("[Chronicles] R/SR/SSR or special element roster allocation invalid.");
+                Debug.LogError("[Chronicles] R/SR/SSR/UR/EX roster allocation mismatch.");
                 errors++;
             }
+            foreach (var pair in urByOrigin)
+                if (pair.Value[0] != 1 || pair.Value[1] != 1)
+                {
+                    Debug.LogError("[Chronicles] UR realm must include one Light and one Dark: " + pair.Key);
+                    errors++;
+                }
             if (ChroniclesEquipment.Templates.Length != 18 ||
                 ChroniclesRelics.All.Length != 6)
             {
@@ -139,7 +162,7 @@ namespace MythicChronicles.Editor
                 }
             }
             if (errors == 0)
-                Debug.Log("[Chronicles] Catalog validation passed: 30 hero kits, 6 worlds, 60 stages and narrative beats. This is NOT a Unity/Android playtest.");
+                Debug.Log("[Chronicles] Catalog validation passed: 40 hero kits, five UR Light/Dark realm pairs and 60 story stages. This is NOT a Unity/Android playtest.");
             else Debug.LogError("[Chronicles] Catalog validation failed with " + errors + " issues.");
         }
     }
