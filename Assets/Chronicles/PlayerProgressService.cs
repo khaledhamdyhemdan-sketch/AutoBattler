@@ -683,8 +683,9 @@ namespace MythicChronicles
             else return null;
 
             // Preliminary standard-banner odds: R 20%, SR 65%, SSR 15%.
-            // The 4 Light/Dark SSR units are EXCLUDED until a special
-            // limited banner with separate odds/pity is implemented.
+            // All ten Light/Dark UR heroes are reserved for a separate
+            // limited banner with published odds, pity and transaction logs.
+            // Standard summons cannot roll UR or EX.
             float random = UnityEngine.Random.value;
             Rarity tier = random < .20f ? Rarity.R :
                 random < .85f ? Rarity.SR : Rarity.SSR;
