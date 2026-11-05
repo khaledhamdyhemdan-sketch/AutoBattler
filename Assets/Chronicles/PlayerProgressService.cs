@@ -11,6 +11,7 @@ namespace MythicChronicles
         public string id;
         public int level = 1;
         public int stars = 1;
+        public int weaponLevel, armorLevel;
         public int fragments;
         public string skin = "default";
     }
@@ -115,7 +116,7 @@ namespace MythicChronicles
             Data.heroes.RemoveAll(h => h == null || WorldsCatalog.FindHero(h.id) == null);
             var seen = new HashSet<string>(StringComparer.Ordinal);
             Data.heroes.RemoveAll(h => !seen.Add(h.id));
-            foreach (var h in Data.heroes) { h.level = Mathf.Clamp(h.level, 1, 200); h.stars = Mathf.Clamp(h.stars, 1, 6); }
+            foreach (var h in Data.heroes) { h.level = Mathf.Clamp(h.level, 1, 200); h.stars = Mathf.Clamp(h.stars, 1, 6); h.weaponLevel = Mathf.Clamp(h.weaponLevel, 0, 30); h.armorLevel = Mathf.Clamp(h.armorLevel, 0, 30); }
             seen.Clear();
             Data.selectedTeam.RemoveAll(id => !OwnsHero(id) || !seen.Add(id));
             if (Data.selectedTeam.Count > 5) Data.selectedTeam.RemoveRange(5, Data.selectedTeam.Count - 5);
@@ -204,6 +205,37 @@ namespace MythicChronicles
             if (Data.gold < cost) return false;
             Data.gold -= cost;
             hero.level++;
+            IncrementQuest("upgrade_1");
+            Save();
+            return true;
+        }
+
+        public bool UpgradeEquipment(string id, bool weapon)
+        {
+            OwnedHero h = FindOwnedHero(id);
+            if (h == null) return false;
+            int level = weapon ? h.weaponLevel : h.armorLevel;
+            if (level >= 30) return false;
+            int cost = 125 + level * 75;
+            if (Data.gold < cost) return false;
+            Data.gold -= cost;
+            if (weapon) h.weaponLevel++;
+            else h.armorLevel++;
+            IncrementQuest("upgrade_1");
+            Save();
+            return true;
+        }
+
+        public bool AscendHero(string id)
+        {
+            OwnedHero h = FindOwnedHero(id);
+            if (h == null || h.stars >= 6) return false;
+            int fragmentsNeeded = h.stars * 20;
+            int goldNeeded = h.stars * 450;
+            if (h.fragments < fragmentsNeeded || Data.gold < goldNeeded) return false;
+            h.fragments -= fragmentsNeeded;
+            Data.gold -= goldNeeded;
+            h.stars++;
             IncrementQuest("upgrade_1");
             Save();
             return true;
