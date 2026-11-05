@@ -87,6 +87,34 @@ for (const h of roster) {
 for (const id of [...kits, ...portraits, ...cards, ...elements.keys()])
   assert.ok(lookup.has(id), 'Unknown hero asset ID: ' + id);
 
+// The shared read-only API catalog must remain byte-for-byte consistent
+// in identity and public attributes with Unity's authoritative source.
+const shared = JSON.parse(read('shared/hero-catalog.json'));
+const heroDetails = capture(read(required[0]),
+  /new HeroDefinition\("([^"]+)",\s*"([^"]+)",\s*Origin\.(\w+),\s*CombatRole\.(\w+),\s*Rarity\.(R|SR|SSR|UR|EX)/g)
+  .map(([id,name,origin,role,rarity]) =>
+    ({id,name,origin,role,rarity,element:elements.get(id)}));
+assert.equal(shared.gameLanguage, 'en-US', 'Only English player-facing data is approved');
+assert.equal(shared.heroCount, 41);
+assert.deepEqual(shared.heroes, heroDetails,
+  'Shared backend hero catalog drifted from Unity roster; regenerate it');
+assert.equal(shared.banners.length, 2, 'Expected Standard and Astral disclosure');
+for (const banner of shared.banners) {
+  const odds = Object.values(banner.rates);
+  assert.ok(odds.every(value => typeof value === 'number' &&
+    value >= 0 && value <= 1), 'Invalid summon probability');
+  assert.ok(Math.abs(odds.reduce((a,b) => a + b, 0) - 1) < .000001,
+    'Summon probability distribution must total 100%');
+}
+assert.equal(shared.banners[0].pityCount, 40);
+assert.equal(shared.banners[1].pityCount, 70);
+assert.equal(shared.banners[1].rates.UR, .015);
+const summonSource = read('Assets/Chronicles/ChroniclesSummonRules.cs');
+for (const text of ['StandardCostGems = 120', 'AstralCostGems = 300',
+  'StandardSsrPity = 40', 'AstralUrPity = 70'])
+  assert.ok(summonSource.includes(text),
+    'Unity summon rules have drifted from disclosed shared catalog: ' + text);
+
 const tiers = Object.fromEntries(['R','SR','SSR','UR','EX'].map(t =>
   [t, roster.filter(h => h.rarity === t).length]));
 assert.deepEqual(tiers, { R:2, SR:7, SSR:16, UR:16, EX:0 },
