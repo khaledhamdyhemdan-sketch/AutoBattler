@@ -528,7 +528,7 @@ namespace MythicChronicles
             {
                 GUI.Label(new Rect(30, 680, 478, 61),
                     hero.rarity == Rarity.UR ?
-                        "UR limited acquisition is coming later." :
+                        "UR heroes can be summoned in the Astral Covenant banner." :
                         "Not owned. Find this hero via summoning.", subtitle);
             }
             else
