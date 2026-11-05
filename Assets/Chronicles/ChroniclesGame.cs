@@ -8,7 +8,7 @@ namespace MythicChronicles
     // to be replaced by production UI Toolkit art without changing progression logic.
     public sealed class ChroniclesGame : MonoBehaviour
     {
-        private enum Page { Home, Chapters, Trials, Towers, Raid, Labyrinth, StageStory, Heroes, HeroDetails, Formation, Skins, Gear, Forge, Training, Runes, SignatureWeapon, RelicVault, Summon, Quests, WeeklyQuests, Achievements, Idle, Login, Settings, Battle, Results }
+        private enum Page { Home, Chapters, Trials, Towers, Raid, Labyrinth, ArenaTraining, StageStory, Heroes, HeroDetails, Formation, Skins, Gear, Forge, Training, Runes, SignatureWeapon, RelicVault, Summon, Quests, WeeklyQuests, Achievements, Idle, Login, Settings, Battle, Results }
         private Page page = Page.Home;
         private PlayerProgressService progress;
         private ChroniclesAudioDirector audio;
@@ -18,8 +18,8 @@ namespace MythicChronicles
         private AudioListener menuAudio;
         private int stageId = 1;
         private TrialMode activeTrialMode = TrialMode.Normal;
-        private bool inTower, inRaid, inLabyrinth;
-        private string raidRunId = "", labyrinthRunId = "";
+        private bool inTower, inRaid, inLabyrinth, inArenaTraining;
+        private string raidRunId = "", labyrinthRunId = "", arenaRunId = "";
         private int selectedLabyrinthChoice;
         private int lastRaidDamage;
         private Origin selectedTowerOrigin = Origin.Egypt;
@@ -125,6 +125,7 @@ namespace MythicChronicles
                 case Page.Towers: Towers(); break;
                 case Page.Raid: Raid(); break;
                 case Page.Labyrinth: Labyrinth(); break;
+                case Page.ArenaTraining: ArenaTraining(); break;
                 case Page.StageStory: StageStory(); break;
                 case Page.Heroes: Heroes(); break;
                 case Page.HeroDetails: HeroDetails(); break;
@@ -191,13 +192,65 @@ namespace MythicChronicles
                 page = Page.RelicVault;
             if (GUI.Button(new Rect(352, 796, 148, 49), "SETTINGS"))
                 page = Page.Settings;
-            if (GUI.Button(new Rect(40, 851, 460, 40), "WEEKLY LABYRINTH"))
+            if (GUI.Button(new Rect(40, 851, 220, 40), "LABYRINTH"))
             {
                 inTower = false;
                 inRaid = false;
                 inLabyrinth = false;
+                inArenaTraining = false;
                 page = Page.Labyrinth;
             }
+            if (GUI.Button(new Rect(272, 851, 229, 40), "ARENA TRAINING"))
+            {
+                inArenaTraining = false;
+                inTower = false;
+                inRaid = false;
+                inLabyrinth = false;
+                page = Page.ArenaTraining;
+            }
+        }
+
+        private void ArenaTraining()
+        {
+            ArenaTrainingProgress arena = progress.ArenaTrainingState();
+            GUI.Label(new Rect(29, 220, 487, 58), "ARENA TRAINING", heading);
+            GUI.Label(new Rect(32, 284, 473, 85),
+                "OFFLINE NPC LADDER • 5 MATCHES PER UTC DAY" +
+                "\nPractice your formation. Online PvP is not available yet.", subtitle);
+            GUI.Box(new Rect(39, 384, 462, 220), "");
+            GUI.Label(new Rect(50, 407, 438, 180),
+                "CURRENT TIER: " + ChroniclesArenaTraining.Tier(arena.rating) +
+                "\nRATING: " + arena.rating +
+                "  •  PERSONAL BEST: " + arena.bestRating +
+                "\nMATCH RECORD: " + arena.wins + " W / " + arena.losses + " L" +
+                "\nATTEMPTS LEFT: " + progress.ArenaAttemptsRemaining() +
+                "/" + ChroniclesArenaTraining.DailyAttempts, subtitle);
+            GUI.Box(new Rect(39, 619, 463, 126), "");
+            GUI.Label(new Rect(49, 630, 442, 101),
+                "WIN: +22 RATING, 260 GOLD, 12 GEMS" +
+                "\nLOSS: -12 RATING, 70 GOLD" +
+                "\nRanks: Bronze • Silver • Gold • Platinum" +
+                "\nDiamond • Master • Grandmaster • Legend • Mythic", tiny);
+            GUI.enabled = progress.Data.lastClearedStage >= 10 &&
+                progress.ArenaAttemptsRemaining() > 0 &&
+                string.IsNullOrEmpty(arena.pendingMatchToken);
+            if (GUI.Button(new Rect(42, 782, 455, 78),
+                "FIND NPC TRAINING MATCH", bigButton))
+            {
+                stageId = ChroniclesArenaTraining.StageFor(
+                    arena.rating, arena.attemptsToday + 1);
+                inArenaTraining = true;
+                inLabyrinth = false;
+                inRaid = false;
+                inTower = false;
+                activeTrialMode = TrialMode.Normal;
+                notice = "Choose five heroes for the NPC duel.";
+                page = Page.Formation;
+            }
+            GUI.enabled = true;
+            if (progress.Data.lastClearedStage < 10)
+                GUI.Label(new Rect(41, 865, 455, 26),
+                    "Clear Chapter 1 to unlock training.", tiny);
         }
 
         private void Labyrinth()
@@ -956,6 +1009,8 @@ namespace MythicChronicles
         {
             GUI.Label(new Rect(125, 182, 360, 50), "TEAM FORMATION", heading);
             GUI.Label(new Rect(35, 235, 466, 66),
+                inArenaTraining ? "ARENA TRAINING - NPC MATCH" +
+                    "\nThe ladder here is local practice, not online PvP." :
                 inLabyrinth ? "WEEKLY LABYRINTH - ROOM " +
                     progress.LabyrinthState().nextRoom +
                     "\nChoose five heroes and carry your blessings into battle." :
@@ -1304,7 +1359,12 @@ namespace MythicChronicles
             LabyrinthOption labyrinthOption =
                 inLabyrinth ? progress.LabyrinthChoice(selectedLabyrinthChoice) : null;
             bool unlocked = stage != null &&
-                (inLabyrinth ? labyrinthOption != null &&
+                (inArenaTraining ? progress.Data.lastClearedStage >= 10 &&
+                    progress.ArenaAttemptsRemaining() > 0 &&
+                    stageId == ChroniclesArenaTraining.StageFor(
+                        progress.ArenaTrainingState().rating,
+                        progress.ArenaTrainingState().attemptsToday + 1) :
+                inLabyrinth ? labyrinthOption != null &&
                     labyrinthOption.RequiresBattle &&
                     labyrinthOption.stageId == stageId :
                 inRaid ? progress.Data.lastClearedStage >= 10 &&
@@ -1330,6 +1390,12 @@ namespace MythicChronicles
                 if (string.IsNullOrEmpty(labyrinthRunId))
                 { notice = "Unable to begin this Labyrinth encounter."; return; }
             }
+            if (inArenaTraining)
+            {
+                arenaRunId = progress.BeginArenaTraining();
+                if (string.IsNullOrEmpty(arenaRunId))
+                { notice = "No Arena Training attempts remain."; return; }
+            }
             if (battle != null) Destroy(battle.gameObject);
             battle = new GameObject("Chronicles - Battle").AddComponent<ChroniclesBattle>();
             try
@@ -1338,7 +1404,8 @@ namespace MythicChronicles
                     activeTrialMode, inTower ? (Origin?)selectedTowerOrigin : null,
                     inTower ? selectedTowerFloor : 0, inRaid,
                     labyrinthOption, inLabyrinth ?
-                        progress.LabyrinthState().blessingStacks : 0);
+                        progress.LabyrinthState().blessingStacks : 0,
+                    inArenaTraining ? progress.ArenaTrainingState().rating : -1);
             }
             catch (Exception ex)
             {
@@ -1348,6 +1415,9 @@ namespace MythicChronicles
                 if (inLabyrinth && !string.IsNullOrEmpty(labyrinthRunId))
                     progress.CancelLabyrinthStart(labyrinthRunId);
                 labyrinthRunId = "";
+                if (inArenaTraining && !string.IsNullOrEmpty(arenaRunId))
+                    progress.CancelArenaTrainingStart(arenaRunId);
+                arenaRunId = "";
                 CleanupBattle();
                 notice = "Failed to create battle: " + ex.Message;
                 return;
@@ -1361,7 +1431,15 @@ namespace MythicChronicles
         private void OnBattleFinished(bool victory)
         {
             lastVictory = victory;
-            if (inLabyrinth)
+            if (inArenaTraining)
+            {
+                bool savedArena = progress.CompleteArenaTraining(arenaRunId, victory);
+                arenaRunId = "";
+                if (!savedArena) notice = "Arena Training result could not be saved.";
+                else notice = victory ? "Training victory recorded!" :
+                    "Training defeat recorded.";
+            }
+            else if (inLabyrinth)
             {
                 bool saved = progress.CompleteLabyrinthBattle(labyrinthRunId, victory);
                 labyrinthRunId = "";
@@ -1398,6 +1476,7 @@ namespace MythicChronicles
             battle.DrawWorldLabels(scale);
             GUI.Box(new Rect(12, 22, 516, 106), "");
             GUI.Label(new Rect(20, 29, 500, 45),
+                inArenaTraining ? "ARENA TRAINING • NPC OPPONENT" :
                 inLabyrinth ? "WEEKLY LABYRINTH • ROOM " +
                     progress.LabyrinthState().nextRoom :
                 inRaid ? "DAILY WORLD BOSS" :
@@ -1423,6 +1502,29 @@ namespace MythicChronicles
         private void Results()
         {
             GUI.DrawTexture(new Rect(0, 0, 540, 960), panelTex);
+            if (inArenaTraining)
+            {
+                ArenaTrainingProgress arena = progress.ArenaTrainingState();
+                GUI.Label(new Rect(24, 258, 490, 89),
+                    lastVictory ? "ARENA TRAINING WIN" : "ARENA TRAINING LOSS",
+                    heading);
+                GUI.Label(new Rect(38, 394, 465, 135),
+                    "LOCAL RATING: " + arena.rating +
+                    "\nTIER: " + ChroniclesArenaTraining.Tier(arena.rating) +
+                    "\nTRAINING WINS: " + arena.wins + "  •  LOSSES: " + arena.losses +
+                    "\nMATCHES LEFT TODAY: " + progress.ArenaAttemptsRemaining(), subtitle);
+                GUI.Box(new Rect(44, 558, 451, 110),
+                    "Practice against NPC teams.\nOnline PvP and global rankings are not active.");
+                if (GUI.Button(new Rect(42, 728, 455, 74), "RETURN TO ARENA", bigButton))
+                {
+                    CleanupBattle();
+                    inArenaTraining = false;
+                    page = Page.ArenaTraining;
+                }
+                if (GUI.Button(new Rect(42, 819, 455, 64), "RETURN HOME"))
+                    GoHome();
+                return;
+            }
             if (inLabyrinth)
             {
                 LabyrinthProgress run = progress.LabyrinthState();
@@ -1535,6 +1637,11 @@ namespace MythicChronicles
                 progress.AbandonLabyrinthBattle(labyrinthRunId);
                 labyrinthRunId = "";
             }
+            if (inArenaTraining && !string.IsNullOrEmpty(arenaRunId))
+            {
+                progress.AbandonArenaTraining(arenaRunId);
+                arenaRunId = "";
+            }
             if (menuCamera != null) menuCamera.enabled = true;
             if (menuAudio != null) menuAudio.enabled = true;
         }
@@ -1557,8 +1664,10 @@ namespace MythicChronicles
             inTower = false;
             inRaid = false;
             inLabyrinth = false;
+            inArenaTraining = false;
             raidRunId = "";
             labyrinthRunId = "";
+            arenaRunId = "";
             page = Page.Home;
             if (audio != null) audio.SetState(AudioScene.Menu);
         }
