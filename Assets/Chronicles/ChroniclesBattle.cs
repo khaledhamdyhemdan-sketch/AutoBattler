@@ -53,7 +53,8 @@ namespace MythicChronicles
             PlayerSave savedProgress, Action<bool> onFinished,
             TrialMode mode = TrialMode.Normal, Origin? towerOrigin = null,
             int towerFloor = 0, bool raidBattle = false,
-            LabyrinthOption labyrinth = null, int labyrinthBlessings = 0)
+            LabyrinthOption labyrinth = null, int labyrinthBlessings = 0,
+            int arenaTrainingRating = -1)
         {
             raidMode = raidBattle;
             raidDamage = 0f;
@@ -143,6 +144,18 @@ namespace MythicChronicles
                         opponent.maxHp * 18f);
                     opponent.hp = opponent.maxHp;
                     opponent.armor = Mathf.Max(opponent.armor, 92f);
+                }
+            }
+            if (arenaTrainingRating >= 0)
+            {
+                float arenaScale = ChroniclesArenaTraining.EnemyMultiplier(arenaTrainingRating);
+                foreach (Combatant unit in units)
+                {
+                    if (unit.side != 1) continue;
+                    unit.maxHp *= arenaScale;
+                    unit.hp = unit.maxHp;
+                    unit.attack *= arenaScale;
+                    unit.armor *= arenaScale;
                 }
             }
             if (labyrinth != null)
