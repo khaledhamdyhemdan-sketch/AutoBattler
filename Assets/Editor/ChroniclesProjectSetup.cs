@@ -163,6 +163,20 @@ namespace MythicChronicles.Editor
                     Debug.LogError("[Chronicles] UR realm must include at least one Light and one Dark:  " + pair.Key);
                     errors++;
                 }
+            if (ChroniclesSummonRules.Eligible(SummonBannerType.Standard, Rarity.UR).Count != 0 ||
+                ChroniclesSummonRules.Eligible(SummonBannerType.AstralCovenant, Rarity.UR).Count != 16)
+            {
+                Debug.LogError("[Chronicles] UR banner pools are inconsistent with the 41 heroes.");
+                errors++;
+            }
+            if (ChroniclesLoginRewards.Days != 28 ||
+                ChroniclesLoginRewards.ForDay(28) == null ||
+                ChroniclesTrials.Chapters != 6 ||
+                ChroniclesTrials.StagesPerChapter != 10)
+            {
+                Debug.LogError("[Chronicles] Daily rewards or trial stage definitions invalid.");
+                errors++;
+            }
             if (ChroniclesEquipment.Templates.Length != 18 ||
                 ChroniclesRelics.All.Length != 6)
             {
