@@ -8,7 +8,7 @@ namespace MythicChronicles
     // to be replaced by production UI Toolkit art without changing progression logic.
     public sealed class ChroniclesGame : MonoBehaviour
     {
-        private enum Page { Home, Chapters, StageStory, Heroes, HeroDetails, Formation, Skins, Gear, Training, Runes, Summon, Quests, WeeklyQuests, Idle, Settings, Battle, Results }
+        private enum Page { Home, Chapters, StageStory, Heroes, HeroDetails, Formation, Skins, Gear, Forge, Training, Runes, Summon, Quests, WeeklyQuests, Idle, Settings, Battle, Results }
         private Page page = Page.Home;
         private PlayerProgressService progress;
         private ChroniclesAudioDirector audio;
@@ -114,6 +114,7 @@ namespace MythicChronicles
                 case Page.Formation: Formation(); break;
                 case Page.Skins: Skins(); break;
                 case Page.Gear: Gear(); break;
+                case Page.Forge: Forge(); break;
                 case Page.Training: Training(); break;
                 case Page.Runes: Runes(); break;
                 case Page.Summon: Summon(); break;
@@ -349,47 +350,81 @@ namespace MythicChronicles
             if (hero == null) { page = Page.Heroes; return; }
             EquipmentBonuses bonus = progress.GearBonus(hero.id);
             GUI.Label(new Rect(30, 236, 480, 55), hero.name.ToUpperInvariant() + " EQUIPMENT", heading);
-            GUI.Label(new Rect(30, 288, 480, 80),
-                "Six slots • " + bonus.equippedCount + "/6 equipped" +
+            GUI.Label(new Rect(30, 283, 480, 87),
+                "SLOTS " + bonus.equippedCount + "/6  •  DUST " + progress.Data.forgeDust +
                 "\nATK +" + Mathf.RoundToInt(bonus.attack) +
-                "  HP +" + Mathf.RoundToInt(bonus.health) +
-                "  DEF +" + Mathf.RoundToInt(bonus.defense) +
+                " HP +" + Mathf.RoundToInt(bonus.health) +
+                " DEF +" + Mathf.RoundToInt(bonus.defense) +
                 "\nSET: " + bonus.summary, subtitle);
             if (progress.Data.equipment.Count == 0)
                 GUI.Label(new Rect(36, 390, 465, 110),
-                    "Win campaign stages to earn equipment. Each stage drops a piece once.", subtitle);
-            gearScroll = GUI.BeginScrollView(new Rect(18, 385, 504, 438), gearScroll,
-                new Rect(0, 0, 478, Mathf.Max(440, progress.Data.equipment.Count * 98)));
+                    "Win stages to earn equipment, or craft gear from forge materials.", subtitle);
+            gearScroll = GUI.BeginScrollView(new Rect(18, 380, 504, 426), gearScroll,
+                new Rect(0, 0, 478, Mathf.Max(430, progress.Data.equipment.Count * 111)));
             for (int i = 0; i < progress.Data.equipment.Count; i++)
             {
                 GearInstance item = progress.Data.equipment[i];
                 GearTemplate gear = ChroniclesEquipment.Find(item.templateId);
                 if (gear == null) continue;
-                float y = i * 98f;
-                GUI.Box(new Rect(4, y, 469, 92), "");
+                float y = i * 111f;
+                GUI.Box(new Rect(4, y, 469, 104), "");
                 string wearing = item.equippedHeroId == hero.id ? "EQUIPPED" :
                     string.IsNullOrEmpty(item.equippedHeroId) ? "IN BAG" : "ON " + item.equippedHeroId;
-                GUI.Label(new Rect(11, y + 8, 456, 38),
-                    gear.name + "  +" + item.level + "  [" + gear.rarity + "]", tiny);
-                GUI.Label(new Rect(11, y + 37, 192, 43), wearing, tiny);
+                GUI.Label(new Rect(11, y + 5, 456, 34),
+                    gear.name + " +" + item.level + " [" + gear.rarity + "]", tiny);
+                GUI.Label(new Rect(11, y + 35, 451, 24), wearing, tiny);
                 if (item.equippedHeroId == hero.id)
                 {
-                    if (GUI.Button(new Rect(206, y + 45, 113, 39), "REMOVE"))
-                        notice = progress.UnequipGear(item.instanceId) ? "Item removed." : "Cannot remove.";
+                    if (GUI.Button(new Rect(13, y + 64, 141, 34), "UNEQUIP"))
+                        notice = progress.UnequipGear(item.instanceId) ? "Unequipped." : "Failed.";
                 }
                 else
                 {
-                    if (GUI.Button(new Rect(206, y + 45, 113, 39), "EQUIP"))
-                        notice = progress.EquipGear(item.instanceId, hero.id) ? "Item equipped." : "Cannot equip.";
+                    if (GUI.Button(new Rect(13, y + 64, 141, 34), "EQUIP"))
+                        notice = progress.EquipGear(item.instanceId, hero.id) ? "Equipped." : "Failed.";
                 }
                 GUI.enabled = item.level < 30 && progress.Data.gold >= ChroniclesEquipment.UpgradeCost(item);
-                if (GUI.Button(new Rect(327, y + 45, 133, 39), "UPGRADE"))
-                    notice = progress.UpgradeGear(item.instanceId) ? "Gear upgraded." : "Upgrade failed.";
+                if (GUI.Button(new Rect(162, y + 64, 146, 34), "LEVEL UP"))
+                    notice = progress.UpgradeGear(item.instanceId) ? "Gear leveled." : "Failed.";
+                GUI.enabled = string.IsNullOrEmpty(item.equippedHeroId);
+                if (GUI.Button(new Rect(316, y + 64, 142, 34), "DISMANTLE"))
+                    notice = progress.DismantleGear(item.instanceId) ? "Materials received." : "Failed.";
                 GUI.enabled = true;
             }
             GUI.EndScrollView();
-            if (GUI.Button(new Rect(40, 844, 460, 50), "BACK TO HERO", bigButton))
+            if (GUI.Button(new Rect(37, 816, 223, 47), "AUTO EQUIP"))
+                notice = progress.AutoEquip(hero.id) ? "Best available items equipped." : "Auto equip failed.";
+            if (GUI.Button(new Rect(270, 816, 229, 47), "FORGE"))
+                { page = Page.Forge; notice = ""; }
+            if (GUI.Button(new Rect(40, 871, 460, 42), "BACK TO HERO"))
                 page = Page.HeroDetails;
+        }
+
+        private void Forge()
+        {
+            GUI.Label(new Rect(25, 238, 490, 57), "FORGE WORKSHOP", heading);
+            GUI.Label(new Rect(35, 291, 470, 55),
+                "Dust: " + progress.Data.forgeDust +
+                " • Dismantle unwanted unequipped gear to make new equipment.", subtitle);
+            gearScroll = GUI.BeginScrollView(new Rect(17, 359, 505, 474), gearScroll,
+                new Rect(0, 0, 479, ChroniclesEquipment.Templates.Length * 77));
+            for (int i = 0; i < ChroniclesEquipment.Templates.Length; i++)
+            {
+                GearTemplate item = ChroniclesEquipment.Templates[i];
+                float y = i * 77f;
+                int dust = 20 + (int)item.rarity * 35;
+                int gold = 200 + (int)item.rarity * 300;
+                GUI.Box(new Rect(3, y, 469, 71), "");
+                GUI.Label(new Rect(11, y + 5, 300, 62),
+                    item.name + " [" + item.rarity + "]\n" + dust + " dust + " + gold + " gold", tiny);
+                GUI.enabled = progress.Data.forgeDust >= dust && progress.Data.gold >= gold;
+                if (GUI.Button(new Rect(324, y + 13, 136, 45), "CRAFT"))
+                    notice = progress.CraftGear(item.id) ? "New gear forged." : "Crafting unavailable.";
+                GUI.enabled = true;
+            }
+            GUI.EndScrollView();
+            if (GUI.Button(new Rect(40, 843, 460, 55), "BACK TO EQUIPMENT", bigButton))
+                page = Page.Gear;
         }
 
         private void Training()
