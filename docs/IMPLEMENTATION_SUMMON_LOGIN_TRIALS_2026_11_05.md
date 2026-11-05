@@ -30,6 +30,17 @@
 - Added English **Campaign Rank** names by total normal+Elite+Dark wins: Wanderer, Trailblazer, Conqueror, Vanguard, Nightbreaker, Realm Guardian, Mythbound.
 - Added English chapter-selection UI for Elite/Dark, story preview, battle mode labels and result navigation. **Faction Towers and Arena ranks are not yet included**; tower battles and server-authoritative online PvP are separate blockers.
 
+### Seven origin-based Faction Towers
+- **Seven PvE towers** with original English names: Egyptian Spire, Olympian Tower, Yggdrasil Ascent, Celestial Mirror (Japan), Jade Heaven (China), Enchanted Keep (Folklore), Hall of Legends (History).
+- The `Origin.EastAsia` story source is split into **Japan and China** for playable faction towers.
+- **100 algorithmically scaled floors per tower** in the current code. Content and environments are currently recycled from the six chapter base stages, **not 700 hand-authored encounters**.
+- Unlock after normal story Chapter 1; enter with **exactly five owned heroes**, including **at least two heroes** from the selected origin. The other three may come from other traditions to keep small origins playable.
+- Highest floor recorded per tower, not a real online leaderboard. Offline rank titles: Novice, Climber, Ascendant, Skywalker, Tower Lord, Eternal Summit.
+- Each new floor grants one-time gold, gems and forge materials; a special milestone every 25 floors gives an Astral Seal. Floors cannot be skipped or farmed for repeated first-clear rewards.
+- Connected formation restrictions, tower-opponent filtering, battle scaling, victory persistence, and next-floor navigation to `ChroniclesGame.cs`.
+- Unity editor checks in `Assets/Editor/ChroniclesTowerVerification.cs`, with a catalogue-length validation in `ChroniclesProjectSetup.cs`. **These checks have been authored, not run in the Unity Editor.**
+- **Still missing:** original environment art, 100 bespoke floor scenarios per origin, live global ranking, online Arena, cross-platform account synchronization, final balance testing.
+
 ### QA and metadata
 - Unity editor test scripts exist at:
   - `Assets/Editor/ChroniclesSummonVerification.cs`
@@ -43,7 +54,7 @@
 
 1. **Production artwork:** Distinct, individually approved high-resolution static anime portraits and true articulated/2D rigged animated portraits for **all 41 heroes** (current 41 coded procedural fallback portraits are development art only), final card frames, cinematic intros, VFX, audio and battle characters.
 2. **Core content:** Final mobile UI inspired in usability (not copied assets) by Omniheroes, level art/backgrounds, full stage encounter tuning, finalized UR probability balancing and battle balance checks.
-3. **Progression & modes:** Complete crafting economy, endgame stage content, **Faction Towers**, multi-tier rankings for Towers and Arena, Labyrinth and world boss, guilds, accounts and backend.
+3. **Progression & modes:** Complete crafting economy, endgame stage content, Production-quality Faction Tower environments and balance, **online competitive** rankings for Towers and Arena, Labyrinth and world boss, guilds, accounts and backend.
 4. **Security/live service:** Server-authoritative economy, cloud saves, banner transactions and timestamp protection, online rankings/matchmaking, potential billing according to marketplace/platform policy.
 5. **Release:** Unity compile and editor playtests, memory/performance profiling, full QA on Android, real signed APK/AAB and store checks.
 
