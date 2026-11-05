@@ -81,14 +81,14 @@ def audit():
     raise SystemExit(bool(errors))
 
 
-def split(hero, source, sheet):
+def split(hero, source, sheet, replace=False):
     known = {h['hero_id'] for h in csv.DictReader(
         (ROOT / 'docs/HERO_PORTRAITS_41_ASSET_MANIFEST.csv').open(encoding='utf-8-sig'))}
     if hero not in known:
         raise ValueError('Unknown hero ID')
     still = ART / 'Static' / f'{hero}.png'
     folder = ART / 'Animated' / hero
-    if still.exists() or folder.exists():
+    if (still.exists() or folder.exists()) and not replace:
         raise FileExistsError('Review existing artwork before replacing it')
     with Image.open(source) as original, Image.open(sheet) as grid:
         w, h = grid.size
@@ -99,8 +99,17 @@ def split(hero, source, sheet):
             raise ValueError('Animation cells must be 2:3 portraits')
         frames = [grid.crop((x*cw, y*ch, (x+1)*cw, (y+1)*ch)).convert('RGB')
                   for y in range(2) for x in range(4)]
+        if replace:
+            old_frames = sorted(folder.glob('frame_*.png'))
+            if len(old_frames) != 8 or not still.exists():
+                raise ValueError('Replacement requires an existing eight-frame portrait pair')
+            archive = ROOT / 'art-source' / hero / 'superseded-v1'
+            archive.mkdir(parents=True, exist_ok=False)
+            shutil.copy2(still, archive / 'static.png')
+            for old in old_frames:
+                shutil.copy2(old, archive / old.name)
         still.parent.mkdir(parents=True, exist_ok=True)
-        folder.mkdir(parents=True)
+        folder.mkdir(parents=True, exist_ok=replace)
         original.save(still, format='PNG')
         for i, frame in enumerate(frames):
             frame.save(folder / f'frame_{i:03}.png')
@@ -127,8 +136,9 @@ if __name__ == '__main__':
     p.add_argument('hero')
     p.add_argument('source', type=Path)
     p.add_argument('sheet', type=Path)
+    p.add_argument('--replace', action='store_true', help='Archive old eight-frame set before replacing; preserve Unity GUIDs')
     args = parser.parse_args()
     if args.command == 'audit':
         audit()
     else:
-        split(args.hero, args.source, args.sheet)
+        split(args.hero, args.source, args.sheet, args.replace)

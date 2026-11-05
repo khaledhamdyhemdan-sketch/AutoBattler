@@ -10,6 +10,7 @@ Runtime language remains English. Portraits contain no baked text/UI/borders.
 | Persephone | 1024x1536 PNG | 8 x 362x543 | Adult female, pomegranate, auburn hair, blossom/ivy crown; blink present; minor detail drift | Awaiting Unity installation |
 | Heracles | 1024x1536 PNG | 8 x 362x543 | Adult masculine champion, beard, lion pelt, bronze cuirass, wooden club; blink present; minor detail drift | Awaiting Unity installation |
 | Nyx | 1024x1536 PNG | 8 x 362x543 | Adult female primordial night, constellation crown, star mantle, violet orb; blink present; minor detail drift | Awaiting Unity installation |
+| Apollo correction | 1024x1536 PNG | 8 x 362x543 | Removed decorative padding, restored visible right hand at belt following owner correction; both hands retained in all cells | Awaiting Unity installation |
 
 These are candidate idle loops, not final production animation approval.
 Full source sheets, exact prompts, GIF previews and frame-difference metrics are
