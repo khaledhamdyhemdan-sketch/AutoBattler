@@ -14,6 +14,9 @@ namespace MythicChronicles
             public GameObject model;
             public int side, level;
             public float hp, maxHp, attack, armor, energy, shield, attackCd, skillCd, stunned, flash;
+            public float burn, burnTick, cursed, frozen, rallied, tauntSeconds, passiveTimer;
+            public bool savedOnce;
+            public Combatant forcedTarget;
             public bool boss;
             public Vector3 formationPosition, arrivalPosition;
             public bool Alive { get { return hp > 0f; } }
@@ -174,7 +177,7 @@ namespace MythicChronicles
         {
             if (ended || Paused) return;
             float dt = Mathf.Min(.05f, Time.deltaTime * Speed);
-            if (introTime > 0)
+            if (introTime > 0f)
             {
                 introTime -= dt;
                 float t = Mathf.Clamp01((2.8f - introTime) / 1.9f);
@@ -187,16 +190,20 @@ namespace MythicChronicles
                 }
                 return;
             }
+
             elapsed += dt;
             foreach (Combatant f in units)
             {
                 if (!f.Alive) continue;
-                f.attackCd -= dt; f.skillCd -= dt;
-                f.stunned = Mathf.Max(0f, f.stunned - dt);
-                f.flash = Mathf.Max(0f, f.flash - dt);
+                TickStatuses(f, dt);
+                if (!f.Alive) continue;
+                f.attackCd -= dt;
+                f.skillCd -= dt;
                 if (f.stunned > 0f) continue;
                 Combatant target = FindTarget(f);
                 if (target == null) continue;
+
+                HeroKit kit = HeroAbilityCatalog.For(f.hero.id);
                 if (f.energy >= 100f)
                 {
                     f.energy = 0f;
@@ -205,28 +212,37 @@ namespace MythicChronicles
                 }
                 if (f.skillCd <= 0f)
                 {
-                    f.skillCd = 5f + (f.hero.role == CombatRole.Support ? -1f : 0f);
+                    f.skillCd = kit == null ? 6f : kit.cooldown;
+                    if (kit != null && (kit.passive == HeroPassive.Sage || kit.passive == HeroPassive.Oracle))
+                        f.skillCd *= .85f;
                     CastSkill(f, target);
                     continue;
                 }
+
                 float range = f.hero.role == CombatRole.Mage || f.hero.role == CombatRole.Healer ||
                     f.hero.role == CombatRole.Support || f.hero.role == CombatRole.Controller ? 4.5f : 1.6f;
                 Vector3 direction = target.model.transform.position - f.model.transform.position;
                 direction.y = 0f;
                 if (direction.magnitude > range)
                 {
-                    f.model.transform.position += direction.normalized * Mathf.Min(2.1f * dt, direction.magnitude - range);
-                    f.model.transform.LookAt(new Vector3(target.model.transform.position.x, f.model.transform.position.y,
-                        target.model.transform.position.z));
+                    float moveSpeed = f.frozen > 0f ? 1.0f : 2.1f;
+                    f.model.transform.position += direction.normalized *
+                        Mathf.Min(moveSpeed * dt, direction.magnitude - range);
+                    f.model.transform.LookAt(new Vector3(target.model.transform.position.x,
+                        f.model.transform.position.y, target.model.transform.position.z));
                 }
                 else if (f.attackCd <= 0f)
                 {
-                    float multiplier = f.hero.role == CombatRole.Assassin && target.hp < target.maxHp * .35f ? 1.6f : 1f;
-                    Hit(f, target, f.attack * multiplier);
-                    f.attackCd = f.hero.role == CombatRole.Assassin ? .85f : 1.25f;
-                    f.energy = Mathf.Min(100f, f.energy + 17f);
+                    Hit(f, target, f.attack);
+                    float baseCooldown = f.hero.role == CombatRole.Assassin ? .85f : 1.25f;
+                    if (f.frozen > 0f) baseCooldown *= 1.45f;
+                    if (kit != null && kit.passive == HeroPassive.Stormborn) baseCooldown *= .8f;
+                    f.attackCd = baseCooldown;
+                    f.energy = Mathf.Min(100f, f.energy + (kit != null &&
+                        kit.passive == HeroPassive.Enchantress ? 23f : 17f));
                 }
             }
+
             for (int i = popups.Count - 1; i >= 0; i--)
             {
                 popups[i].remaining -= dt;
@@ -241,25 +257,73 @@ namespace MythicChronicles
                 float left = 0f, right = 0f;
                 foreach (var unit in units)
                 {
-                    if (unit.side == 0) left += unit.hp;
-                    else right += unit.hp;
+                    if (unit.side == 0) left += unit.hp / unit.maxHp;
+                    else right += unit.hp / unit.maxHp;
                 }
-                if (finished != null) finished(playerAlive && (!enemyAlive || left > right));
+                if (finished != null)
+                    finished(playerAlive && (!enemyAlive || left > right));
+            }
+        }
+
+        private void TickStatuses(Combatant hero, float dt)
+        {
+            hero.stunned = Mathf.Max(0f, hero.stunned - dt);
+            hero.cursed = Mathf.Max(0f, hero.cursed - dt);
+            hero.frozen = Mathf.Max(0f, hero.frozen - dt);
+            hero.rallied = Mathf.Max(0f, hero.rallied - dt);
+            hero.tauntSeconds = Mathf.Max(0f, hero.tauntSeconds - dt);
+            if (hero.tauntSeconds <= 0f) hero.forcedTarget = null;
+            hero.passiveTimer += dt;
+            if (hero.burn > 0f)
+            {
+                hero.burn = Mathf.Max(0f, hero.burn - dt);
+                hero.burnTick += dt;
+                if (hero.burnTick >= 1f)
+                {
+                    hero.burnTick -= 1f;
+                    Hit(null, hero, Mathf.Max(6f, hero.maxHp * .018f));
+                }
+            }
+
+            HeroKit kit = HeroAbilityCatalog.For(hero.hero.id);
+            if (kit == null || !hero.Alive) return;
+            if (kit.passive == HeroPassive.Rebirth && hero.passiveTimer >= 4f)
+            {
+                hero.passiveTimer = 0f;
+                Heal(hero, hero.maxHp * .03f);
+            }
+            else if (kit.passive == HeroPassive.Equilibrium && hero.passiveTimer >= 8f)
+            {
+                hero.passiveTimer = 0f;
+                Shield(LowestFriend(hero), hero.attack * 2f);
             }
         }
 
         private Combatant FindTarget(Combatant actor)
         {
+            if (actor.tauntSeconds > 0f && actor.forcedTarget != null && actor.forcedTarget.Alive)
+                return actor.forcedTarget;
             Combatant nearest = null;
             float best = float.MaxValue;
-            foreach (var unit in units)
+            foreach (Combatant unit in units)
             {
                 if (unit.side == actor.side || !unit.Alive) continue;
                 float dist = (actor.model.transform.position - unit.model.transform.position).sqrMagnitude;
-                if (actor.hero.role == CombatRole.Assassin) dist += 20f * unit.hp / unit.maxHp;
+                if (actor.hero.role == CombatRole.Assassin)
+                    dist += 20f * unit.hp / unit.maxHp;
                 if (dist < best) { best = dist; nearest = unit; }
             }
             return nearest;
+        }
+
+        private Combatant WeakestEnemy(Combatant actor)
+        {
+            Combatant weakest = null;
+            foreach (Combatant unit in units)
+                if (unit.side != actor.side && unit.Alive &&
+                    (weakest == null || unit.hp / unit.maxHp < weakest.hp / weakest.maxHp))
+                    weakest = unit;
+            return weakest;
         }
 
         private Combatant LowestFriend(Combatant actor)
@@ -281,22 +345,123 @@ namespace MythicChronicles
         private void Hit(Combatant attacker, Combatant defender, float raw)
         {
             if (defender == null || !defender.Alive) return;
+            HeroKit attackingKit = attacker == null ? null : HeroAbilityCatalog.For(attacker.hero.id);
+            HeroKit defendingKit = HeroAbilityCatalog.For(defender.hero.id);
+            if (defendingKit != null &&
+                (defendingKit.passive == HeroPassive.Evasion || defendingKit.passive == HeroPassive.Trickster) &&
+                UnityEngine.Random.value < .15f)
+            {
+                Floating("DODGE", defender, Color.cyan);
+                return;
+            }
+
+            if (attacker != null && attackingKit != null)
+            {
+                switch (attackingKit.passive)
+                {
+                    case HeroPassive.Executioner:
+                        if (defender.hp < defender.maxHp * .4f) raw *= 1.4f;
+                        break;
+                    case HeroPassive.SolarFlame:
+                        defender.burn = Mathf.Max(defender.burn, 3.5f);
+                        break;
+                    case HeroPassive.Fury:
+                        raw *= 1f + .45f * (1f - attacker.hp / attacker.maxHp);
+                        break;
+                    case HeroPassive.NightHunter:
+                    case HeroPassive.DeathChill:
+                        if (defender.cursed > 0f) raw *= 1.28f;
+                        break;
+                    case HeroPassive.Winterborn:
+                        if (defender.frozen > 0f) raw *= 1.3f;
+                        break;
+                    case HeroPassive.Hunter:
+                        if (UnityEngine.Random.value < .22f) raw *= 1.65f;
+                        break;
+                    case HeroPassive.Thunderlord:
+                        if (UnityEngine.Random.value < .12f)
+                            defender.stunned = Mathf.Max(defender.stunned, .65f);
+                        break;
+                }
+
+                foreach (Combatant ally in units)
+                {
+                    if (ally.side != attacker.side || !ally.Alive) continue;
+                    HeroKit allyKit = HeroAbilityCatalog.For(ally.hero.id);
+                    if (allyKit != null && (allyKit.passive == HeroPassive.Banner ||
+                        allyKit.passive == HeroPassive.Tactician))
+                        { raw *= 1.06f; break; }
+                }
+                if (attacker.rallied > 0f) raw *= 1.22f;
+            }
+
             float damage = raw * 100f / (100f + defender.armor);
             if (defender.hero.role == CombatRole.Tank) damage *= .84f;
-            float consumed = Mathf.Min(defender.shield, damage);
-            defender.shield -= consumed;
-            damage = Mathf.Max(0f, damage - consumed);
+            if (defender.cursed > 0f) damage *= 1.2f;
+            if (defendingKit != null && (defendingKit.passive == HeroPassive.Guardian ||
+                defendingKit.passive == HeroPassive.Ironhide || defendingKit.passive == HeroPassive.Knight))
+                damage *= .87f;
+            float absorbed = Mathf.Min(defender.shield, damage);
+            defender.shield -= absorbed;
+            damage = Mathf.Max(0f, damage - absorbed);
             defender.hp = Mathf.Max(0f, defender.hp - damage);
             defender.energy = Mathf.Min(100f, defender.energy + damage * .12f);
             Floating("-" + Mathf.RoundToInt(damage), defender, new Color(1f, .72f, .54f));
-            if (!defender.Alive) defender.model.SetActive(false);
+
+            if (attacker != null && attackingKit != null &&
+                attackingKit.passive == HeroPassive.Bloodthirst && attacker.Alive)
+                Heal(attacker, damage * .12f);
+
+            if (defender.Alive) return;
+            if (defendingKit != null &&
+                (defendingKit.passive == HeroPassive.Colossus || defendingKit.passive == HeroPassive.Phoenix) &&
+                !defender.savedOnce)
+            {
+                defender.savedOnce = true;
+                defender.hp = Mathf.Max(1f, defender.maxHp * .16f);
+                Shield(defender, defender.maxHp * .13f);
+                Floating("LAST STAND", defender, Color.yellow);
+                return;
+            }
+            foreach (Combatant ally in units)
+            {
+                if (ally == defender || ally.side != defender.side || !ally.Alive || ally.savedOnce) continue;
+                HeroKit allyKit = HeroAbilityCatalog.For(ally.hero.id);
+                if (allyKit != null && allyKit.passive == HeroPassive.GuardianAngel)
+                {
+                    ally.savedOnce = true;
+                    defender.hp = defender.maxHp * .23f;
+                    Shield(defender, defender.maxHp * .15f);
+                    Floating("RESCUED", defender, Color.green);
+                    return;
+                }
+            }
+            defender.model.SetActive(false);
+            foreach (Combatant unit in units)
+            {
+                if (!unit.Alive || unit.side == defender.side) continue;
+                HeroKit kit = HeroAbilityCatalog.For(unit.hero.id);
+                if (kit != null && kit.passive == HeroPassive.Gravekeeper)
+                    Shield(unit, unit.attack * .8f);
+            }
         }
 
         private void Heal(Combatant target, float value)
         {
             if (target == null || !target.Alive) return;
-            target.hp = Mathf.Min(target.maxHp, target.hp + value);
-            Floating("+" + Mathf.RoundToInt(value), target, Color.green);
+            foreach (Combatant teammate in units)
+            {
+                if (teammate.side != target.side || !teammate.Alive) continue;
+                HeroKit kit = HeroAbilityCatalog.For(teammate.hero.id);
+                if (kit != null && kit.passive == HeroPassive.Dawnborn) { value *= 1.10f; break; }
+            }
+            float actual = Mathf.Min(value, target.maxHp - target.hp);
+            if (actual <= 0f) return;
+            target.hp += actual;
+            Floating("+" + Mathf.RoundToInt(actual), target, Color.green);
+            HeroKit healedKit = HeroAbilityCatalog.For(target.hero.id);
+            if (healedKit != null && healedKit.passive == HeroPassive.Compassion)
+                Shield(target, actual * .16f);
         }
 
         private void Shield(Combatant target, float value)
@@ -308,53 +473,143 @@ namespace MythicChronicles
 
         private void CastSkill(Combatant actor, Combatant target)
         {
-            actor.energy = Mathf.Min(100f, actor.energy + 12f);
-            switch (actor.hero.role)
-            {
-                case CombatRole.Healer: Heal(LowestFriend(actor), actor.attack * 2.5f); break;
-                case CombatRole.Support:
-                    foreach (var unit in units) if (unit.side == actor.side && unit.Alive)
-                        unit.energy = Mathf.Min(100f, unit.energy + 16f);
-                    Shield(LowestFriend(actor), actor.attack * 1.3f); break;
-                case CombatRole.Tank: Shield(actor, actor.maxHp * .16f); break;
-                case CombatRole.Controller: Hit(actor, target, actor.attack * 1.25f);
-                    if (target.Alive) target.stunned = Mathf.Max(target.stunned, 1f); break;
-                case CombatRole.Assassin: Hit(actor, target, actor.attack * 1.9f); break;
-                case CombatRole.Mage:
-                    foreach (var unit in units) if (unit.side != actor.side && unit.Alive)
-                        Hit(actor, unit, actor.attack * .65f); break;
-                default: Hit(actor, target, actor.attack * 1.6f); break;
-            }
-            Floating("SKILL", actor, Color.yellow);
+            HeroKit kit = HeroAbilityCatalog.For(actor.hero.id);
+            if (kit == null) { Hit(actor, target, actor.attack * 1.4f); return; }
+            actor.energy = Mathf.Min(100f, actor.energy + 13f);
+            CastEffect(actor, target, kit.skill, kit.skillPower, false);
+            Floating(kit.skillName, actor, Color.yellow);
         }
 
         private void CastUltimate(Combatant actor, Combatant target)
         {
-            switch (actor.hero.role)
+            HeroKit kit = HeroAbilityCatalog.For(actor.hero.id);
+            if (kit == null) { Hit(actor, target, actor.attack * 3f); return; }
+            CastEffect(actor, target, kit.ultimate, kit.ultimatePower, true);
+            Floating(kit.ultimateName, actor, new Color(1f, .75f, .22f));
+        }
+
+        private void CastEffect(Combatant actor, Combatant target, AbilityEffect effect, float power, bool ultimate)
+        {
+            switch (effect)
             {
-                case CombatRole.Healer:
-                    foreach (var unit in units) if (unit.side == actor.side && unit.Alive)
-                        Heal(unit, actor.attack * 3.2f);
+                case AbilityEffect.Strike:
+                    Hit(actor, target, actor.attack * power);
                     break;
-                case CombatRole.Support:
-                case CombatRole.Tank:
-                    foreach (var unit in units) if (unit.side == actor.side && unit.Alive)
-                        Shield(unit, actor.attack * 2.6f);
+                case AbilityEffect.HuntWeakest:
+                    Hit(actor, WeakestEnemy(actor), actor.attack * power);
                     break;
-                case CombatRole.Controller:
-                    foreach (var unit in units) if (unit.side != actor.side && unit.Alive)
+                case AbilityEffect.Cleave:
+                    int hitCount = 0;
+                    foreach (Combatant enemy in units)
                     {
-                        Hit(actor, unit, actor.attack);
-                        unit.stunned = Mathf.Max(unit.stunned, 1.4f);
+                        if (enemy.side == actor.side || !enemy.Alive) continue;
+                        Hit(actor, enemy, actor.attack * power * .74f);
+                        if (++hitCount >= 3) break;
                     }
                     break;
-                case CombatRole.Mage:
-                    foreach (var unit in units) if (unit.side != actor.side && unit.Alive)
-                        Hit(actor, unit, actor.attack * 2f);
+                case AbilityEffect.AreaBlast:
+                    foreach (Combatant enemy in units)
+                        if (enemy.side != actor.side && enemy.Alive)
+                            Hit(actor, enemy, actor.attack * power * .72f);
                     break;
-                default: Hit(actor, target, actor.attack * 4f); break;
+                case AbilityEffect.StunStrike:
+                    Hit(actor, target, actor.attack * power);
+                    if (target.Alive) target.stunned = Mathf.Max(target.stunned, 1.1f);
+                    break;
+                case AbilityEffect.FrostStrike:
+                    Hit(actor, target, actor.attack * power);
+                    if (target.Alive)
+                    {
+                        target.frozen = Mathf.Max(target.frozen, 3.6f);
+                        target.stunned = Mathf.Max(target.stunned, .65f);
+                    }
+                    break;
+                case AbilityEffect.BurningWave:
+                    foreach (Combatant enemy in units)
+                    {
+                        if (enemy.side == actor.side || !enemy.Alive) continue;
+                        Hit(actor, enemy, actor.attack * power * .60f);
+                        if (enemy.Alive) enemy.burn = Mathf.Max(enemy.burn, 4f);
+                    }
+                    break;
+                case AbilityEffect.WeakeningCurse:
+                    foreach (Combatant enemy in units)
+                    {
+                        if (enemy.side == actor.side || !enemy.Alive) continue;
+                        if (!ultimate && enemy != target) continue;
+                        Hit(actor, enemy, actor.attack * power * (ultimate ? .6f : 1f));
+                        if (enemy.Alive) enemy.cursed = Mathf.Max(enemy.cursed, ultimate ? 6f : 4.5f);
+                    }
+                    break;
+                case AbilityEffect.LifeDrain:
+                    Hit(actor, target, actor.attack * power);
+                    Heal(actor, actor.attack * power * .52f);
+                    break;
+                case AbilityEffect.HealLowest:
+                    Heal(LowestFriend(actor), actor.attack * power);
+                    break;
+                case AbilityEffect.HealTeam:
+                    foreach (Combatant ally in units)
+                        if (ally.side == actor.side && ally.Alive)
+                            Heal(ally, actor.attack * power * .85f);
+                    break;
+                case AbilityEffect.ShieldSelf:
+                    Shield(actor, actor.maxHp * .12f * power);
+                    break;
+                case AbilityEffect.ShieldTeam:
+                    foreach (Combatant ally in units)
+                        if (ally.side == actor.side && ally.Alive)
+                            Shield(ally, actor.attack * power * 1.25f);
+                    break;
+                case AbilityEffect.EnergizeTeam:
+                    foreach (Combatant ally in units)
+                        if (ally.side == actor.side && ally.Alive)
+                            ally.energy = Mathf.Min(100f, ally.energy + power * 11f);
+                    break;
+                case AbilityEffect.TauntGuard:
+                    Shield(actor, actor.maxHp * .14f * power);
+                    foreach (Combatant enemy in units)
+                        if (enemy.side != actor.side && enemy.Alive)
+                        {
+                            enemy.forcedTarget = actor;
+                            enemy.tauntSeconds = Mathf.Max(enemy.tauntSeconds, 2.8f);
+                        }
+                    break;
+                case AbilityEffect.TripleStrike:
+                    for (int i = 0; i < 3; i++)
+                    {
+                        Combatant hitTarget = target.Alive ? target : WeakestEnemy(actor);
+                        if (hitTarget != null) Hit(actor, hitTarget, actor.attack * power * .77f);
+                    }
+                    break;
+                case AbilityEffect.Execution:
+                    Combatant weakest = WeakestEnemy(actor);
+                    if (weakest != null)
+                        Hit(actor, weakest, actor.attack * power *
+                            (weakest.hp <= weakest.maxHp * .5f ? 1.3f : 1f));
+                    break;
+                case AbilityEffect.Rally:
+                    foreach (Combatant ally in units)
+                        if (ally.side == actor.side && ally.Alive)
+                        {
+                            ally.rallied = Mathf.Max(ally.rallied, 3.5f + power);
+                            ally.energy = Mathf.Min(100f, ally.energy + power * 5f);
+                        }
+                    break;
+                case AbilityEffect.Eclipse:
+                    foreach (Combatant enemy in units)
+                        if (enemy.side != actor.side && enemy.Alive)
+                        {
+                            Hit(actor, enemy, actor.attack * power * .62f);
+                            if (enemy.Alive)
+                            {
+                                enemy.stunned = Mathf.Max(enemy.stunned, ultimate ? 1.1f : .4f);
+                                if (actor.hero.role == CombatRole.Controller)
+                                    enemy.cursed = Mathf.Max(enemy.cursed, 3.8f);
+                            }
+                        }
+                    break;
             }
-            Floating("ULTIMATE!", actor, new Color(1f, .78f, .2f));
         }
 
         public void DrawWorldLabels(float uiScale)
