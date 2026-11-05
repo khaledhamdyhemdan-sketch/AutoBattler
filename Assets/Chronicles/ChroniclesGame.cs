@@ -13,6 +13,8 @@ namespace MythicChronicles
         private PlayerProgressService progress;
         private ChroniclesAudioDirector audio;
         private ChroniclesBattle battle;
+        private ChroniclesCatalogClient catalogClient;
+        [SerializeField] private string publicCatalogServerUrl = ""; // HTTPS; opt-in only
         private float draftMusic = .8f, draftEffects = .9f;
         private Camera menuCamera;
         private AudioListener menuAudio;
@@ -62,6 +64,7 @@ namespace MythicChronicles
             cameraObject.transform.position = new Vector3(0f, 0f, -10f);
             menuAudio = cameraObject.AddComponent<AudioListener>();
             progress = new PlayerProgressService();
+            catalogClient = gameObject.AddComponent<ChroniclesCatalogClient>();
             audio = gameObject.AddComponent<ChroniclesAudioDirector>();
             draftMusic = progress.Data.musicVolume;
             draftEffects = progress.Data.effectsVolume;
@@ -1592,8 +1595,13 @@ namespace MythicChronicles
                     "First-time guide restarted." : "Could not restart guide.";
                 if (progress.Data.tutorialCompleted == false) page = Page.Home;
             }
-            GUI.Label(new Rect(37, 794, 466, 48),
-                "Portrait animations and sounds use original character assets when installed.", subtitle);
+            GUI.Label(new Rect(37, 791, 466, 27),
+                "SERVER: " + (catalogClient == null ?
+                    "OFFLINE MODE" : catalogClient.Status), tiny);
+            GUI.enabled = catalogClient != null && !catalogClient.Busy;
+            if (GUI.Button(new Rect(58, 815, 425, 27), "CHECK PUBLIC GAME API"))
+                catalogClient.CheckReadOnlyCatalog(publicCatalogServerUrl);
+            GUI.enabled = true;
             if (GUI.Button(new Rect(40, 845, 460, 54), "RETURN HOME", bigButton))
                 GoHome();
         }
