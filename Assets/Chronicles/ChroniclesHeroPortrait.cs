@@ -6,7 +6,7 @@ namespace MythicChronicles
 {
     /// <summary>
     /// Generates distinct lightweight 2D placeholder illustrations and a
-    /// parallax/breathing/particle animated portrait for all 41 catalog heroes.
+    /// parallax/breathing/particle animated portrait for every catalog hero.
     /// If production Texture2D portraits / frame sequences are imported later,
     /// authored assets override procedural artwork without code changes.
     /// These development illustrations are NOT complete anime character art.

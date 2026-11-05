@@ -64,9 +64,9 @@ namespace MythicChronicles.Editor
                     errors++;
                 }
             }
-            if (WorldsCatalog.Heroes.Length != 41)
+            if (WorldsCatalog.Heroes.Length != HeroRosterData.HeroCount)
             {
-                Debug.LogError("[Chronicles] Expected 41 named heroes."); errors++;
+                Debug.LogError("[Chronicles] Hero catalog does not match the generated roster."); errors++;
             }
             var kitIds = new HashSet<string>(StringComparer.Ordinal);
             foreach (HeroKit kit in HeroAbilityCatalog.All)
@@ -150,11 +150,10 @@ namespace MythicChronicles.Editor
                     else if (hero.element == HeroElement.Darkness) counts[1]++;
                 }
             }
-            if (rCount != 2 || srCount != 7 || ssrCount != 16 ||
-                urCount != 16 || exCount != 0 || lightCount != 9 || darknessCount != 7 ||
-                urByOrigin.Count != 5 || URCardCatalog.Count != 16)
+            // No global UR cap (owner decision); EX remains locked.
+            if (exCount != 0 || urCount < 16 || urByOrigin.Count < 5 || URCardCatalog.Count != urCount)
             {
-                Debug.LogError("[Chronicles] R/SR/SSR/UR/EX roster allocation mismatch.");
+                Debug.LogError("[Chronicles] Rarity ladder invalid (EX locked, released UR kept, one UR card per UR).");
                 errors++;
             }
             foreach (var pair in urByOrigin)
@@ -164,9 +163,9 @@ namespace MythicChronicles.Editor
                     errors++;
                 }
             if (ChroniclesSummonRules.Eligible(SummonBannerType.Standard, Rarity.UR).Count != 0 ||
-                ChroniclesSummonRules.Eligible(SummonBannerType.AstralCovenant, Rarity.UR).Count != 16)
+                ChroniclesSummonRules.Eligible(SummonBannerType.AstralCovenant, Rarity.UR).Count != urCount)
             {
-                Debug.LogError("[Chronicles] UR banner pools are inconsistent with the 41 heroes.");
+                Debug.LogError("[Chronicles] UR banner pools are inconsistent with the hero catalog.");
                 errors++;
             }
             if (ChroniclesLoginRewards.Days != 28 ||
@@ -209,7 +208,7 @@ namespace MythicChronicles.Editor
                 }
             }
             if (errors == 0)
-                Debug.Log("[Chronicles] Catalog validation passed: 41 hero kits, 16 UR heroes across five Light/Dark realms and 60 story stages. This is NOT a Unity/Android playtest.");
+                Debug.Log("[Chronicles] Catalog validation passed: " + WorldsCatalog.Heroes.Length + " hero kits, " + urCount + " UR heroes across " + urByOrigin.Count + " Light/Dark realms and 60 story stages. This is NOT a Unity/Android playtest.");
             else Debug.LogError("[Chronicles] Catalog validation failed with " + errors + " issues.");
         }
     }

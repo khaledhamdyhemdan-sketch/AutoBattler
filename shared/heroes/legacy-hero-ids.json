@@ -1,0 +1,170 @@
+{
+  "description": "Frozen snapshot of released hero IDs and their minimum rarity. Every id here must stay in hero-roster.json with the same or higher rarity. Append new releases; never delete lines.",
+  "snapshotCommit": "472309a43ebc4057afd87c39ffe7303cc26872e7",
+  "heroes": [
+    {
+      "id": "horus",
+      "minimumRarity": "SSR"
+    },
+    {
+      "id": "anubis",
+      "minimumRarity": "SSR"
+    },
+    {
+      "id": "ra",
+      "minimumRarity": "UR"
+    },
+    {
+      "id": "sobek",
+      "minimumRarity": "R"
+    },
+    {
+      "id": "set",
+      "minimumRarity": "SR"
+    },
+    {
+      "id": "isis",
+      "minimumRarity": "SSR"
+    },
+    {
+      "id": "sekhmet",
+      "minimumRarity": "SSR"
+    },
+    {
+      "id": "nephthys",
+      "minimumRarity": "SR"
+    },
+    {
+      "id": "bastet",
+      "minimumRarity": "R"
+    },
+    {
+      "id": "maat",
+      "minimumRarity": "SSR"
+    },
+    {
+      "id": "athena",
+      "minimumRarity": "SSR"
+    },
+    {
+      "id": "artemis",
+      "minimumRarity": "SR"
+    },
+    {
+      "id": "hades",
+      "minimumRarity": "UR"
+    },
+    {
+      "id": "persephone",
+      "minimumRarity": "SSR"
+    },
+    {
+      "id": "heracles",
+      "minimumRarity": "SSR"
+    },
+    {
+      "id": "freyja",
+      "minimumRarity": "SSR"
+    },
+    {
+      "id": "thor",
+      "minimumRarity": "SSR"
+    },
+    {
+      "id": "odin",
+      "minimumRarity": "UR"
+    },
+    {
+      "id": "hel",
+      "minimumRarity": "UR"
+    },
+    {
+      "id": "skadi",
+      "minimumRarity": "SR"
+    },
+    {
+      "id": "amaterasu",
+      "minimumRarity": "UR"
+    },
+    {
+      "id": "susanoo",
+      "minimumRarity": "SR"
+    },
+    {
+      "id": "sunwukong",
+      "minimumRarity": "SSR"
+    },
+    {
+      "id": "guanyin",
+      "minimumRarity": "SSR"
+    },
+    {
+      "id": "nezha",
+      "minimumRarity": "SSR"
+    },
+    {
+      "id": "morgana",
+      "minimumRarity": "SSR"
+    },
+    {
+      "id": "merlin",
+      "minimumRarity": "SSR"
+    },
+    {
+      "id": "arthur",
+      "minimumRarity": "SSR"
+    },
+    {
+      "id": "cleopatra",
+      "minimumRarity": "SR"
+    },
+    {
+      "id": "joan",
+      "minimumRarity": "SR"
+    },
+    {
+      "id": "amun",
+      "minimumRarity": "UR"
+    },
+    {
+      "id": "apep",
+      "minimumRarity": "UR"
+    },
+    {
+      "id": "zeus",
+      "minimumRarity": "UR"
+    },
+    {
+      "id": "nyx",
+      "minimumRarity": "UR"
+    },
+    {
+      "id": "baldr",
+      "minimumRarity": "UR"
+    },
+    {
+      "id": "fenrir",
+      "minimumRarity": "UR"
+    },
+    {
+      "id": "izanagi",
+      "minimumRarity": "UR"
+    },
+    {
+      "id": "izanami",
+      "minimumRarity": "UR"
+    },
+    {
+      "id": "nuwa",
+      "minimumRarity": "UR"
+    },
+    {
+      "id": "hundun",
+      "minimumRarity": "UR"
+    },
+    {
+      "id": "apollo",
+      "minimumRarity": "UR"
+    }
+  ]
+}

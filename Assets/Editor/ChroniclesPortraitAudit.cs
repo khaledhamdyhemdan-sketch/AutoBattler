@@ -18,7 +18,7 @@ namespace MythicChronicles.Editor
         private const string AnimationRoot =
             "Assets/Resources/Chronicles/Portraits/Animated/";
 
-        [MenuItem("Tools/Chronicles/Audit 41 Portraits And English")]
+        [MenuItem("Tools/Chronicles/Audit Hero Portraits And English")]
         public static void Audit()
         {
             int missingIdentity = 0, missingStill = 0, missingAnimation = 0;
@@ -111,10 +111,10 @@ namespace MythicChronicles.Editor
                     .AppendLine(english ? "YES" : "NO");
             }
 
-            if (WorldsCatalog.Heroes.Length != 41)
+            if (WorldsCatalog.Heroes.Length != HeroRosterData.HeroCount)
             {
                 missingIdentity++;
-                Debug.LogError("[Portrait Audit] Expected exactly 41 catalog heroes.");
+                Debug.LogError("[Portrait Audit] Catalog does not match the generated hero roster.");
             }
 
             // Verify English across story content, not just character cards.

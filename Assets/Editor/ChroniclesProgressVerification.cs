@@ -227,16 +227,19 @@ namespace MythicChronicles.Editor
                         else if (hero.element == HeroElement.Darkness) count[1]++;
                     }
                 }
-                Check(rCount == 2 && srCount == 7 && ssrCount == 16 &&
-                    urCount == 16 && exCount == 0 &&
-                    light == 9 && dark == 7 && urPairByRealm.Count == 5,
-                    "41-character tier distribution or UR element balance mismatch.");
+                // No global UR cap (owner decision); EX remains locked.
+                Check(exCount == 0 && urCount >= 16 && urPairByRealm.Count >= 5 &&
+                    rCount + srCount + ssrCount + urCount == WorldsCatalog.Heroes.Length,
+                    "Rarity ladder invalid: EX must stay locked and released UR heroes must remain.");
                 foreach (var realm in urPairByRealm)
                     Check(realm.Value[0] >= 1 && realm.Value[1] >= 1,
                         "Each UR mythology must have at least one Light and one Dark.");
-                Check(WorldsCatalog.Heroes.Length == 41 &&
-                    HeroAbilityCatalog.All.Length == 41,
-                    "All forty-one characters must have skill kits.");
+                Check(WorldsCatalog.Heroes.Length == HeroRosterData.HeroCount &&
+                    HeroAbilityCatalog.All.Length == WorldsCatalog.Heroes.Length,
+                    "Every character must have a skill kit.");
+                foreach (HeroDefinition hero in WorldsCatalog.Heroes)
+                    Check(HeroAbilityCatalog.For(hero.id) != null,
+                        "Missing skill kit: " + hero.id);
                 // Every promoted hero must preserve its original persistent ID.
                 string[] promotedIds = { "ra", "hades", "odin", "hel", "amaterasu" };
                 foreach (string id in promotedIds)

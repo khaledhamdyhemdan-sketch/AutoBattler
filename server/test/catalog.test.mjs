@@ -1,7 +1,12 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { createServer } from 'node:http';
+import { readFileSync } from 'node:fs';
 import { createHandler } from '../src/app.mjs';
+
+const readShared = name => JSON.parse(readFileSync(new URL('../../shared/heroes/' + name, import.meta.url), 'utf8'));
+const canonical = readShared('hero-roster.json');
+const legacy = readShared('legacy-hero-ids.json');
 
 const pool = { async query() { throw new Error('Public catalog must not query account data'); } };
 const pepper = 'a-test-secret-32-character-pepper-do-not-reuse';
@@ -17,21 +22,23 @@ async function withServer(callback) {
   }
 }
 
-test('public English hero roster exposes 41 unique defined champions without private data', async () => {
+test('public English hero roster exposes every canonical champion without private data', async () => {
   await withServer(async base => {
     const response = await fetch(base + '/v1/catalog/heroes');
     assert.equal(response.status, 200);
     assert.equal(response.headers.get('cache-control'), 'no-store');
     const data = await response.json();
     assert.equal(data.language, 'en-US');
-    assert.equal(data.count, 41);
-    assert.equal(data.heroes.length, 41);
-    assert.equal(new Set(data.heroes.map(x => x.id)).size, 41);
+    assert.equal(data.count, canonical.heroes.length);
+    assert.equal(data.heroes.length, canonical.heroes.length);
+    assert.equal(new Set(data.heroes.map(x => x.id)).size, data.heroes.length);
+    // Every released hero ID must still be served (save compatibility).
+    const served = new Set(data.heroes.map(x => x.id));
+    for (const old of legacy.heroes) assert.ok(served.has(old.id), 'Missing released hero ' + old.id);
     assert.equal(data.liveGameEconomy, false);
     const ur = data.heroes.filter(x => x.rarity === 'UR');
-    assert.equal(ur.length, 16);
-    assert.equal(ur.filter(x => x.element === 'Light').length, 9);
-    assert.equal(ur.filter(x => x.element === 'Darkness').length, 7);
+    assert.ok(ur.length >= 16, 'Released UR heroes must not be removed');
+    assert.ok(ur.every(x => x.element === 'Light' || x.element === 'Darkness'));
     assert.ok(ur.some(x => x.id === 'odin' && x.origin === 'Norse'));
     assert.ok(ur.some(x => x.id === 'hades' && x.origin === 'Greece'));
     assert.ok(ur.some(x => x.id === 'ra' && x.origin === 'Egypt'));

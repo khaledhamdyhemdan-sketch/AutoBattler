@@ -9,7 +9,7 @@ namespace MythicChronicles
         public const int StepCount = 5;
         public static readonly string[] Prompts =
         {
-            "WELCOME! Explore a world of 41 mythic heroes.",
+            "WELCOME! Explore a world of " + HeroRosterData.HeroCount + " mythic heroes.",
             "HEROES: inspect rarity, element and signature skills.",
             "FORMATION: assemble five heroes before entering combat.",
             "ADVENTURE: clear story chapters, Elite and Dark trials.",

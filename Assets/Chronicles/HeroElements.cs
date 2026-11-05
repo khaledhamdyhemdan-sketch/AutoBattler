@@ -22,51 +22,6 @@ namespace MythicChronicles
         public const float DisadvantagePenalty = .12f;
         public const float LightDarkRivalryBonus = .18f;
 
-        private static readonly Dictionary<string, HeroElement> Map =
-            new Dictionary<string, HeroElement>(StringComparer.Ordinal)
-            {
-                { "horus", HeroElement.Wind },
-                { "anubis", HeroElement.Wind },
-                { "ra", HeroElement.Light },
-                { "sobek", HeroElement.Water },
-                { "set", HeroElement.Fire },
-                { "isis", HeroElement.Water },
-                { "sekhmet", HeroElement.Fire },
-                { "nephthys", HeroElement.Wind },
-                { "bastet", HeroElement.Nature },
-                { "maat", HeroElement.Nature },
-                { "athena", HeroElement.Wind },
-                { "artemis", HeroElement.Nature },
-                { "hades", HeroElement.Darkness },
-                { "persephone", HeroElement.Nature },
-                { "heracles", HeroElement.Fire },
-                { "freyja", HeroElement.Nature },
-                { "thor", HeroElement.Wind },
-                { "odin", HeroElement.Light },
-                { "hel", HeroElement.Darkness },
-                { "skadi", HeroElement.Water },
-                { "amaterasu", HeroElement.Light },
-                { "susanoo", HeroElement.Wind },
-                { "sunwukong", HeroElement.Fire },
-                { "guanyin", HeroElement.Water },
-                { "nezha", HeroElement.Fire },
-                { "morgana", HeroElement.Nature },
-                { "merlin", HeroElement.Wind },
-                { "arthur", HeroElement.Water },
-                { "cleopatra", HeroElement.Water },
-                { "joan", HeroElement.Fire },
-                { "amun", HeroElement.Light },
-                { "apep", HeroElement.Darkness },
-                { "zeus", HeroElement.Light },
-                { "nyx", HeroElement.Darkness },
-                { "baldr", HeroElement.Light },
-                { "fenrir", HeroElement.Darkness },
-                { "izanagi", HeroElement.Light },
-                { "izanami", HeroElement.Darkness },
-                { "nuwa", HeroElement.Light },
-                { "hundun", HeroElement.Darkness },
-                { "apollo", HeroElement.Light }
-            };
 
         public static bool IsSpecial(HeroElement kind)
         {
@@ -76,11 +31,12 @@ namespace MythicChronicles
         {
             return hero != null && IsSpecial(For(hero.id));
         }
+        // Roster elements come from the generated catalog; unknown IDs (e.g. story
+        // bosses) keep the historical Nature default.
         public static HeroElement For(string heroId)
         {
-            HeroElement kind;
-            return heroId != null && Map.TryGetValue(heroId, out kind)
-                ? kind : HeroElement.Nature;
+            HeroDefinition hero = WorldsCatalog.FindHero(heroId);
+            return hero != null ? hero.element : HeroElement.Nature;
         }
 
         // Fire beats Nature, Nature beats Wind, Wind beats Water, Water beats Fire.

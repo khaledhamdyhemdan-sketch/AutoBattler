@@ -2,6 +2,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
+import { pathToFileURL } from 'node:url';
 
 const root = process.cwd();
 
@@ -46,58 +47,50 @@ for (const p of required)
   assert.ok(fs.existsSync(path.join(root, p)), 'Missing required file: ' + p);
 
 const capture = (text, re) => Array.from(text.matchAll(re), m => m.slice(1));
-const roster = capture(read(required[0]),
-  /new HeroDefinition\("([^"]+)",\s*"[^"]+",\s*Origin\.(\w+),\s*CombatRole\.\w+,\s*Rarity\.(R|SR|SSR|UR|EX)/g)
-  .map(([id, origin, rarity]) => ({ id, origin, rarity }));
-const kits = capture(read(required[1]), /new HeroKit\("([^"]+)"/g).map(a => a[0]);
-const portraits = capture(read(required[2]), /new PortraitIdentity\("([^"]+)"/g).map(a => a[0]);
-const elements = new Map(capture(read(required[3]),
-  /\{\s*"([^"]+)",\s*HeroElement\.(\w+)\s*\}/g));
+// Hero data has ONE canonical source (shared/heroes/hero-roster.json). The C# tables and
+// the shared backend catalog are generated from it and must not be stale.
+const { loadRoster, validateRoster, rosterTargets, renderCSharp, renderShared } =
+  await import(pathToFileURL(path.join(root, 'tools/generate-hero-data.mjs')).href);
+const canonical = loadRoster();
+const rosterErrors = validateRoster(canonical);
+assert.deepEqual(rosterErrors, [], 'Canonical hero roster invalid:\n' + rosterErrors.join('\n'));
+assert.equal(read('Assets/Chronicles/HeroRosterData.g.cs'), renderCSharp(canonical),
+  'HeroRosterData.g.cs is stale; run: node tools/generate-hero-data.mjs');
+assert.equal(read('shared/hero-catalog.json'), renderShared(canonical),
+  'shared/hero-catalog.json is stale; run: node tools/generate-hero-data.mjs');
+for (const [file, marker] of [
+  ['Assets/Chronicles/WorldsCatalog.cs', 'Heroes = HeroRosterData.Heroes;'],
+  ['Assets/Chronicles/HeroAbilityCatalog.cs', 'All = HeroRosterData.Kits;'],
+  ['Assets/Chronicles/HeroPortraitIdentityCatalog.cs', 'All = HeroRosterData.FallbackPortraits;'],
+  ['Assets/Chronicles/HeroSkinCatalog.cs', 'HeroRosterData.AlternateSkinNames']])
+  assert.ok(read(file).includes(marker), file + ' must read hero data from HeroRosterData');
+assert.ok(!/new HeroKit\(|new PortraitIdentity\(|\{\s*"[a-z]+",\s*HeroElement\./.test(
+  read('Assets/Chronicles/HeroAbilityCatalog.cs') + read('Assets/Chronicles/HeroPortraitIdentityCatalog.cs') +
+  read('Assets/Chronicles/HeroElements.cs')), 'Hand-written hero tables found outside the canonical roster');
+
+const roster = canonical.heroes;
+const elements = new Map(roster.map(h => [h.id, h.element]));
 const cards = capture(read(required[5]),
   /new URCardIdentity\("([^"]+)"/g).map(a => a[0]);
-
-const unique = (label, ids) => {
-  assert.equal(new Set(ids).size, ids.length, 'Duplicate ' + label + ' IDs');
-};
-unique('hero', roster.map(h => h.id));
-unique('kit', kits);
-unique('portrait', portraits);
-unique('UR card', cards);
-
-assert.equal(roster.length, 41, 'Expected 41 heroes');
-assert.equal(kits.length, 41, 'Expected 41 ability kits');
-assert.equal(portraits.length, 41, 'Expected 41 portrait identities');
-assert.equal(elements.size, 41, 'Expected 41 elemental identities');
-assert.equal(cards.length, 16, 'Expected 16 UR card directions');
+assert.equal(new Set(cards).size, cards.length, 'Duplicate UR card IDs');
 const lookup = new Map(roster.map(hero => [hero.id, hero]));
 for (const h of roster) {
-  assert.ok(kits.includes(h.id), h.id + ' has no skill kit');
-  assert.ok(portraits.includes(h.id), h.id + ' has no portrait identity');
-  assert.ok(elements.has(h.id), h.id + ' has no element mapping');
   if (h.rarity === 'UR') {
     assert.ok(cards.includes(h.id), h.id + ' has no premium UR card');
-    assert.ok(['Light', 'Darkness'].includes(elements.get(h.id)),
+    assert.ok(['Light', 'Darkness'].includes(h.element),
       h.id + ' must have a special UR element');
   } else {
     assert.ok(!cards.includes(h.id), h.id + ' has UR card but wrong rarity');
-    assert.ok(!['Light', 'Darkness'].includes(elements.get(h.id)),
+    assert.ok(!['Light', 'Darkness'].includes(h.element),
       h.id + ' has a special element without UR rarity');
   }
 }
-for (const id of [...kits, ...portraits, ...cards, ...elements.keys()])
+for (const id of cards)
   assert.ok(lookup.has(id), 'Unknown hero asset ID: ' + id);
 
-// The shared read-only API catalog must remain byte-for-byte consistent
-// in identity and public attributes with Unity's authoritative source.
 const shared = JSON.parse(read('shared/hero-catalog.json'));
-const heroDetails = capture(read(required[0]),
-  /new HeroDefinition\("([^"]+)",\s*"([^"]+)",\s*Origin\.(\w+),\s*CombatRole\.(\w+),\s*Rarity\.(R|SR|SSR|UR|EX)/g)
-  .map(([id,name,origin,role,rarity]) =>
-    ({id,name,origin,role,rarity,element:elements.get(id)}));
 assert.equal(shared.gameLanguage, 'en-US', 'Only English player-facing data is approved');
-assert.equal(shared.heroCount, 41);
-assert.deepEqual(shared.heroes, heroDetails,
-  'Shared backend hero catalog drifted from Unity roster; regenerate it');
+assert.equal(shared.heroCount, roster.length);
 assert.equal(shared.banners.length, 2, 'Expected Standard and Astral disclosure');
 for (const banner of shared.banners) {
   const odds = Object.values(banner.rates);
@@ -117,9 +110,8 @@ for (const text of ['StandardCostGems = 120', 'AstralCostGems = 300',
 
 const artBible = JSON.parse(read('docs/HERO_ART_DIRECTION_ALL_41.json'));
 assert.equal(artBible.language, 'en-US');
-assert.equal(artBible.heroes.length, 41, 'Every character needs art direction');
-assert.deepEqual(artBible.heroes.map(h => h.id), shared.heroes.map(h => h.id),
-  "Art production roster diverges from Unity hero IDs");
+assert.deepEqual(artBible.heroes.map(h => h.id), roster.map(h => h.id),
+  "Art production roster diverges from Unity hero IDs (every hero needs art direction)");
 for (const hero of artBible.heroes) {
   for (const field of ['silhouette','weapon','setting','idle','ultimateVfx'])
     assert.ok(typeof hero[field] === 'string' && hero[field].length > 20,
@@ -140,30 +132,22 @@ for (const hero of artBible.heroes) {
   }
 }
 
+// No global UR cap (owner decision). Every faction that has UR heroes must
+// have both Light and Darkness UR; EX stays locked (enforced by the generator).
 const tiers = Object.fromEntries(['R','SR','SSR','UR','EX'].map(t =>
   [t, roster.filter(h => h.rarity === t).length]));
-assert.deepEqual(tiers, { R:2, SR:7, SSR:16, UR:16, EX:0 },
-  'Rarity ladder distribution drifted');
+assert.equal(tiers.EX, 0, 'EX rarity is locked');
 const origins = new Map();
 for (const hero of roster.filter(h => h.rarity === 'UR')) {
   const state = origins.get(hero.origin) ?? {Light:0,Darkness:0};
-  state[elements.get(hero.id)]++;
+  state[hero.element]++;
   origins.set(hero.origin, state);
 }
-assert.equal(origins.size, 5, 'Five UR mythological origins expected');
 for (const [origin, counts] of origins) {
   assert.ok(counts.Light >= 1 && counts.Darkness >= 1,
     origin + ' must have Light and Darkness UR heroes');
 }
-assert.equal(roster.filter(h => h.rarity === 'UR' &&
-  elements.get(h.id) === 'Light').length, 9);
-assert.equal(roster.filter(h => h.rarity === 'UR' &&
-  elements.get(h.id) === 'Darkness').length, 7);
-
-const altNames = read(required[4]).split('private static readonly string[] AltNames =')[1]?.split('};')[0];
-assert.ok(altNames, 'Missing alternate-skin names');
-assert.equal(capture(altNames, /"[^"]+"/g).length, 41,
-  'Skin concept count does not match the roster');
+const unmetTargets = rosterTargets(canonical).filter(t => !t.ok);
 
 function listFiles(folder) {
   const entries = fs.readdirSync(folder, { withFileTypes: true });
@@ -242,6 +226,10 @@ for(const method of ['BeginLabyrinthBattle','CompleteLabyrinthBattle',
   'BeginArenaTraining','CompleteArenaTraining','DrawHeroes',
   'ClaimAchievement','ClaimDailyLogin','BuyShopOffer','ClaimMailReward'])
   assert.ok(player.includes(method+'('), 'Missing gameplay method '+method);
-console.log('[Chronicles Source Audit] PASS: 41 heroes, 16 UR, English game UI source, '+
+console.log('[Chronicles Source Audit] PASS: '+roster.length+' heroes ('+
+  Object.entries(tiers).map(([t,n])=>t+' '+n).join(', ')+'), English game UI source, '+
   runtimeFiles.length+' runtime C# files, '+editorFiles.length+
   ' editor scripts, '+guidSet.size+' GUIDs. This is NOT a Unity compile or playtest.');
+if (unmetTargets.length)
+  console.log('[Chronicles Source Audit] Roster target pending (10+ heroes and Light+Dark UR per faction): '+
+    unmetTargets.map(t => t.origin+' '+t.heroes+'/10 UR L'+t.lightUR+'/D'+t.darkUR).join(', '));

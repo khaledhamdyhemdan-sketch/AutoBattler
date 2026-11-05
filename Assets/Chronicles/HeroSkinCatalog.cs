@@ -18,19 +18,9 @@ namespace MythicChronicles
 
     public static class HeroSkinCatalog
     {
-        // 41 optional costume concepts; ALL require original production-ready visual assets.
+        // One optional costume concept per hero, keyed by hero ID in
+        // shared/heroes/hero-roster.json. ALL require original production-ready visual assets.
         // These definitions implement entitlement/equip logic, not missing animations or art.
-        private static readonly string[] AltNames =
-        {
-            "Solar Falcon", "Silent Judge", "Sun Emperor", "Nile Warden", "Desert Sovereign",
-            "Lunar Oracle", "Crimson Lioness", "Night Blossom", "Velvet Moon", "Celestial Verdict",
-            "Astral Strategist", "Moon Huntress", "Obsidian Lord", "Winter Blossom", "Lionheart",
-            "Star Valkyrie", "Runic Thunder", "Wandering Sage", "Frozen Queen", "Snow Stalker",
-            "Heavenly Dawn", "Ocean Tempest", "Cloud Monarch", "Lotus Mercy", "Flame Lotus",
-            "Mirror Witch", "Arcane Clockwork", "Everlasting Crown", "Ptolemaic Radiance", "Silver Banner",
-            "Veiled Origin", "Star-Eater", "Thunder Throne", "Infinite Night", "Golden Renewal",
-            "Unbound Moon", "Worldforger", "Yomi Empress", "Sky Weaver", "The First Silence", "Delphic Sunrise"
-        };
 
         private static readonly Dictionary<string, List<HeroSkin>> ByHero = Build();
 
@@ -41,13 +31,16 @@ namespace MythicChronicles
             {
                 HeroDefinition hero = WorldsCatalog.Heroes[i];
                 string alternateId = "ascendant";
-                result[hero.id] = new List<HeroSkin>
+                var skins = new List<HeroSkin>
                 {
                     new HeroSkin(hero.id, "default", "Original Appearance",
-                        "Authentic original design for this crossover hero.", 0),
-                    new HeroSkin(hero.id, alternateId, AltNames[i],
-                        "Alternative animated fantasy costume: " + AltNames[i], 280)
+                        "Authentic original design for this crossover hero.", 0)
                 };
+                string altName;
+                if (HeroRosterData.AlternateSkinNames.TryGetValue(hero.id, out altName))
+                    skins.Add(new HeroSkin(hero.id, alternateId, altName,
+                        "Alternative animated fantasy costume: " + altName, 280));
+                result[hero.id] = skins;
             }
             return result;
         }
