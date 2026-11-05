@@ -12,6 +12,7 @@ namespace MythicChronicles
         {
             public HeroDefinition hero;
             public GameObject model;
+            public HeroVisualDriver visual;
             public int side, level;
             public float hp, maxHp, attack, armor, energy, shield, attackCd, skillCd, stunned, flash;
             public float burn, burnTick, cursed, frozen, rallied, tauntSeconds, passiveTimer;
@@ -52,7 +53,7 @@ namespace MythicChronicles
             {
                 HeroDefinition hero = WorldsCatalog.FindHero(squad[i].id);
                 if (hero == null) throw new ArgumentException("Unknown hero: " + squad[i].id);
-                Spawn(hero, 0, i, squad[i].level, false, squad[i].weaponLevel, squad[i].armorLevel, squad[i].stars);
+                Spawn(hero, 0, i, squad[i].level, false, squad[i].weaponLevel, squad[i].armorLevel, squad[i].stars, squad[i].skin);
             }
             var opponents = new List<HeroDefinition>();
             Origin origin = WorldsCatalog.Chapters[stage.chapter - 1].origin;
@@ -132,7 +133,7 @@ namespace MythicChronicles
         }
 
         private void Spawn(HeroDefinition hero, int side, int slot, int level, bool boss,
-            int weaponLevel = 0, int armorLevel = 0, int stars = 1)
+            int weaponLevel = 0, int armorLevel = 0, int stars = 1, string skin = "default")
         {
             bool front = slot < 2;
             float x = front ? (slot == 0 ? -1.55f : 1.55f) : (slot - 3) * 2.45f;
@@ -154,22 +155,24 @@ namespace MythicChronicles
                 arrivalPosition = destination + new Vector3(0f, 0f, side == 0 ? -5f : 5f)
             };
             unit.hp = unit.maxHp;
-            unit.model = GameObject.CreatePrimitive(PrimitiveType.Capsule);
-            unit.model.name = hero.name + (boss ? " - Chapter Boss" : "");
-            unit.model.transform.SetParent(transform);
+            unit.visual = HeroVisualDriver.Spawn(hero, skin, transform,
+                side == 0 ? OriginMaterial(hero.origin) : redMaterial);
+            unit.model = unit.visual.gameObject;
             unit.model.transform.position = unit.arrivalPosition;
             unit.model.transform.localScale = Vector3.one * .001f;
-            unit.model.GetComponent<Renderer>().sharedMaterial = side == 0 ? OriginMaterial(hero.origin) : redMaterial;
-            Collider collider = unit.model.GetComponent<Collider>();
-            if (collider != null) Destroy(collider);
-            GameObject emblem = GameObject.CreatePrimitive(PrimitiveType.Sphere);
-            emblem.name = "Hero Emblem";
-            emblem.transform.SetParent(unit.model.transform, false);
-            emblem.transform.localPosition = new Vector3(0f, .90f, 0f);
-            emblem.transform.localScale = new Vector3(.45f, .20f, .45f);
-            emblem.GetComponent<Renderer>().sharedMaterial = goldMaterial;
-            Collider emblemCollider = emblem.GetComponent<Collider>();
-            if (emblemCollider != null) Destroy(emblemCollider);
+            if (unit.visual.IsPlaceholder)
+            {
+                GameObject emblem = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+                emblem.name = "Placeholder Emblem";
+                emblem.transform.SetParent(unit.model.transform, false);
+                emblem.transform.localPosition = new Vector3(0f, .90f, 0f);
+                emblem.transform.localScale = new Vector3(.45f, .20f, .45f);
+                emblem.GetComponent<Renderer>().sharedMaterial = goldMaterial;
+                Collider emblemCollider = emblem.GetComponent<Collider>();
+                if (emblemCollider != null) Destroy(emblemCollider);
+            }
+            unit.visual.Play(HeroAnimation.Entrance);
+            unit.visual.EntranceFX(hero.id);
             units.Add(unit);
         }
 
@@ -226,6 +229,7 @@ namespace MythicChronicles
                 if (direction.magnitude > range)
                 {
                     float moveSpeed = f.frozen > 0f ? 1.0f : 2.1f;
+                    f.visual.Play(HeroAnimation.Run);
                     f.model.transform.position += direction.normalized *
                         Mathf.Min(moveSpeed * dt, direction.magnitude - range);
                     f.model.transform.LookAt(new Vector3(target.model.transform.position.x,
@@ -233,6 +237,7 @@ namespace MythicChronicles
                 }
                 else if (f.attackCd <= 0f)
                 {
+                    f.visual.Play(HeroAnimation.Attack);
                     Hit(f, target, f.attack);
                     float baseCooldown = f.hero.role == CombatRole.Assassin ? .85f : 1.25f;
                     if (f.frozen > 0f) baseCooldown *= 1.45f;
@@ -241,6 +246,7 @@ namespace MythicChronicles
                     f.energy = Mathf.Min(100f, f.energy + (kit != null &&
                         kit.passive == HeroPassive.Enchantress ? 23f : 17f));
                 }
+                else f.visual.Play(HeroAnimation.Idle);
             }
 
             for (int i = popups.Count - 1; i >= 0; i--)
@@ -260,8 +266,11 @@ namespace MythicChronicles
                     if (unit.side == 0) left += unit.hp / unit.maxHp;
                     else right += unit.hp / unit.maxHp;
                 }
-                if (finished != null)
-                    finished(playerAlive && (!enemyAlive || left > right));
+                bool won = playerAlive && (!enemyAlive || left > right);
+                foreach (Combatant unit in units)
+                    if (unit.Alive && unit.side == (won ? 0 : 1))
+                        unit.visual.Play(HeroAnimation.Victory);
+                if (finished != null) finished(won);
             }
         }
 
@@ -395,6 +404,7 @@ namespace MythicChronicles
                 if (attacker.rallied > 0f) raw *= 1.22f;
             }
 
+            defender.visual.Play(HeroAnimation.Hit);
             float damage = raw * 100f / (100f + defender.armor);
             if (defender.hero.role == CombatRole.Tank) damage *= .84f;
             if (defender.cursed > 0f) damage *= 1.2f;
@@ -436,7 +446,8 @@ namespace MythicChronicles
                     return;
                 }
             }
-            defender.model.SetActive(false);
+            defender.visual.Play(HeroAnimation.Death);
+            if (defender.visual.IsPlaceholder) defender.model.SetActive(false);
             foreach (Combatant unit in units)
             {
                 if (!unit.Alive || unit.side == defender.side) continue;
@@ -476,6 +487,7 @@ namespace MythicChronicles
             HeroKit kit = HeroAbilityCatalog.For(actor.hero.id);
             if (kit == null) { Hit(actor, target, actor.attack * 1.4f); return; }
             actor.energy = Mathf.Min(100f, actor.energy + 13f);
+            actor.visual.Play(HeroAnimation.Skill);
             CastEffect(actor, target, kit.skill, kit.skillPower, false);
             Floating(kit.skillName, actor, Color.yellow);
         }
@@ -484,6 +496,7 @@ namespace MythicChronicles
         {
             HeroKit kit = HeroAbilityCatalog.For(actor.hero.id);
             if (kit == null) { Hit(actor, target, actor.attack * 3f); return; }
+            actor.visual.Play(HeroAnimation.Ultimate);
             CastEffect(actor, target, kit.ultimate, kit.ultimatePower, true);
             Floating(kit.ultimateName, actor, new Color(1f, .75f, .22f));
         }
