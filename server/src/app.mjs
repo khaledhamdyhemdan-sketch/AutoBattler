@@ -1,4 +1,5 @@
 import { randomUUID } from 'node:crypto';
+import { publicHeroCatalog, publicBannerCatalog } from './catalog.mjs';
 import {
   bearerToken, guestName, hashedSession, newSessionToken, readJson, validUuid
 } from './security.mjs';
@@ -133,6 +134,14 @@ export function createHandler({ pool, pepper, devGuest = false, logger = console
       if (req.method === 'POST' && pathname === '/v1/auth/guest') {
         const result = await createDeveloperGuest(req, pool, pepper, devGuest);
         send(res, 201, result); return;
+      }
+      // Static, public, rate-transparent information only. No player-owned
+      // inventory/currency is returned and no summon roll runs server-side.
+      if (req.method === 'GET' && pathname === '/v1/catalog/heroes') {
+        send(res, 200, publicHeroCatalog()); return;
+      }
+      if (req.method === 'GET' && pathname === '/v1/catalog/banners') {
+        send(res, 200, publicBannerCatalog()); return;
       }
       if (req.method === 'GET' && pathname === '/v1/capabilities') {
         send(res, 200, { gameLanguage: 'en-US',
