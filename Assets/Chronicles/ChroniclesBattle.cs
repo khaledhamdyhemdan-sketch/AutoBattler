@@ -48,7 +48,8 @@ namespace MythicChronicles
 
         public void Initialize(StageDefinition chosen, IList<OwnedHero> squad,
             PlayerSave savedProgress, Action<bool> onFinished,
-            TrialMode mode = TrialMode.Normal)
+            TrialMode mode = TrialMode.Normal, Origin? towerOrigin = null,
+            int towerFloor = 0)
         {
             if (chosen == null || squad == null || squad.Count != 5) throw new ArgumentException("Battle requires stage and five heroes.");
             stage = chosen; finished = onFinished;
@@ -78,10 +79,12 @@ namespace MythicChronicles
                 fighter.ultimateFactor *= 1f + squad[i].signatureWeaponRank * .055f;
             }
             var opponents = new List<HeroDefinition>();
-            Origin origin = WorldsCatalog.Chapters[stage.chapter - 1].origin;
+            Origin origin = towerOrigin.HasValue ?
+                towerOrigin.Value : WorldsCatalog.Chapters[stage.chapter - 1].origin;
             foreach (var hero in WorldsCatalog.Heroes)
                 if (hero.rarity != Rarity.UR &&
-                    (hero.origin == origin || (origin == Origin.EastAsia &&
+                    (hero.origin == origin || (!towerOrigin.HasValue &&
+                    origin == Origin.EastAsia &&
                     (hero.origin == Origin.Japan || hero.origin == Origin.China))))
                     opponents.Add(hero);
             if (opponents.Count == 0) throw new InvalidOperationException("Chapter needs opponents.");
@@ -110,6 +113,19 @@ namespace MythicChronicles
                     opponent.attack *= ChroniclesTrials.EnemyAttackMultiplier(mode);
                     opponent.armor *= mode == TrialMode.Dark ? 1.5f : 1.25f;
                     opponent.skillCd *= mode == TrialMode.Dark ? .80f : .90f;
+                }
+            }
+            if (towerFloor > 0)
+            {
+                float hpScale = 1f + (towerFloor - 1) * .09f;
+                float attackScale = 1f + (towerFloor - 1) * .07f;
+                foreach (Combatant opponent in units)
+                {
+                    if (opponent.side != 1) continue;
+                    opponent.maxHp *= hpScale;
+                    opponent.hp = opponent.maxHp;
+                    opponent.attack *= attackScale;
+                    opponent.armor *= 1f + (towerFloor - 1) * .025f;
                 }
             }
             ApplySynergy();
