@@ -24,4 +24,12 @@ before authoring instead of silently selecting the shortest description.
 - Flat source only; layered rigging/attack clips remain separate unfinished work.
 
 File audit and source audit must pass before upload. These are not Unity compilation.
-Anubis and Ra production has not yet started; review their kits/brief first.
+## Anubis delivery
+
+Reviewed full brief and Soul Barrier, Judgement Gate, Keeper's Oath. Original
+male jackal-headed guardian, ceremonial crook and threshold key, both hands
+visible, spectral weighing gate and protective barrier. Static1024x1536 and
+eight362x543 frames. Candidate loop; minor detail drift and subtle blink need
+Unity review. Source sheet/prompts/GIF retained in `art-source/anubis`.
+
+Ra production has not yet started; review his kit/brief first.
