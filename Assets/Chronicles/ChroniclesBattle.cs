@@ -157,7 +157,9 @@ namespace MythicChronicles
             cam.fieldOfView = 52f;
             cameraObject.transform.position = new Vector3(0f, 11.5f, -13f);
             cameraObject.transform.LookAt(new Vector3(0f, 0f, 0f));
-            if (FindFirstObjectByType<AudioListener>() == null) cameraObject.AddComponent<AudioListener>();
+            AudioListener activeListener = FindFirstObjectByType<AudioListener>();
+            if (activeListener == null || !activeListener.isActiveAndEnabled)
+                cameraObject.AddComponent<AudioListener>();
             GameObject lightObject = new GameObject("Chronicles Arena Light");
             lightObject.transform.SetParent(transform);
             Light light = lightObject.AddComponent<Light>();
