@@ -21,6 +21,7 @@ namespace MythicChronicles
         private bool showHeroSkills;
         private bool showHeroMotion = true;
         private int galleryTierFilter = -1;
+        private int galleryElementFilter = -1;
         private float storyStartedAt;
         private string notice = "";
         private string lastSummoned = "";
@@ -262,7 +263,7 @@ namespace MythicChronicles
                 if (i == 5)
                 {
                     GUI.DrawTexture(new Rect(x, 268, 77, 45), Texture2D.blackTexture);
-                    GUI.Label(new Rect(x, 270, 77, 39), "EX 🔒", subtitle);
+                    GUI.Label(new Rect(x, 270, 77, 39), "EX LOCKED", tiny);
                     continue;
                 }
                 Color old = GUI.backgroundColor;
@@ -276,9 +277,25 @@ namespace MythicChronicles
                 GUI.backgroundColor = old;
             }
 
+            string[] elementTabs = { "ALL", "FIRE", "WATER", "NATURE", "WIND", "LIGHT", "DARK" };
+            for (int i = 0; i < elementTabs.Length; i++)
+            {
+                Color beforeTab = GUI.backgroundColor;
+                if (galleryElementFilter == i - 1)
+                    GUI.backgroundColor = new Color(.78f, .82f, .91f);
+                if (GUI.Button(new Rect(22f + i * 71f, 319f, 67f, 40f), elementTabs[i]))
+                {
+                    galleryElementFilter = i - 1;
+                    rosterScroll = Vector2.zero;
+                }
+                GUI.backgroundColor = beforeTab;
+            }
+
             var visible = new List<HeroDefinition>();
             foreach (HeroDefinition hero in WorldsCatalog.Heroes)
-                if (galleryTierFilter < 0 || (int)hero.rarity == galleryTierFilter)
+                if ((galleryTierFilter < 0 || (int)hero.rarity == galleryTierFilter) &&
+                    (galleryElementFilter < 0 ||
+                     (int)hero.element == galleryElementFilter))
                     visible.Add(hero);
             visible.Sort((first, second) =>
             {
@@ -289,8 +306,8 @@ namespace MythicChronicles
 
             int rows = Mathf.CeilToInt(visible.Count / 3f);
             rosterScroll = GUI.BeginScrollView(
-                new Rect(17, 323, 509, 560), rosterScroll,
-                new Rect(0, 0, 477, Mathf.Max(560, rows * 222 + 12)));
+                new Rect(17, 365, 509, 510), rosterScroll,
+                new Rect(0, 0, 477, Mathf.Max(510, rows * 222 + 12)));
             for (int i = 0; i < visible.Count; i++)
             {
                 HeroDefinition hero = visible[i];
@@ -299,7 +316,7 @@ namespace MythicChronicles
                 float y = 4f + row * 222f;
                 // Generate only thumbnails inside or near the viewport.
                 if (y + 218f < rosterScroll.y - 30f ||
-                    y > rosterScroll.y + 600f) continue;
+                    y > rosterScroll.y + 550f) continue;
                 GUI.Box(new Rect(x, y, 150, 212), "");
                 ChroniclesHeroPortrait.Draw(hero.id,
                     new Rect(x + 4, y + 4, 142, 164), false);
