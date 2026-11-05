@@ -35,6 +35,9 @@ namespace MythicChronicles
         public long lastIdleClaimTicks;
         public int gold = 2500, gems = 350, summonTickets = 3, heroFragments, forgeDust, relicDust, nextItemSerial = 1;
         public int lastClearedStage;
+        public int astralSeals;
+        public int standardPity, astralPity;
+        public List<SummonHistoryRecord> summonHistory = new List<SummonHistoryRecord>();
         public float musicVolume = .8f, effectsVolume = .9f;
         public bool reducePortraitMotion;
         public List<OwnedHero> heroes = new List<OwnedHero>();
@@ -135,12 +138,25 @@ namespace MythicChronicles
             if (Data.equipment == null) Data.equipment = new List<GearInstance>();
             if (Data.runes == null) Data.runes = new List<RuneInstance>();
             if (Data.relics == null) Data.relics = new List<RelicRank>();
+            if (Data.summonHistory == null)
+                Data.summonHistory = new List<SummonHistoryRecord>();
             Data.gold = Math.Max(0, Data.gold);
             Data.gems = Math.Max(0, Data.gems);
             Data.summonTickets = Math.Max(0, Data.summonTickets);
             Data.heroFragments = Math.Max(0, Data.heroFragments);
             Data.forgeDust = Math.Max(0, Data.forgeDust);
             Data.relicDust = Math.Max(0, Data.relicDust);
+            Data.astralSeals = Math.Max(0, Data.astralSeals);
+            Data.standardPity = Mathf.Clamp(Data.standardPity, 0,
+                ChroniclesSummonRules.StandardSsrPity - 1);
+            Data.astralPity = Mathf.Clamp(Data.astralPity, 0,
+                ChroniclesSummonRules.AstralUrPity - 1);
+            Data.summonHistory.RemoveAll(h => h == null ||
+                WorldsCatalog.FindHero(h.heroId) == null ||
+                (h.banner != "Standard" && h.banner != "AstralCovenant"));
+            if (Data.summonHistory.Count > ChroniclesSummonRules.HistoryLimit)
+                Data.summonHistory.RemoveRange(0,
+                    Data.summonHistory.Count - ChroniclesSummonRules.HistoryLimit);
             Data.nextItemSerial = Math.Max(1, Data.nextItemSerial);
             Data.lastClearedStage = Mathf.Clamp(Data.lastClearedStage, 0, 60);
             Data.musicVolume = Mathf.Clamp01(Data.musicVolume);
@@ -684,31 +700,116 @@ namespace MythicChronicles
         // This is not a real-money offering or final commercial gacha balance.
         public string SummonHero()
         {
-            ResetDailyIfNeeded();
-            if (Data.summonTickets > 0) Data.summonTickets--;
-            else if (Data.gems >= 120) Data.gems -= 120;
-            else return null;
+            SummonBatchResult result = DrawHeroes(SummonBannerType.Standard, 1);
+            return result.success && result.heroIds.Count > 0 ?
+                result.heroIds[0] : null;
+        }
 
-            // Preliminary standard-banner odds: R 20%, SR 65%, SSR 15%.
-            // All ten Light/Dark UR heroes are reserved for a separate
-            // limited banner with published odds, pity and transaction logs.
-            // Standard summons cannot roll UR or EX.
-            float random = UnityEngine.Random.value;
-            Rarity tier = random < .20f ? Rarity.R :
-                random < .85f ? Rarity.SR : Rarity.SSR;
-            var candidates = new List<HeroDefinition>();
-            foreach (var hero in WorldsCatalog.Heroes)
-                if (hero.rarity == tier && !HeroElements.IsSpecial(hero))
-                    candidates.Add(hero);
-            if (candidates.Count == 0) return null;
-            HeroDefinition selected = candidates[UnityEngine.Random.Range(0, candidates.Count)];
-            OwnedHero owned = FindOwnedHero(selected.id);
-            if (owned == null) Data.heroes.Add(new OwnedHero { id = selected.id });
-            else { owned.fragments += 10; Data.heroFragments += 10; }
-            IncrementQuest("summon_1");
-            IncrementWeekly("summon_5");
-            Save();
-            return selected.id;
+        /// <summary>
+        /// Offline prototype only: currency and records live in the local save.
+        /// Paid pulls/real rankings require server-authoritative transactions.
+        /// A batch is deducted once, drawn once and saved once; on save failure
+        /// the in-memory data is restored to its original snapshot.
+        /// </summary>
+        public SummonBatchResult DrawHeroes(SummonBannerType banner, int count)
+        {
+            var result = new SummonBatchResult();
+            if (count != 1 && count != 10)
+            {
+                result.error = "Choose 1 or 10 summons.";
+                return result;
+            }
+            if (banner != SummonBannerType.Standard &&
+                banner != SummonBannerType.AstralCovenant)
+            {
+                result.error = "Unknown summon banner.";
+                return result;
+            }
+            ResetDailyIfNeeded();
+            int tickets = banner == SummonBannerType.Standard ?
+                Data.summonTickets : Data.astralSeals;
+            int free = Math.Min(count, tickets);
+            int paid = count - free;
+            int gemCost = paid * ChroniclesSummonRules.GemCost(banner);
+            if (Data.gems < gemCost)
+            {
+                result.error = "Not enough tickets, seals or gems.";
+                return result;
+            }
+
+            string before = JsonUtility.ToJson(Data);
+            try
+            {
+                if (banner == SummonBannerType.Standard)
+                    Data.summonTickets -= free;
+                else
+                    Data.astralSeals -= free;
+                Data.gems -= gemCost;
+
+                for (int i = 0; i < count; i++)
+                {
+                    float roll = UnityEngine.Random.value;
+                    int previousPity = banner == SummonBannerType.Standard ?
+                        Data.standardPity : Data.astralPity;
+                    bool guaranteed = banner == SummonBannerType.Standard ?
+                        previousPity >= ChroniclesSummonRules.StandardSsrPity - 1 :
+                        previousPity >= ChroniclesSummonRules.AstralUrPity - 1;
+                    Rarity tier;
+                    if (banner == SummonBannerType.Standard)
+                    {
+                        tier = guaranteed || roll <
+                            ChroniclesSummonRules.StandardSsrRate ? Rarity.SSR :
+                            roll < ChroniclesSummonRules.StandardSsrRate +
+                            ChroniclesSummonRules.StandardSrRate ? Rarity.SR : Rarity.R;
+                        Data.standardPity = tier == Rarity.SSR ?
+                            0 : previousPity + 1;
+                    }
+                    else
+                    {
+                        tier = guaranteed || roll <
+                            ChroniclesSummonRules.AstralUrRate ? Rarity.UR :
+                            roll < ChroniclesSummonRules.AstralUrRate +
+                            ChroniclesSummonRules.AstralSsrRate ? Rarity.SSR : Rarity.SR;
+                        Data.astralPity = tier == Rarity.UR ?
+                            0 : previousPity + 1;
+                    }
+
+                    List<HeroDefinition> pool = ChroniclesSummonRules.Eligible(banner, tier);
+                    if (pool.Count == 0) throw new InvalidOperationException(
+                        "No heroes are available for this summon tier.");
+                    HeroDefinition hero = pool[UnityEngine.Random.Range(0, pool.Count)];
+                    OwnedHero owned = FindOwnedHero(hero.id);
+                    if (owned == null)
+                        Data.heroes.Add(new OwnedHero { id = hero.id });
+                    else
+                    {
+                        owned.fragments += 10;
+                        Data.heroFragments += 10;
+                    }
+                    result.heroIds.Add(hero.id);
+                    Data.summonHistory.Add(new SummonHistoryRecord
+                    {
+                        heroId = hero.id,
+                        banner = banner.ToString(),
+                        utc = DateTime.UtcNow.ToString("o"),
+                        guaranteed = guaranteed
+                    });
+                    if (Data.summonHistory.Count > ChroniclesSummonRules.HistoryLimit)
+                        Data.summonHistory.RemoveAt(0);
+                    IncrementQuest("summon_1");
+                    IncrementWeekly("summon_5");
+                }
+                if (!Save()) throw new IOException(LastError ?? "Save failed.");
+                result.success = true;
+                return result;
+            }
+            catch (Exception ex)
+            {
+                Data = JsonUtility.FromJson<PlayerSave>(before);
+                result.heroIds.Clear();
+                result.error = "Summon could not be saved: " + ex.Message;
+                return result;
+            }
         }
 
         public bool CompleteStage(int stageId)
@@ -730,6 +831,7 @@ namespace MythicChronicles
                 {
                     Data.relics.Add(new RelicRank { id = rewardRelic.id, level = 1 });
                     Data.relicDust += 15;
+                    Data.astralSeals = Math.Min(999999, Data.astralSeals + 2);
                     if (string.IsNullOrEmpty(Data.equippedRelicId))
                         Data.equippedRelicId = rewardRelic.id;
                 }
