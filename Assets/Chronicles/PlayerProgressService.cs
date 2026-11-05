@@ -47,6 +47,7 @@ namespace MythicChronicles
         public List<int> stageRewardsClaimed = new List<int>();
         public List<int> eliteClears = new List<int>();
         public List<int> darkClears = new List<int>();
+        public List<TowerProgressRecord> towerProgress = new List<TowerProgressRecord>();
         public List<QuestCounter> quests = new List<QuestCounter>();
         public List<QuestCounter> weeklyQuests = new List<QuestCounter>();
         public List<string> claimedDailyQuests = new List<string>();
@@ -136,6 +137,16 @@ namespace MythicChronicles
             if (Data.stageRewardsClaimed == null) Data.stageRewardsClaimed = new List<int>();
             if (Data.eliteClears == null) Data.eliteClears = new List<int>();
             if (Data.darkClears == null) Data.darkClears = new List<int>();
+            if (Data.towerProgress == null)
+                Data.towerProgress = new List<TowerProgressRecord>();
+            var seenTowers = new HashSet<string>(StringComparer.Ordinal);
+            Data.towerProgress.RemoveAll(t => t == null ||
+                string.IsNullOrEmpty(t.origin) ||
+                !seenTowers.Add(t.origin) ||
+                !Array.Exists(ChroniclesTowers.TowerOrigins,
+                    origin => origin.ToString() == t.origin));
+            foreach (TowerProgressRecord tower in Data.towerProgress)
+                tower.highestFloor = Mathf.Clamp(tower.highestFloor, 0, ChroniclesTowers.MaxFloor);
             var seenElite = new HashSet<int>();
             Data.eliteClears.RemoveAll(id => id < 1 || id > 60 || !seenElite.Add(id));
             var seenDark = new HashSet<int>();
@@ -863,6 +874,47 @@ namespace MythicChronicles
                 result.heroIds.Clear();
                 result.error = "Summon could not be saved: " + ex.Message;
                 return result;
+            }
+        }
+
+        public bool CanEnterTower(Origin origin, int floor, IList<string> team)
+        {
+            return ChroniclesTowers.CanEnter(Data, origin, floor, team);
+        }
+
+        public bool CompleteTower(Origin origin, int floor, IList<string> team)
+        {
+            if (!CanEnterTower(origin, floor, team)) return false;
+            ResetDailyIfNeeded();
+            ResetWeeklyIfNeeded();
+            string before = JsonUtility.ToJson(Data);
+            try
+            {
+                TrialReward reward = ChroniclesTowers.FloorReward(floor);
+                if (reward == null) return false;
+                TowerProgressRecord record = Data.towerProgress.Find(x =>
+                    x.origin == origin.ToString());
+                if (record == null)
+                {
+                    record = new TowerProgressRecord { origin = origin.ToString() };
+                    Data.towerProgress.Add(record);
+                }
+                record.highestFloor = floor;
+                Data.gold = checked(Data.gold + reward.gold);
+                Data.gems = checked(Data.gems + reward.gems);
+                Data.forgeDust = checked(Data.forgeDust + reward.forgeDust);
+                Data.astralSeals = checked(Data.astralSeals + reward.astralSeals);
+                IncrementQuest("win_1");
+                IncrementQuest("win_3");
+                if (floor % 10 == 0) IncrementWeekly("boss_3");
+                if (!Save()) throw new IOException(LastError ?? "Save failed.");
+                return true;
+            }
+            catch (Exception ex)
+            {
+                Data = JsonUtility.FromJson<PlayerSave>(before);
+                LastError = ex.Message;
+                return false;
             }
         }
 
