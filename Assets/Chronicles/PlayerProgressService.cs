@@ -47,6 +47,10 @@ namespace MythicChronicles
         public List<int> stageRewardsClaimed = new List<int>();
         public List<int> campaignMilestonesClaimed = new List<int>();
         public List<string> claimedAchievements = new List<string>();
+        public string shopUtcDay = "";
+        public List<ShopPurchaseCounter> shopPurchases = new List<ShopPurchaseCounter>();
+        public List<RewardMail> mailbox = new List<RewardMail>();
+        public bool welcomeMailGranted;
         public List<int> eliteClears = new List<int>();
         public List<int> darkClears = new List<int>();
         public List<TowerProgressRecord> towerProgress = new List<TowerProgressRecord>();
@@ -146,6 +150,32 @@ namespace MythicChronicles
                 Data.campaignMilestonesClaimed = new List<int>();
             if (Data.claimedAchievements == null)
                 Data.claimedAchievements = new List<string>();
+            if (Data.shopUtcDay == null) Data.shopUtcDay = "";
+            if (Data.shopPurchases == null)
+                Data.shopPurchases = new List<ShopPurchaseCounter>();
+            var knownOffers = new HashSet<string>(StringComparer.Ordinal);
+            Data.shopPurchases.RemoveAll(x => x == null ||
+                ChroniclesShop.Find(x.offerId) == null ||
+                !knownOffers.Add(x.offerId));
+            foreach (ShopPurchaseCounter counter in Data.shopPurchases)
+                counter.quantity = Mathf.Clamp(counter.quantity, 0,
+                    ChroniclesShop.Find(counter.offerId).dailyLimit);
+            if (Data.mailbox == null) Data.mailbox = new List<RewardMail>();
+            var knownMail = new HashSet<string>(StringComparer.Ordinal);
+            Data.mailbox.RemoveAll(x => x == null || string.IsNullOrEmpty(x.id) ||
+                !knownMail.Add(x.id));
+            if (!Data.welcomeMailGranted)
+            {
+                if (!knownMail.Contains("welcome_v1"))
+                    Data.mailbox.Add(new RewardMail
+                    {
+                        id = "welcome_v1", subject = "Welcome to the Chronicles",
+                        body = "Begin your journey across the mythic worlds.",
+                        createdUtc = DateTime.UtcNow.ToString("o"),
+                        gems = 60, tickets = 1
+                    });
+                Data.welcomeMailGranted = true;
+            }
             var uniqueAchievements = new HashSet<string>(StringComparer.Ordinal);
             Data.claimedAchievements.RemoveAll(id =>
                 ChroniclesAchievements.Find(id) == null || !uniqueAchievements.Add(id));
@@ -1020,6 +1050,110 @@ namespace MythicChronicles
             // The attempt is consumed when started. Prevent quitting to reroll.
             Data.raidPendingRunId = "";
             return Save();
+        }
+
+        private void ResetShopDay()
+        {
+            string today = DateTime.UtcNow.ToString("yyyy-MM-dd");
+            if (Data.shopUtcDay == today) return;
+            Data.shopUtcDay = today;
+            Data.shopPurchases.Clear();
+            Save();
+        }
+
+        public int ShopRemaining(string offerId)
+        {
+            ResetShopDay();
+            ShopOffer offer = ChroniclesShop.Find(offerId);
+            if (offer == null) return 0;
+            ShopPurchaseCounter used = Data.shopPurchases.Find(
+                x => x.offerId == offerId);
+            return Mathf.Max(0, offer.dailyLimit - (used == null ? 0 : used.quantity));
+        }
+
+        public bool BuyShopOffer(string offerId)
+        {
+            ShopOffer offer = ChroniclesShop.Find(offerId);
+            if (offer == null || ShopRemaining(offerId) <= 0) return false;
+            if (offer.currency == ShopCurrency.Gold && Data.gold < offer.cost)
+                return false;
+            if (offer.currency == ShopCurrency.Gems && Data.gems < offer.cost)
+                return false;
+            string before = JsonUtility.ToJson(Data);
+            try
+            {
+                if (offer.currency == ShopCurrency.Gold)
+                    Data.gold -= offer.cost;
+                else if (offer.currency == ShopCurrency.Gems)
+                    Data.gems -= offer.cost;
+                switch (offer.reward)
+                {
+                    case ShopReward.Gold:
+                        Data.gold = checked(Data.gold + offer.amount); break;
+                    case ShopReward.Gems:
+                        Data.gems = checked(Data.gems + offer.amount); break;
+                    case ShopReward.SummonTicket:
+                        Data.summonTickets = checked(Data.summonTickets + offer.amount); break;
+                    case ShopReward.AstralSeal:
+                        Data.astralSeals = checked(Data.astralSeals + offer.amount); break;
+                    case ShopReward.ForgeDust:
+                        Data.forgeDust = checked(Data.forgeDust + offer.amount); break;
+                    case ShopReward.RelicDust:
+                        Data.relicDust = checked(Data.relicDust + offer.amount); break;
+                }
+                ShopPurchaseCounter used = Data.shopPurchases.Find(
+                    x => x.offerId == offer.id);
+                if (used == null)
+                {
+                    used = new ShopPurchaseCounter { offerId = offer.id };
+                    Data.shopPurchases.Add(used);
+                }
+                used.quantity++;
+                if (!Save()) throw new IOException(LastError ?? "Save failed.");
+                return true;
+            }
+            catch (Exception ex)
+            {
+                Data = JsonUtility.FromJson<PlayerSave>(before);
+                LastError = ex.Message;
+                return false;
+            }
+        }
+
+        public int UnclaimedMailCount()
+        {
+            int count = 0;
+            if (Data.mailbox == null) return count;
+            foreach (RewardMail message in Data.mailbox)
+                if (!message.claimed) count++;
+            return count;
+        }
+
+        public bool ClaimMailReward(string mailId)
+        {
+            if (string.IsNullOrEmpty(mailId)) return false;
+            RewardMail mail = Data.mailbox.Find(
+                x => x != null && x.id == mailId);
+            if (mail == null || mail.claimed) return false;
+            string before = JsonUtility.ToJson(Data);
+            try
+            {
+                Data.gold = checked(Data.gold + mail.gold);
+                Data.gems = checked(Data.gems + mail.gems);
+                Data.summonTickets = checked(Data.summonTickets + mail.tickets);
+                Data.astralSeals = checked(Data.astralSeals + mail.astralSeals);
+                Data.forgeDust = checked(Data.forgeDust + mail.forgeDust);
+                Data.relicDust = checked(Data.relicDust + mail.relicDust);
+                mail.claimed = true;
+                if (!Save()) throw new IOException(LastError ?? "Save failed.");
+                return true;
+            }
+            catch (Exception ex)
+            {
+                Data = JsonUtility.FromJson<PlayerSave>(before);
+                LastError = ex.Message;
+                return false;
+            }
         }
 
         public bool CanClaimAchievement(string id)
