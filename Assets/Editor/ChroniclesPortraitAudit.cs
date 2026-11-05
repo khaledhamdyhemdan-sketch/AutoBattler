@@ -49,6 +49,7 @@ namespace MythicChronicles.Editor
                         SearchOption.TopDirectoryOnly)
                     : new string[0];
                 Array.Sort(frames, StringComparer.Ordinal);
+                bool validAnimation = frames.Length == 8 || frames.Length == 12;
                 if (frames.Length < 8)
                 {
                     missingAnimation++;
@@ -65,8 +66,24 @@ namespace MythicChronicles.Editor
                         Debug.LogError("[Portrait Audit] " + hero.id +
                             ": use consecutive, zero-padded frame names starting at frame_000.png.");
                         missingAnimation++;
+                        validAnimation = false;
                         break;
                     }
+                }
+
+                int width = 0, height = 0;
+                foreach (string framePath in frames)
+                {
+                    var texture = AssetDatabase.LoadAssetAtPath<Texture2D>(framePath);
+                    if (texture == null || (width > 0 &&
+                        (texture.width != width || texture.height != height)))
+                    {
+                        validAnimation = false;
+                        Debug.LogError("[Portrait Audit] Missing import or inconsistent frame size: " + framePath);
+                        continue;
+                    }
+                    width = texture.width;
+                    height = texture.height;
                 }
 
                 HeroKit kit = HeroAbilityCatalog.For(hero.id);
@@ -85,7 +102,7 @@ namespace MythicChronicles.Editor
                         hero.id);
                 }
 
-                if (still && frames.Length >= 8 && english) completePairs++;
+                if (still && validAnimation && english) completePairs++;
                 report.Append(EscapeCsv(hero.id)).Append(',')
                     .Append(EscapeCsv(hero.name)).Append(',')
                     .Append(EscapeCsv(hero.rarity.ToString())).Append(',')
@@ -135,7 +152,7 @@ namespace MythicChronicles.Editor
             string destination = "Assets/Chronicles/PortraitArtAudit.csv";
             File.WriteAllText(destination, report.ToString(), new UTF8Encoding(false));
             AssetDatabase.ImportAsset(destination, ImportAssetOptions.ForceUpdate);
-            Debug.Log("[Portrait Audit] " + completePairs + "/41 imported production pairs. " +
+            Debug.Log("[Portrait Audit] " + completePairs + "/41 structurally valid imported pairs (visual approval separate). " +
                 "Missing static=" + missingStill + ", animations=" + missingAnimation +
                 ", identity issues=" + missingIdentity + ", English issues=" + englishIssues +
                 ". Missing production assets use the distinct procedural fallback." +

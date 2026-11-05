@@ -1,0 +1,441 @@
+{
+  "heroes": [
+    {
+      "hero_id": "horus",
+      "static": false,
+      "frames": 0,
+      "dimensions": [],
+      "visual_approval": "MANUAL_REVIEW_REQUIRED"
+    },
+    {
+      "hero_id": "anubis",
+      "static": false,
+      "frames": 0,
+      "dimensions": [],
+      "visual_approval": "MANUAL_REVIEW_REQUIRED"
+    },
+    {
+      "hero_id": "ra",
+      "static": false,
+      "frames": 0,
+      "dimensions": [],
+      "visual_approval": "MANUAL_REVIEW_REQUIRED"
+    },
+    {
+      "hero_id": "sobek",
+      "static": false,
+      "frames": 0,
+      "dimensions": [],
+      "visual_approval": "MANUAL_REVIEW_REQUIRED"
+    },
+    {
+      "hero_id": "set",
+      "static": false,
+      "frames": 0,
+      "dimensions": [],
+      "visual_approval": "MANUAL_REVIEW_REQUIRED"
+    },
+    {
+      "hero_id": "isis",
+      "static": false,
+      "frames": 0,
+      "dimensions": [],
+      "visual_approval": "MANUAL_REVIEW_REQUIRED"
+    },
+    {
+      "hero_id": "sekhmet",
+      "static": false,
+      "frames": 0,
+      "dimensions": [],
+      "visual_approval": "MANUAL_REVIEW_REQUIRED"
+    },
+    {
+      "hero_id": "nephthys",
+      "static": false,
+      "frames": 0,
+      "dimensions": [],
+      "visual_approval": "MANUAL_REVIEW_REQUIRED"
+    },
+    {
+      "hero_id": "bastet",
+      "static": false,
+      "frames": 0,
+      "dimensions": [],
+      "visual_approval": "MANUAL_REVIEW_REQUIRED"
+    },
+    {
+      "hero_id": "maat",
+      "static": false,
+      "frames": 0,
+      "dimensions": [],
+      "visual_approval": "MANUAL_REVIEW_REQUIRED"
+    },
+    {
+      "hero_id": "athena",
+      "static": true,
+      "frames": 8,
+      "dimensions": [
+        [
+          1024,
+          1536
+        ],
+        [
+          362,
+          543
+        ],
+        [
+          362,
+          543
+        ],
+        [
+          362,
+          543
+        ],
+        [
+          362,
+          543
+        ],
+        [
+          362,
+          543
+        ],
+        [
+          362,
+          543
+        ],
+        [
+          362,
+          543
+        ],
+        [
+          362,
+          543
+        ]
+      ],
+      "visual_approval": "MANUAL_REVIEW_REQUIRED"
+    },
+    {
+      "hero_id": "artemis",
+      "static": false,
+      "frames": 0,
+      "dimensions": [],
+      "visual_approval": "MANUAL_REVIEW_REQUIRED"
+    },
+    {
+      "hero_id": "hades",
+      "static": true,
+      "frames": 8,
+      "dimensions": [
+        [
+          384,
+          576
+        ],
+        [
+          384,
+          576
+        ],
+        [
+          384,
+          576
+        ],
+        [
+          384,
+          576
+        ],
+        [
+          384,
+          576
+        ],
+        [
+          384,
+          576
+        ],
+        [
+          384,
+          576
+        ],
+        [
+          384,
+          576
+        ],
+        [
+          384,
+          576
+        ]
+      ],
+      "visual_approval": "MANUAL_REVIEW_REQUIRED"
+    },
+    {
+      "hero_id": "persephone",
+      "static": false,
+      "frames": 0,
+      "dimensions": [],
+      "visual_approval": "MANUAL_REVIEW_REQUIRED"
+    },
+    {
+      "hero_id": "heracles",
+      "static": false,
+      "frames": 0,
+      "dimensions": [],
+      "visual_approval": "MANUAL_REVIEW_REQUIRED"
+    },
+    {
+      "hero_id": "freyja",
+      "static": false,
+      "frames": 0,
+      "dimensions": [],
+      "visual_approval": "MANUAL_REVIEW_REQUIRED"
+    },
+    {
+      "hero_id": "thor",
+      "static": false,
+      "frames": 0,
+      "dimensions": [],
+      "visual_approval": "MANUAL_REVIEW_REQUIRED"
+    },
+    {
+      "hero_id": "odin",
+      "static": false,
+      "frames": 0,
+      "dimensions": [],
+      "visual_approval": "MANUAL_REVIEW_REQUIRED"
+    },
+    {
+      "hero_id": "hel",
+      "static": false,
+      "frames": 0,
+      "dimensions": [],
+      "visual_approval": "MANUAL_REVIEW_REQUIRED"
+    },
+    {
+      "hero_id": "skadi",
+      "static": false,
+      "frames": 0,
+      "dimensions": [],
+      "visual_approval": "MANUAL_REVIEW_REQUIRED"
+    },
+    {
+      "hero_id": "amaterasu",
+      "static": false,
+      "frames": 0,
+      "dimensions": [],
+      "visual_approval": "MANUAL_REVIEW_REQUIRED"
+    },
+    {
+      "hero_id": "susanoo",
+      "static": false,
+      "frames": 0,
+      "dimensions": [],
+      "visual_approval": "MANUAL_REVIEW_REQUIRED"
+    },
+    {
+      "hero_id": "sunwukong",
+      "static": false,
+      "frames": 0,
+      "dimensions": [],
+      "visual_approval": "MANUAL_REVIEW_REQUIRED"
+    },
+    {
+      "hero_id": "guanyin",
+      "static": false,
+      "frames": 0,
+      "dimensions": [],
+      "visual_approval": "MANUAL_REVIEW_REQUIRED"
+    },
+    {
+      "hero_id": "nezha",
+      "static": false,
+      "frames": 0,
+      "dimensions": [],
+      "visual_approval": "MANUAL_REVIEW_REQUIRED"
+    },
+    {
+      "hero_id": "morgana",
+      "static": false,
+      "frames": 0,
+      "dimensions": [],
+      "visual_approval": "MANUAL_REVIEW_REQUIRED"
+    },
+    {
+      "hero_id": "merlin",
+      "static": false,
+      "frames": 0,
+      "dimensions": [],
+      "visual_approval": "MANUAL_REVIEW_REQUIRED"
+    },
+    {
+      "hero_id": "arthur",
+      "static": false,
+      "frames": 0,
+      "dimensions": [],
+      "visual_approval": "MANUAL_REVIEW_REQUIRED"
+    },
+    {
+      "hero_id": "cleopatra",
+      "static": false,
+      "frames": 0,
+      "dimensions": [],
+      "visual_approval": "MANUAL_REVIEW_REQUIRED"
+    },
+    {
+      "hero_id": "joan",
+      "static": false,
+      "frames": 0,
+      "dimensions": [],
+      "visual_approval": "MANUAL_REVIEW_REQUIRED"
+    },
+    {
+      "hero_id": "amun",
+      "static": false,
+      "frames": 0,
+      "dimensions": [],
+      "visual_approval": "MANUAL_REVIEW_REQUIRED"
+    },
+    {
+      "hero_id": "apep",
+      "static": false,
+      "frames": 0,
+      "dimensions": [],
+      "visual_approval": "MANUAL_REVIEW_REQUIRED"
+    },
+    {
+      "hero_id": "zeus",
+      "static": true,
+      "frames": 8,
+      "dimensions": [
+        [
+          384,
+          576
+        ],
+        [
+          384,
+          576
+        ],
+        [
+          384,
+          576
+        ],
+        [
+          384,
+          576
+        ],
+        [
+          384,
+          576
+        ],
+        [
+          384,
+          576
+        ],
+        [
+          384,
+          576
+        ],
+        [
+          384,
+          576
+        ],
+        [
+          384,
+          576
+        ]
+      ],
+      "visual_approval": "MANUAL_REVIEW_REQUIRED"
+    },
+    {
+      "hero_id": "nyx",
+      "static": false,
+      "frames": 0,
+      "dimensions": [],
+      "visual_approval": "MANUAL_REVIEW_REQUIRED"
+    },
+    {
+      "hero_id": "baldr",
+      "static": false,
+      "frames": 0,
+      "dimensions": [],
+      "visual_approval": "MANUAL_REVIEW_REQUIRED"
+    },
+    {
+      "hero_id": "fenrir",
+      "static": false,
+      "frames": 0,
+      "dimensions": [],
+      "visual_approval": "MANUAL_REVIEW_REQUIRED"
+    },
+    {
+      "hero_id": "izanagi",
+      "static": false,
+      "frames": 0,
+      "dimensions": [],
+      "visual_approval": "MANUAL_REVIEW_REQUIRED"
+    },
+    {
+      "hero_id": "izanami",
+      "static": false,
+      "frames": 0,
+      "dimensions": [],
+      "visual_approval": "MANUAL_REVIEW_REQUIRED"
+    },
+    {
+      "hero_id": "nuwa",
+      "static": false,
+      "frames": 0,
+      "dimensions": [],
+      "visual_approval": "MANUAL_REVIEW_REQUIRED"
+    },
+    {
+      "hero_id": "hundun",
+      "static": false,
+      "frames": 0,
+      "dimensions": [],
+      "visual_approval": "MANUAL_REVIEW_REQUIRED"
+    },
+    {
+      "hero_id": "apollo",
+      "static": true,
+      "frames": 8,
+      "dimensions": [
+        [
+          384,
+          576
+        ],
+        [
+          384,
+          576
+        ],
+        [
+          384,
+          576
+        ],
+        [
+          384,
+          576
+        ],
+        [
+          384,
+          576
+        ],
+        [
+          384,
+          576
+        ],
+        [
+          384,
+          576
+        ],
+        [
+          384,
+          576
+        ],
+        [
+          384,
+          576
+        ]
+      ],
+      "visual_approval": "MANUAL_REVIEW_REQUIRED"
+    }
+  ],
+  "errors": [],
+  "note": "File validation only. Not identity approval, Unity import, or Android QA."
+}
