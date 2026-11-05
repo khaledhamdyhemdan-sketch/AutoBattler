@@ -15,6 +15,7 @@ namespace MythicChronicles
         private int stageId = 1;
         private string selectedHero = "horus";
         private bool showHeroSkills;
+        private float storyStartedAt;
         private string notice = "";
         private string lastSummoned = "";
         private bool lastVictory;
@@ -158,6 +159,7 @@ namespace MythicChronicles
                         (id <= progress.Data.lastClearedStage ? "\nCLEARED" : "")))
                     {
                         stageId = id;
+                        storyStartedAt = Time.unscaledTime;
                         page = Page.StageStory;
                         notice = "";
                     }
@@ -172,21 +174,45 @@ namespace MythicChronicles
         {
             StageDefinition stage = WorldsCatalog.GetStage(stageId);
             if (stage == null) { page = Page.Chapters; return; }
-            GUI.Label(new Rect(22, 261, 496, 90), stage.boss ? "BOSS ENCOUNTER" : "STORY ENCOUNTER", heading);
-            GUI.Label(new Rect(25, 349, 490, 80), stage.name, heading);
             StoryMoment moment = WorldsStory.Get(stageId);
-            GUI.Box(new Rect(32, 449, 476, 174), "");
-            GUI.Label(new Rect(45, 454, 448, 40), moment == null ? "Narrator" : moment.speaker, heading);
-            GUI.Label(new Rect(45, 509, 448, 105), moment == null ? stage.narrative : moment.line, subtitle);
-            GUI.Label(new Rect(35, 633, 475, 58),
-                "Recommended power: " + stage.recommendedPower + "\n" +
-                "First-clear reward: " + stage.gold + " Gold, " + stage.gems + " Gems", subtitle);
-            if (GUI.Button(new Rect(42, 739, 458, 76), "PREPARE TEAM", bigButton))
+            Texture2D background = ChroniclesStageArt.Background(
+                WorldsCatalog.Chapters[stage.chapter - 1].origin);
+            if (background != null)
+                GUI.DrawTexture(new Rect(27, 241, 486, 216), background, ScaleMode.ScaleAndCrop);
+            GUI.Label(new Rect(22, 257, 496, 78),
+                stage.boss ? "BOSS ENCOUNTER" : "STORY ENCOUNTER", heading);
+            GUI.Label(new Rect(25, 349, 490, 72), stage.name, heading);
+
+            GUI.Box(new Rect(32, 458, 476, 196), "");
+            string speaker = moment == null ? "Narrator" : moment.speaker;
+            string line = moment == null ? stage.narrative : moment.line;
+            Texture2D portrait = ChroniclesStageArt.Portrait(speaker);
+            float textWidth = portrait == null ? 439f : 288f;
+            GUI.Label(new Rect(45, 466, textWidth, 37), speaker, subtitle);
+            int visibleCharacters = Mathf.Clamp(
+                Mathf.FloorToInt((Time.unscaledTime - storyStartedAt) * 32f), 0, line.Length);
+            GUI.Label(new Rect(45, 506, textWidth, 140),
+                line.Substring(0, visibleCharacters), subtitle);
+
+            if (portrait != null)
+            {
+                float slide = 1f - Mathf.Clamp01((Time.unscaledTime - storyStartedAt) * 2f);
+                GUI.DrawTexture(new Rect(350f + slide * 70f, 465f, 141f, 180f),
+                    portrait, ScaleMode.ScaleToFit);
+            }
+            if (GUI.Button(new Rect(180, 658, 180, 35), "SHOW ALL DIALOGUE"))
+                storyStartedAt = Time.unscaledTime - 30f;
+            GUI.Label(new Rect(35, 690, 475, 50),
+                "Recommended power: " + stage.recommendedPower +
+                "  |  First-clear: " + stage.gold + " Gold, " +
+                stage.gems + " Gems", subtitle);
+            if (GUI.Button(new Rect(42, 753, 458, 70), "PREPARE TEAM", bigButton))
             {
                 notice = "";
                 page = Page.Formation;
             }
-            if (GUI.Button(new Rect(42, 825, 458, 53), "BACK TO CHAPTERS")) page = Page.Chapters;
+            if (GUI.Button(new Rect(42, 831, 458, 51), "BACK TO CHAPTERS"))
+                page = Page.Chapters;
         }
 
         private void Heroes()
