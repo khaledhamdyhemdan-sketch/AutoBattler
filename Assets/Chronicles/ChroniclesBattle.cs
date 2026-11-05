@@ -157,8 +157,14 @@ namespace MythicChronicles
             unit.model.GetComponent<Renderer>().sharedMaterial = side == 0 ? OriginMaterial(hero.origin) : redMaterial;
             Collider collider = unit.model.GetComponent<Collider>();
             if (collider != null) Destroy(collider);
-            MakePrimitive("Emblem", PrimitiveType.Sphere, unit.model.transform.position + Vector3.up * .92f, new Vector3(.45f, .20f, .45f),
-                goldMaterial, unit.model.transform);
+            GameObject emblem = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+            emblem.name = "Hero Emblem";
+            emblem.transform.SetParent(unit.model.transform, false);
+            emblem.transform.localPosition = new Vector3(0f, .90f, 0f);
+            emblem.transform.localScale = new Vector3(.45f, .20f, .45f);
+            emblem.GetComponent<Renderer>().sharedMaterial = goldMaterial;
+            Collider emblemCollider = emblem.GetComponent<Collider>();
+            if (emblemCollider != null) Destroy(emblemCollider);
             units.Add(unit);
         }
 
