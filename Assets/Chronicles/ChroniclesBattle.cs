@@ -20,7 +20,7 @@ namespace MythicChronicles
             public Combatant forcedTarget;
             public bool boss;
             public float bossSpecialTimer = 9f;
-            public Vector3 formationPosition, arrivalPosition;
+            public Vector3 formationPosition, arrivalPosition, displayScale;
             public bool Alive { get { return hp > 0f; } }
         }
         private sealed class FloatingText
@@ -192,7 +192,8 @@ namespace MythicChronicles
                 side == 0 ? OriginMaterial(hero.origin) : redMaterial);
             unit.model = unit.visual.gameObject;
             unit.model.transform.position = unit.arrivalPosition;
-            unit.model.transform.localScale = Vector3.one * .001f;
+            unit.displayScale = unit.model.transform.localScale;
+            unit.model.transform.localScale = unit.displayScale * .001f;
             if (unit.visual.IsPlaceholder)
             {
                 GameObject emblem = GameObject.CreatePrimitive(PrimitiveType.Sphere);
@@ -222,7 +223,7 @@ namespace MythicChronicles
                     Combatant f = units[i];
                     float stagger = Mathf.Clamp01(t * 1.6f - (i % 5) * .12f);
                     f.model.transform.position = Vector3.Lerp(f.arrivalPosition, f.formationPosition, stagger);
-                    f.model.transform.localScale = Vector3.one * Mathf.Max(.001f, stagger) * (f.boss ? 1.4f : 1f);
+                    f.model.transform.localScale = f.displayScale * Mathf.Max(.001f, stagger) * (f.boss ? 1.4f : 1f);
                 }
                 return;
             }
