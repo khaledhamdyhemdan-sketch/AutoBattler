@@ -37,6 +37,8 @@ namespace MythicChronicles
         public int lastClearedStage;
         public int astralSeals;
         public int standardPity, astralPity;
+        public int loginDaysClaimed;
+        public string lastLoginGiftUtc = "";
         public List<SummonHistoryRecord> summonHistory = new List<SummonHistoryRecord>();
         public float musicVolume = .8f, effectsVolume = .9f;
         public bool reducePortraitMotion;
@@ -147,6 +149,9 @@ namespace MythicChronicles
             Data.forgeDust = Math.Max(0, Data.forgeDust);
             Data.relicDust = Math.Max(0, Data.relicDust);
             Data.astralSeals = Math.Max(0, Data.astralSeals);
+            Data.loginDaysClaimed = Mathf.Clamp(Data.loginDaysClaimed, 0,
+                ChroniclesLoginRewards.Days);
+            if (Data.lastLoginGiftUtc == null) Data.lastLoginGiftUtc = "";
             Data.standardPity = Mathf.Clamp(Data.standardPity, 0,
                 ChroniclesSummonRules.StandardSsrPity - 1);
             Data.astralPity = Mathf.Clamp(Data.astralPity, 0,
@@ -698,6 +703,45 @@ namespace MythicChronicles
 
         // Free earned-currency summoning only. Epic: 75%, Legendary: 25% of rarity pools.
         // This is not a real-money offering or final commercial gacha balance.
+        public int NextLoginRewardDay()
+        {
+            return Data.loginDaysClaimed >= ChroniclesLoginRewards.Days ?
+                1 : Data.loginDaysClaimed + 1;
+        }
+
+        public bool CanClaimDailyLogin()
+        {
+            // Local/offline convenience. Online rewards must use server UTC.
+            string today = DateTime.UtcNow.ToString("yyyy-MM-dd");
+            return string.IsNullOrEmpty(Data.lastLoginGiftUtc) ||
+                string.CompareOrdinal(today, Data.lastLoginGiftUtc) > 0;
+        }
+
+        public LoginReward ClaimDailyLogin()
+        {
+            if (!CanClaimDailyLogin()) return null;
+            LoginReward reward = ChroniclesLoginRewards.ForDay(NextLoginRewardDay());
+            if (reward == null) return null;
+            string before = JsonUtility.ToJson(Data);
+            try
+            {
+                Data.gold = checked(Data.gold + reward.gold);
+                Data.gems = checked(Data.gems + reward.gems);
+                Data.summonTickets = checked(Data.summonTickets + reward.tickets);
+                Data.astralSeals = checked(Data.astralSeals + reward.astralSeals);
+                Data.loginDaysClaimed = reward.day;
+                Data.lastLoginGiftUtc = DateTime.UtcNow.ToString("yyyy-MM-dd");
+                if (!Save()) throw new IOException(LastError ?? "Save failed.");
+                return reward;
+            }
+            catch (Exception ex)
+            {
+                Data = JsonUtility.FromJson<PlayerSave>(before);
+                LastError = ex.Message;
+                return null;
+            }
+        }
+
         public string SummonHero()
         {
             SummonBatchResult result = DrawHeroes(SummonBannerType.Standard, 1);
