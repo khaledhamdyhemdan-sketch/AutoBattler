@@ -23,6 +23,9 @@ namespace MythicChronicles
 
         private static readonly Dictionary<string, Entry> Cache =
             new Dictionary<string, Entry>(StringComparer.Ordinal);
+        private const int MaxCachedAnimatedHeroes = 2;
+        private static readonly LinkedList<string> RecentAnimatedHeroes =
+            new LinkedList<string>();
 
         private static Entry Resolve(string id)
         {
@@ -65,7 +68,29 @@ namespace MythicChronicles
                     string.CompareOrdinal(left.name, right.name));
                 entry.frames = found;
             }
+            if (entry.frames.Length > 0)
+            {
+                RecentAnimatedHeroes.Remove(heroId);
+                RecentAnimatedHeroes.AddLast(heroId);
+                TrimAnimatedCache();
+            }
             return entry.frames;
+        }
+
+        private static void TrimAnimatedCache()
+        {
+            while (RecentAnimatedHeroes.Count > MaxCachedAnimatedHeroes)
+            {
+                string expiredId = RecentAnimatedHeroes.First.Value;
+                RecentAnimatedHeroes.RemoveFirst();
+                Entry expired;
+                if (!Cache.TryGetValue(expiredId, out expired) ||
+                    expired.frames == null) continue;
+                foreach (Texture2D frame in expired.frames)
+                    if (frame != null) Resources.UnloadAsset(frame);
+                expired.frames = null;
+                expired.framesLoaded = false;
+            }
         }
 
         public static bool HasAuthoredStatic(string heroId)
@@ -85,6 +110,7 @@ namespace MythicChronicles
         {
             // Resources.Load assets are Unity-owned. Do not Destroy them.
             Cache.Clear();
+            RecentAnimatedHeroes.Clear();
         }
     }
 }
