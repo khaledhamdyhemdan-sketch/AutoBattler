@@ -253,18 +253,18 @@ namespace MythicChronicles
             GUI.Label(new Rect(30, 222, 475, 40),
                 "Collected " + progress.Data.heroes.Count + " / " +
                 WorldsCatalog.Heroes.Length + " • Origin + Element + Rarity", subtitle);
-            string[] tiers = { "R", "SR", "SSR", "???", "???" };
+            string[] tiers = { "R", "SR", "SSR", "UR", "EX" };
             for (int tier = 0; tier < tiers.Length; tier++)
             {
                 float x = 25f + tier * 101f;
-                if (tier >= 3)
+                if (tier == 4)
                 {
                     GUI.DrawTexture(new Rect(x, 267f, 95f, 61f), Texture2D.blackTexture);
                     GUI.Label(new Rect(x + 4f, 277f, 87f, 42f),
                         "LOCKED\n" + tiers[tier], subtitle);
                 }
                 else GUI.Box(new Rect(x, 267f, 95f, 61f),
-                    tiers[tier] + "\nAVAILABLE");
+                    tiers[tier] + (tier == 3 ? "\nLIMITED" : "\nAVAILABLE"));
             }
             rosterScroll = GUI.BeginScrollView(new Rect(20, 336, 505, 541), rosterScroll,
                 new Rect(0, 0, 474, WorldsCatalog.Heroes.Length * 76));
@@ -641,7 +641,7 @@ namespace MythicChronicles
             GUI.Box(new Rect(40, 347, 460, 135), "Bring a hero from another age into your collection.");
             GUI.Label(new Rect(28, 503, 488, 86),
                 "Cost: 1 earned ticket or 120 earned gems\n" +
-                "R 20% • SR 65% • SSR 15%\nLight/Dark SSR: limited banners only. Duplicates give fragments.", subtitle);
+                "R 20% • SR 65% • SSR 15%\nUR Light/Dark: limited banner (not active yet). Duplicates give fragments.", subtitle);
             if (GUI.Button(new Rect(40, 621, 460, 80), "SUMMON ONE HERO", bigButton))
             {
                 string chosen = progress.SummonHero();
