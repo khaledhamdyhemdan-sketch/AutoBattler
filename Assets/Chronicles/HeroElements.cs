@@ -27,7 +27,7 @@ namespace MythicChronicles
             {
                 { "horus", HeroElement.Wind },
                 { "anubis", HeroElement.Wind },
-                { "ra", HeroElement.Fire },
+                { "ra", HeroElement.Light },
                 { "sobek", HeroElement.Water },
                 { "set", HeroElement.Fire },
                 { "isis", HeroElement.Water },
@@ -37,15 +37,15 @@ namespace MythicChronicles
                 { "maat", HeroElement.Nature },
                 { "athena", HeroElement.Wind },
                 { "artemis", HeroElement.Nature },
-                { "hades", HeroElement.Water },
+                { "hades", HeroElement.Darkness },
                 { "persephone", HeroElement.Nature },
                 { "heracles", HeroElement.Fire },
                 { "freyja", HeroElement.Nature },
                 { "thor", HeroElement.Wind },
-                { "odin", HeroElement.Wind },
-                { "hel", HeroElement.Water },
+                { "odin", HeroElement.Light },
+                { "hel", HeroElement.Darkness },
                 { "skadi", HeroElement.Water },
-                { "amaterasu", HeroElement.Fire },
+                { "amaterasu", HeroElement.Light },
                 { "susanoo", HeroElement.Wind },
                 { "sunwukong", HeroElement.Fire },
                 { "guanyin", HeroElement.Water },
@@ -64,7 +64,8 @@ namespace MythicChronicles
                 { "izanagi", HeroElement.Light },
                 { "izanami", HeroElement.Darkness },
                 { "nuwa", HeroElement.Light },
-                { "hundun", HeroElement.Darkness }
+                { "hundun", HeroElement.Darkness },
+                { "apollo", HeroElement.Light }
             };
 
         public static bool IsSpecial(HeroElement kind)
