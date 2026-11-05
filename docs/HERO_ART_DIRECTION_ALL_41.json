@@ -451,7 +451,7 @@
       "staticPath": "Assets/Resources/Chronicles/Portraits/Static/morgana.png",
       "framesFolder": "Assets/Resources/Chronicles/Portraits/Animated/morgana",
       "prefab": "Assets/Resources/Chronicles/Heroes/morgana/default.prefab",
-      "productionStatus": "NOT_PRODUCED"
+      "productionStatus": "CANDIDATE_STATIC_AND_8_FRAMES_UNITY_REVIEW_PENDING"
     },
     {
       "id": "merlin",
