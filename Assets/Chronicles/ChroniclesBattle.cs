@@ -52,7 +52,8 @@ namespace MythicChronicles
         public void Initialize(StageDefinition chosen, IList<OwnedHero> squad,
             PlayerSave savedProgress, Action<bool> onFinished,
             TrialMode mode = TrialMode.Normal, Origin? towerOrigin = null,
-            int towerFloor = 0, bool raidBattle = false)
+            int towerFloor = 0, bool raidBattle = false,
+            LabyrinthOption labyrinth = null, int labyrinthBlessings = 0)
         {
             raidMode = raidBattle;
             raidDamage = 0f;
@@ -144,8 +145,29 @@ namespace MythicChronicles
                     opponent.armor = Mathf.Max(opponent.armor, 92f);
                 }
             }
+            if (labyrinth != null)
+            {
+                float enemyScale = 1f + (labyrinth.room - 1) * .075f;
+                if (labyrinth.kind == LabyrinthRoomKind.Elite) enemyScale *= 1.28f;
+                if (labyrinth.kind == LabyrinthRoomKind.Guardian) enemyScale *= 1.55f;
+                foreach (Combatant unit in units)
+                {
+                    if (unit.side == 1)
+                    {
+                        unit.maxHp *= enemyScale;
+                        unit.hp = unit.maxHp;
+                        unit.attack *= enemyScale;
+                    }
+                }
+            }
             ApplySynergy();
             ApplyRelic(savedProgress);
+            if (labyrinth != null && labyrinthBlessings > 0)
+                foreach (Combatant unit in units)
+                    if (unit.side == 0)
+                        unit.attack *= 1f + Mathf.Clamp(labyrinthBlessings, 0,
+                            ChroniclesLabyrinth.MaxBlessings) *
+                            ChroniclesLabyrinth.AttackPerBlessing;
         }
 
         private void ApplyRelic(PlayerSave saved)
