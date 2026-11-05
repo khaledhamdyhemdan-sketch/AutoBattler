@@ -8,7 +8,7 @@ namespace MythicChronicles
     // to be replaced by production UI Toolkit art without changing progression logic.
     public sealed class ChroniclesGame : MonoBehaviour
     {
-        private enum Page { Home, Chapters, StageStory, Heroes, HeroDetails, Formation, Summon, Quests, Idle, Battle, Results }
+        private enum Page { Home, Chapters, StageStory, Heroes, HeroDetails, Formation, Summon, Quests, WeeklyQuests, Idle, Battle, Results }
         private Page page = Page.Home;
         private PlayerProgressService progress;
         private ChroniclesBattle battle;
@@ -92,7 +92,8 @@ namespace MythicChronicles
                 case Page.HeroDetails: HeroDetails(); break;
                 case Page.Formation: Formation(); break;
                 case Page.Summon: Summon(); break;
-                case Page.Quests: Quests(); break;
+                case Page.Quests: Quests(false); break;
+                case Page.WeeklyQuests: Quests(true); break;
                 case Page.Idle: Idle(); break;
                 case Page.Battle: BattleHud(scale); break;
                 case Page.Results: Results(); break;
@@ -124,12 +125,13 @@ namespace MythicChronicles
             if (GUI.Button(new Rect(274, 497, 226, 62), "FORMATION", bigButton)) page = Page.Formation;
             if (GUI.Button(new Rect(40, 570, 222, 62), "SUMMON", bigButton)) page = Page.Summon;
             if (GUI.Button(new Rect(274, 570, 226, 62), "DAILY QUESTS", bigButton)) page = Page.Quests;
-            if (GUI.Button(new Rect(40, 645, 460, 64), "AFK REWARDS (" + progress.IdleProjectedGold() + " GOLD)", bigButton))
+            if (GUI.Button(new Rect(40, 645, 222, 64), "WEEKLY QUESTS", bigButton))
+                page = Page.WeeklyQuests;
+            if (GUI.Button(new Rect(274, 645, 226, 64), "AFK REWARDS", bigButton))
                 page = Page.Idle;
-            GUI.Label(new Rect(45, 733, 450, 125),
-                "Six linked story chapters • 30 collectible heroes\n" +
-                "Your choices travel between worlds.\n" +
-                "Developing art, animations and cinematic scenes remains in progress.", subtitle);
+            GUI.Label(new Rect(40, 748, 460, 125),
+                "Six connected chapters • 30 collectible heroes\n" +
+                "Different myths, one original storyline.", subtitle);
         }
 
         private void Chapters()
@@ -295,27 +297,32 @@ namespace MythicChronicles
                 GUI.Label(new Rect(40, 730, 460, 66), "LATEST: " + WorldsCatalog.FindHero(lastSummoned).name, heading);
         }
 
-        private void Quests()
+        private void Quests(bool weekly)
         {
-            GUI.Label(new Rect(22, 250, 490, 60), "DAILY MISSIONS", heading);
-            for (int i = 0; i < PlayerProgressService.DailyQuests.Length; i++)
+            GUI.Label(new Rect(22, 249, 490, 60), weekly ? "WEEKLY MISSIONS" : "DAILY MISSIONS", heading);
+            if (GUI.Button(new Rect(25, 306, 244, 40), "DAILY")) page = Page.Quests;
+            if (GUI.Button(new Rect(276, 306, 244, 40), "WEEKLY")) page = Page.WeeklyQuests;
+            QuestInfo[] quests = weekly ? PlayerProgressService.WeeklyQuests : PlayerProgressService.DailyQuests;
+            for (int i = 0; i < quests.Length; i++)
             {
-                QuestInfo quest = PlayerProgressService.DailyQuests[i];
-                int amount = progress.QuestProgress(quest.id);
-                bool claimed = progress.Data.claimedDailyQuests.Contains(quest.id);
-                float y = 348 + i * 99;
+                QuestInfo quest = quests[i];
+                int amount = weekly ? progress.WeeklyQuestProgress(quest.id) : progress.QuestProgress(quest.id);
+                bool claimed = weekly ? progress.Data.claimedWeeklyQuests.Contains(quest.id)
+                    : progress.Data.claimedDailyQuests.Contains(quest.id);
+                float y = 361 + i * 99;
                 GUI.Box(new Rect(21, y, 500, 87), "");
-                GUI.Label(new Rect(37, y + 8, 270, 67),
+                GUI.Label(new Rect(37, y + 8, 276, 67),
                     quest.title + "\n" + Math.Min(quest.target, amount) + "/" + quest.target +
-                    "  •  " + quest.goldReward + " gold", tiny);
+                    "  •  " + quest.goldReward + " gold / " + quest.gemReward + " gems", tiny);
                 GUI.enabled = !claimed && amount >= quest.target;
                 if (GUI.Button(new Rect(340, y + 17, 157, 54), claimed ? "CLAIMED" : "CLAIM"))
-                    notice = progress.ClaimDailyQuest(quest.id) ? "Mission reward claimed!" : "Mission not ready.";
+                    notice = (weekly ? progress.ClaimWeeklyQuest(quest.id) : progress.ClaimDailyQuest(quest.id))
+                        ? "Mission reward claimed!" : "Mission not ready.";
                 GUI.enabled = true;
             }
         }
 
-        private void Idle()
+                private void Idle()
         {
             GUI.Label(new Rect(30, 275, 480, 76), "AFK TREASURY", heading);
             GUI.Box(new Rect(41, 388, 459, 177), "Your adventurers gather resources while you are away.");
