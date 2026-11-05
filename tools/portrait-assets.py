@@ -38,6 +38,7 @@ def metadata():
 
 def audit():
     rows, errors = [], []
+    image_owners = {}
     manifest = ROOT / 'docs/HERO_PORTRAITS_41_ASSET_MANIFEST.csv'
     for hero in csv.DictReader(manifest.open(encoding='utf-8-sig')):
         hid = hero['hero_id']
@@ -52,6 +53,9 @@ def audit():
                     im.load()
                     dimensions.append(im.size)
                     hashes.append(hashlib.sha256(im.convert('RGB').tobytes()).hexdigest())
+                    previous = image_owners.setdefault((im.size, hashes[-1]), hid)
+                    if previous != hid:
+                        errors.append(f'{hid}: identical decoded image also assigned to {previous}')
             except Exception as ex:
                 errors.append(f'{p.relative_to(ROOT)}: {ex}')
         if frames:
