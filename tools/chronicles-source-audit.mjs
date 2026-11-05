@@ -1,8 +1,31 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import assert from 'node:assert/strict';
+import { execFileSync } from 'node:child_process';
 
 const root = process.cwd();
+
+// Reject orphaned Git submodule pointers. An older UniTask gitlink in
+// Packages/com.cysharp.unitask was tracked without a .gitmodules entry and
+// caused GitHub Actions checkout cleanup to warn/fail. UniTask is managed
+// through Unity Package Manager's Git URL in manifest.json, not as a submodule.
+const manifest = JSON.parse(fs.readFileSync(path.join(root,
+  'Packages/manifest.json'), 'utf8'));
+const lockFile = JSON.parse(fs.readFileSync(path.join(root,
+  'Packages/packages-lock.json'), 'utf8'));
+const unitaskUrl = manifest.dependencies?.['com.cysharp.unitask'];
+assert.match(unitaskUrl ?? '', /^https:\/\/github\.com\/Cysharp\/UniTask\.git\?path=/,
+  'UniTask must resolve through Unity Package Manager, not a broken Git submodule');
+assert.equal(lockFile.dependencies?.['com.cysharp.unitask']?.source, 'git',
+  'Unity lock file must track UniTask as a Git package');
+const gitEntries = execFileSync('git', ['ls-files', '--stage', 'Packages'],
+  { cwd: root, encoding: 'utf8' }).split('\n');
+const gitlinks = gitEntries.filter(line => line.startsWith('160000 '));
+assert.equal(gitlinks.length, 0,
+  'Orphaned Packages gitlink detected: ' + gitlinks.join(' | ') +
+  '; delete stale submodule pointers before committing');
+
+
 const read = p => fs.readFileSync(path.join(root, p), 'utf8');
 const required = [
   'Assets/Chronicles/WorldsCatalog.cs',
