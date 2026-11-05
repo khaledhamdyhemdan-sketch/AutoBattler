@@ -28,6 +28,24 @@ namespace MythicChronicles.Editor
                 Check(service.CompleteStage(1), "Replaying a cleared stage should be allowed.");
                 Check(service.Data.gold == beforeFirst + firstReward,
                     "Replays must not grant first-clear rewards twice.");
+                Check(service.Data.equipment.Count == 1,
+                    "First clear must generate one item and replay must not duplicate it.");
+                GearInstance firstGear = service.Data.equipment[0];
+                Check(service.EquipGear(firstGear.instanceId, "horus"),
+                    "Hero should equip the first gear drop.");
+                Check(service.GearBonus("horus").equippedCount == 1,
+                    "Equipped gear must contribute combat bonuses.");
+                service.Data.gold = 100000; // test-only currency in isolated directory
+                Check(service.UpgradeGear(firstGear.instanceId) && firstGear.level == 1,
+                    "Equipped gear enhancement failed.");
+                Check(service.UnequipGear(firstGear.instanceId),
+                    "Unequipping gear failed.");
+                Check(service.GearBonus("horus").equippedCount == 0,
+                    "Unequipped gear must not contribute stats.");
+                Check(service.EquipGear(firstGear.instanceId, "horus"),
+                    "Re-equipping acquired gear failed.");
+                Check(ChroniclesEquipment.RewardForStage(31) != null,
+                    "Deterministic campaign gear table is incomplete.");
 
                 Check(service.ClaimDailyQuest("win_1"), "Winning a stage should complete the first daily quest.");
                 int rewardedGold = service.Data.gold;
@@ -58,6 +76,31 @@ namespace MythicChronicles.Editor
                 Check(!service.UnlockSkin("horus", "ascendant"), "Skin must not charge a second time.");
                 Check(service.EquipSkin("horus", "ascendant"), "Owned skin must be equippable.");
 
+                Check(service.UpgradeSkill("horus", "active"), "Skill upgrade did not work.");
+                Check(service.FindOwnedHero("horus").activeSkillLevel == 2,
+                    "Active skill level must increase.");
+                Check(service.BuyTalent("horus", true), "Attack talent cannot be purchased.");
+                Check(service.ResetTalents("horus"), "Talent reset should refund investment.");
+                Check(ChroniclesGrowth.EffectiveLevel(service.Data, horus) >= 2,
+                    "Resonance must not reduce trained hero level.");
+                int beforeRefund = service.Data.gold;
+                int expectedRefund = ChroniclesGrowth.RefundForLevelReset(horus.level);
+                Check(service.ResetHeroLevel("horus"), "Level reset failed.");
+                Check(horus.level == 1 && service.Data.gold == beforeRefund + expectedRefund,
+                    "Level reset did not refund the exact training gold.");
+                Check(!service.ResetHeroLevel("horus"), "Double reset must not produce gold.");
+                Check(service.UpgradeHero("horus"), "Hero level upgrade after reset failed.");
+                for (int stage = 2; stage <= 5; stage++)
+                    Check(service.CompleteStage(stage), "Sequential stage reward failed at " + stage);
+                Check(service.Data.runes.Count == 1, "Stage five should award one rune.");
+                RuneInstance rune = service.Data.runes[0];
+                Check(service.EquipRune(rune.instanceId, "horus"), "Rune equip failed.");
+                Check(service.UpgradeRune(rune.instanceId), "Rune enhancement failed.");
+                Check(service.UnequipRune(rune.instanceId), "Rune removal failed.");
+                Check(service.EquipRune(rune.instanceId, "horus"), "Rune re-equip failed.");
+                Check(ChroniclesGrowth.Calculate(service.Data, horus).attackMultiplier > 1f,
+                    "Attack talent/rune modifiers should be observable.");
+
                 service.Data.lastIdleClaimTicks = DateTime.UtcNow.AddMinutes(-140).Ticks;
                 int idleGold = service.ClaimIdleGold();
                 Check(idleGold > 0, "Idle collection should return accumulated currency.");
@@ -68,13 +111,19 @@ namespace MythicChronicles.Editor
 
                 Check(service.Save(), "Failed to save progress.");
                 var restored = new PlayerProgressService(folder);
-                Check(restored.Data.lastClearedStage == 1, "Stage progression did not reload.");
+                Check(restored.Data.lastClearedStage == 5, "Stage progression did not reload.");
                 Check(restored.FindOwnedHero("horus").level == 2, "Hero level did not reload.");
                 Check(restored.FindOwnedHero("horus").weaponLevel == 1, "Gear progression did not reload.");
                 Check(restored.FindOwnedHero("horus").skin == "ascendant",
                     "Equipped skin did not reload.");
                 Check(restored.Data.selectedTeam.Count == 5, "Formation did not reload.");
-                Check(restored.Data.stageRewardsClaimed.Count == 1, "Cleared stage log did not reload.");
+                Check(restored.Data.stageRewardsClaimed.Count == 5, "Cleared stage log did not reload.");
+                Check(restored.Data.equipment.Count == 5, "Five unique gear rewards did not reload.");
+                Check(restored.Data.runes.Count == 1 &&
+                    restored.Data.runes[0].assignedHeroId == "horus",
+                    "Equipped rune did not persist.");
+                Check(restored.FindOwnedHero("horus").activeSkillLevel == 2,
+                    "Upgraded skills did not persist.");
 
                 Debug.Log("[Chronicles] Offline progress checks passed. " +
                     "This does NOT mean that the game has passed a Unity/Android playtest.");
