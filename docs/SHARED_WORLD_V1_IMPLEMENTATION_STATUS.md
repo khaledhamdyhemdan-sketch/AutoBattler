@@ -2,6 +2,14 @@
 
 > **Latest roster update — 2026-11-05:** Catalog now has **40 heroes (2 R, 8 SR, 20 SSR, 10 UR)**. The ten UR include one Light and one Darkness from each of Egypt, Greece, Norse, Japan and China. **EX is locked**. Unique skill kits and skin metadata have been extended to 40. The UR banner and final art are **not yet implemented**; Unity/Android are **not tested**. See [UR/EX roster v2](UR_EX_MYTHOLOGY_ROSTER_V2.md). The 30-hero references below describe an older baseline.
 
+## First Five UR Art Batch — 2026-11-05
+
+- Created an original concept-image **preview inside the ChatGPT conversation** featuring **Ra, Apep, Odin, Hades and Amaterasu** with differentiated Light/Dark card aesthetics. This image is **not a source texture imported into Unity**; names/text need cleanup and final art separation.
+- Added a myth-grounded [first-five hero art bible](UR_HERO_BIBLE_FIRST_5_V1.md) covering full-body silhouette, colors, weapons, premium card frame, 3-second entrance choreography and Basic/Skill/Ultimate/Passive cues.
+- `FirstFiveURVisualEffects.cs` adds distinct **procedural placeholder** skill and Ultimate cues for those five. `ChroniclesBattle.cs` now invokes them during skill/Ultimate attacks; authored resource prefabs at `Resources/Chronicles/VFX/Skills/<hero-id>` and `Ultimates/<hero-id>` override those previews.
+- `ChroniclesStageArt.HeroCard` and `ChroniclesGame.cs` now display a gallery thumbnail from `Resources/Chronicles/Cards/<hero-id>` **when a production texture has been supplied**.
+- Unity script GUID added for the effects driver. **No production rigged hero prefabs, polished card textures, voice/audio performances, final animated entrances or Android build are yet in the repository.** No Unity compilation/playtest claimed.
+
 # Shared-World Hero Collector — Implementation Status
 
 **Updated:** 2026-11-05  
