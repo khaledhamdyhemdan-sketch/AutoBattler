@@ -50,6 +50,7 @@ namespace MythicChronicles
         public List<int> eliteClears = new List<int>();
         public List<int> darkClears = new List<int>();
         public List<TowerProgressRecord> towerProgress = new List<TowerProgressRecord>();
+        public LabyrinthProgress labyrinth = new LabyrinthProgress();
         public string raidUtcDay = "";
         public string raidPendingRunId = "";
         public int raidAttemptsUsed, raidBestDamage, raidRewardTier;
@@ -151,6 +152,25 @@ namespace MythicChronicles
             if (Data.darkClears == null) Data.darkClears = new List<int>();
             if (Data.towerProgress == null)
                 Data.towerProgress = new List<TowerProgressRecord>();
+            if (Data.labyrinth == null) Data.labyrinth = new LabyrinthProgress();
+            Data.labyrinth.nextRoom = Mathf.Clamp(Data.labyrinth.nextRoom, 1,
+                ChroniclesLabyrinth.Rooms + 1);
+            Data.labyrinth.lives = Mathf.Clamp(Data.labyrinth.lives, 0,
+                ChroniclesLabyrinth.StartingLives);
+            Data.labyrinth.blessingStacks = Mathf.Clamp(Data.labyrinth.blessingStacks, 0,
+                ChroniclesLabyrinth.MaxBlessings);
+            Data.labyrinth.score = Math.Max(0, Data.labyrinth.score);
+            if (Data.labyrinth.pendingBattleToken == null)
+                Data.labyrinth.pendingBattleToken = "";
+            // An interrupted saved battle counts as a defeat; never award
+            // progress when a result callback has not been recorded.
+            if (!string.IsNullOrEmpty(Data.labyrinth.pendingBattleToken))
+            {
+                Data.labyrinth.pendingBattleToken = "";
+                Data.labyrinth.pendingChoice = -1;
+                if (Data.labyrinth.weekKey == ChroniclesLabyrinth.CurrentWeek())
+                    Data.labyrinth.lives = Math.Max(0, Data.labyrinth.lives - 1);
+            }
             if (Data.raidUtcDay == null) Data.raidUtcDay = "";
             if (Data.raidPendingRunId == null) Data.raidPendingRunId = "";
             Data.raidAttemptsUsed = Mathf.Clamp(Data.raidAttemptsUsed, 0,
@@ -1039,6 +1059,152 @@ namespace MythicChronicles
                 Data = JsonUtility.FromJson<PlayerSave>(before);
                 LastError = ex.Message;
                 return false;
+            }
+        }
+
+        private void RefreshLabyrinthWeek()
+        {
+            string week = ChroniclesLabyrinth.CurrentWeek();
+            if (Data.labyrinth != null && Data.labyrinth.weekKey == week)
+                return;
+            Data.labyrinth = new LabyrinthProgress { weekKey = week };
+            Save();
+        }
+
+        public LabyrinthProgress LabyrinthState()
+        {
+            RefreshLabyrinthWeek();
+            return Data.labyrinth;
+        }
+
+        public LabyrinthOption LabyrinthChoice(int choice)
+        {
+            LabyrinthProgress current = LabyrinthState();
+            if (Data.lastClearedStage < 10 || current.completed ||
+                current.lives <= 0 ||
+                !string.IsNullOrEmpty(current.pendingBattleToken))
+                return null;
+            return ChroniclesLabyrinth.Choice(
+                current.weekKey, current.nextRoom, choice);
+        }
+
+        public bool ChooseLabyrinthEvent(int choice)
+        {
+            LabyrinthOption option = LabyrinthChoice(choice);
+            if (option == null || option.RequiresBattle) return false;
+            string before = JsonUtility.ToJson(Data);
+            try
+            {
+                LabyrinthProgress current = Data.labyrinth;
+                if (option.kind == LabyrinthRoomKind.Shrine)
+                    current.blessingStacks = Math.Min(
+                        ChroniclesLabyrinth.MaxBlessings, current.blessingStacks + 1);
+                if (option.kind == LabyrinthRoomKind.Rest)
+                    current.lives = Math.Min(
+                        ChroniclesLabyrinth.StartingLives, current.lives + 1);
+                Data.gold = checked(Data.gold + ChroniclesLabyrinth.RewardGold(option));
+                Data.forgeDust = checked(Data.forgeDust +
+                    ChroniclesLabyrinth.RewardForgeDust(option));
+                AdvanceLabyrinth(option);
+                if (!Save()) throw new IOException(LastError ?? "Save failed.");
+                return true;
+            }
+            catch (Exception ex)
+            {
+                Data = JsonUtility.FromJson<PlayerSave>(before);
+                LastError = ex.Message;
+                return false;
+            }
+        }
+
+        public string BeginLabyrinthBattle(int choice)
+        {
+            LabyrinthOption option = LabyrinthChoice(choice);
+            if (option == null || !option.RequiresBattle) return null;
+            string before = JsonUtility.ToJson(Data);
+            Data.labyrinth.pendingChoice = choice;
+            Data.labyrinth.pendingBattleToken = Guid.NewGuid().ToString("N");
+            if (Save()) return Data.labyrinth.pendingBattleToken;
+            Data = JsonUtility.FromJson<PlayerSave>(before);
+            return null;
+        }
+
+        public bool CompleteLabyrinthBattle(string token, bool victory)
+        {
+            RefreshLabyrinthWeek();
+            LabyrinthProgress current = Data.labyrinth;
+            if (string.IsNullOrEmpty(token) || token != current.pendingBattleToken)
+                return false;
+            LabyrinthOption option = ChroniclesLabyrinth.Choice(
+                current.weekKey, current.nextRoom, current.pendingChoice);
+            if (option == null || !option.RequiresBattle) return false;
+            ResetDailyIfNeeded();
+            ResetWeeklyIfNeeded();
+            string before = JsonUtility.ToJson(Data);
+            try
+            {
+                current.pendingBattleToken = "";
+                current.pendingChoice = -1;
+                if (victory)
+                {
+                    Data.gold = checked(Data.gold + ChroniclesLabyrinth.RewardGold(option));
+                    Data.forgeDust = checked(Data.forgeDust +
+                        ChroniclesLabyrinth.RewardForgeDust(option));
+                    Data.astralSeals = checked(Data.astralSeals +
+                        ChroniclesLabyrinth.RewardSeals(option));
+                    IncrementQuest("win_1");
+                    IncrementQuest("win_3");
+                    IncrementWeekly("win_10");
+                    if (option.kind == LabyrinthRoomKind.Guardian)
+                        IncrementWeekly("boss_3");
+                    AdvanceLabyrinth(option);
+                }
+                else
+                    current.lives = Math.Max(0, current.lives - 1);
+                if (!Save()) throw new IOException(LastError ?? "Save failed.");
+                return true;
+            }
+            catch (Exception ex)
+            {
+                Data = JsonUtility.FromJson<PlayerSave>(before);
+                LastError = ex.Message;
+                return false;
+            }
+        }
+
+        public bool AbandonLabyrinthBattle(string token)
+        {
+            return CompleteLabyrinthBattle(token, false);
+        }
+
+        public bool CancelLabyrinthStart(string token)
+        {
+            // Only use when creating a battle fails before gameplay begins.
+            LabyrinthProgress current = LabyrinthState();
+            if (string.IsNullOrEmpty(token) || token != current.pendingBattleToken)
+                return false;
+            string before = JsonUtility.ToJson(Data);
+            current.pendingBattleToken = "";
+            current.pendingChoice = -1;
+            if (Save()) return true;
+            Data = JsonUtility.FromJson<PlayerSave>(before);
+            return false;
+        }
+
+        private void AdvanceLabyrinth(LabyrinthOption option)
+        {
+            LabyrinthProgress current = Data.labyrinth;
+            current.score = checked(current.score +
+                (option.kind == LabyrinthRoomKind.Guardian ? 350 :
+                 option.kind == LabyrinthRoomKind.Elite ? 180 :
+                 option.kind == LabyrinthRoomKind.Battle ? 100 : 65));
+            current.nextRoom++;
+            if (current.nextRoom > ChroniclesLabyrinth.Rooms)
+            {
+                current.completed = true;
+                // Grant weekly completion bonus in the SAME persisted transaction.
+                Data.gems = checked(Data.gems + 180);
+                Data.astralSeals = checked(Data.astralSeals + 2);
             }
         }
 
