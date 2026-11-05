@@ -197,6 +197,21 @@ for(const page of ['Labyrinth','ArenaTraining','Heroes','Summon','More','Chapter
   assert.ok(game.includes('case Page.'+page+':'), 'Missing UI route '+page);
 assert.ok(game.includes('ScreenOrientation.Portrait'),
   'Mobile orientation must remain portrait');
+const gameGuid = read('Assets/Chronicles/ChroniclesGame.cs.meta')
+  .match(/^guid:\s*([a-f0-9]{32})/m)?.[1];
+assert.ok(gameGuid, 'Main gameplay script must have a stable Unity GUID');
+assert.ok(read('Assets/Chronicles/Chronicles_Main.unity')
+  .includes('guid: ' + gameGuid),
+  'Main Unity scene must actually contain the ChroniclesGame component');
+const projectSettings = read('ProjectSettings/ProjectSettings.asset');
+assert.ok(projectSettings.includes('Android: com.mythicchronicles.alpha'),
+  'First Android Alpha must not use the Unity template application ID');
+const buildScript = read('tools/run-unity-local.ps1');
+assert.ok(buildScript.includes("'-buildTarget', 'Android'"),
+  'Unity validation must compile the Android target');
+assert.ok(read('Assets/Editor/ChroniclesAndroidBuild.cs')
+  .includes('EditorUserBuildSettings.activeBuildTarget != BuildTarget.Android'),
+  'APK builder must enforce Android as the active target');
 const player=read('Assets/Chronicles/PlayerProgressService.cs');
 for(const method of ['BeginLabyrinthBattle','CompleteLabyrinthBattle',
   'BeginArenaTraining','CompleteArenaTraining','DrawHeroes',
