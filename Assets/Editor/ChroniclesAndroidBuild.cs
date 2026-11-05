@@ -49,7 +49,7 @@ namespace MythicChronicles.Editor
                     scenes = new[] { MainScene },
                     locationPathName = destination,
                     target = BuildTarget.Android,
-                    options = BuildOptions.None
+                    options = bundle ? BuildOptions.None : BuildOptions.Development
                 };
                 BuildReport report = BuildPipeline.BuildPlayer(settings);
                 if (report.summary.result != BuildResult.Succeeded)
