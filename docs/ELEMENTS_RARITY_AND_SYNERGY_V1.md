@@ -1,3 +1,5 @@
+> **Superseded roster:** Current Light/Dark elements and rank distribution are 41 heroes, 16 UR and locked EX. See [UR expansion v3](UR_EXPANSION_16_AND_ODIN_V3.md). Original ring and synergy rules remain in force; old character counts below do not.
+
 > **تحديث 2026-11-05:** تم استبدال توزيع الـ30 بطلًا و4 Light/Dark SSR بخطة 40 بطلًا، منهم **10 UR حصريًا نور/ظلام**، ورتبة **EX مقفولة**. التفاصيل المعتمدة حاليًا: [UR/EX Roster v2](UR_EX_MYTHOLOGY_ROSTER_V2.md). ما يلي أرشيف قواعد v1 ويحتوي معلومات قديمة.
 
 # Elements, Rarity Tiers and Hero Gallery — Game Design v1
