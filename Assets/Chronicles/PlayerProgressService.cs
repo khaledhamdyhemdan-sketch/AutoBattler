@@ -45,6 +45,7 @@ namespace MythicChronicles
         public List<OwnedHero> heroes = new List<OwnedHero>();
         public List<string> selectedTeam = new List<string>();
         public List<int> stageRewardsClaimed = new List<int>();
+        public List<int> campaignMilestonesClaimed = new List<int>();
         public List<int> eliteClears = new List<int>();
         public List<int> darkClears = new List<int>();
         public List<TowerProgressRecord> towerProgress = new List<TowerProgressRecord>();
@@ -138,6 +139,8 @@ namespace MythicChronicles
             if (Data.heroes == null) Data.heroes = new List<OwnedHero>();
             if (Data.selectedTeam == null) Data.selectedTeam = new List<string>();
             if (Data.stageRewardsClaimed == null) Data.stageRewardsClaimed = new List<int>();
+            if (Data.campaignMilestonesClaimed == null)
+                Data.campaignMilestonesClaimed = new List<int>();
             if (Data.eliteClears == null) Data.eliteClears = new List<int>();
             if (Data.darkClears == null) Data.darkClears = new List<int>();
             if (Data.towerProgress == null)
@@ -969,6 +972,37 @@ namespace MythicChronicles
             // The attempt is consumed when started. Prevent quitting to reroll.
             Data.raidPendingRunId = "";
             return Save();
+        }
+
+        public bool CanClaimCampaignMilestone(int stage)
+        {
+            return ChroniclesMilestones.At(stage) != null &&
+                Data.lastClearedStage >= stage &&
+                !Data.campaignMilestonesClaimed.Contains(stage);
+        }
+
+        public bool ClaimCampaignMilestone(int stage)
+        {
+            if (!CanClaimCampaignMilestone(stage)) return false;
+            CampaignMilestoneReward reward = ChroniclesMilestones.At(stage);
+            string before = JsonUtility.ToJson(Data);
+            try
+            {
+                Data.gold = checked(Data.gold + reward.gold);
+                Data.gems = checked(Data.gems + reward.gems);
+                Data.summonTickets = checked(Data.summonTickets + reward.tickets);
+                Data.astralSeals = checked(Data.astralSeals + reward.astralSeals);
+                Data.forgeDust = checked(Data.forgeDust + reward.forgeDust);
+                Data.campaignMilestonesClaimed.Add(stage);
+                if (!Save()) throw new IOException(LastError ?? "Save failed.");
+                return true;
+            }
+            catch (Exception ex)
+            {
+                Data = JsonUtility.FromJson<PlayerSave>(before);
+                LastError = ex.Message;
+                return false;
+            }
         }
 
         public bool CanEnterTower(Origin origin, int floor, IList<string> team)
