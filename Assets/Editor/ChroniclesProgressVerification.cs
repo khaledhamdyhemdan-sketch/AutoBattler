@@ -121,6 +121,26 @@ namespace MythicChronicles.Editor
                     "Dismantling must add forge dust.");
                 Check(!service.DismantleGear(crafted.instanceId), "Gear cannot be dismantled twice.");
 
+                for (int stage = 6; stage <= 10; stage++)
+                    Check(service.CompleteStage(stage), "Cannot clear boss chapter stage " + stage);
+                Check(service.Data.relics.Count == 1 &&
+                    service.Data.relics[0].id == "sun_disc",
+                    "First chapter boss must grant its unique relic.");
+                Check(service.Data.equippedRelicId == "sun_disc",
+                    "First chapter relic should equip by default.");
+                int relicCount = service.Data.relics.Count;
+                Check(service.CompleteStage(10), "Cleared boss should remain replayable.");
+                Check(service.Data.relics.Count == relicCount,
+                    "Repeated boss victory must not duplicate the relic.");
+                Check(service.UpgradeRelic("sun_disc") &&
+                    service.Data.relics[0].level == 2,
+                    "Artifact upgrade must consume chapter relic dust.");
+                while (sobek.level < 10)
+                    Check(service.UpgradeHero("sobek"), "Cannot reach signature unlock level.");
+                Check(service.UpgradeSignatureWeapon("sobek") &&
+                    sobek.signatureWeaponRank == 1,
+                    "Signature weapon must unlock at level 10.");
+
                 service.Data.lastIdleClaimTicks = DateTime.UtcNow.AddMinutes(-140).Ticks;
                 int idleGold = service.ClaimIdleGold();
                 Check(idleGold > 0, "Idle collection should return accumulated currency.");
@@ -131,19 +151,24 @@ namespace MythicChronicles.Editor
 
                 Check(service.Save(), "Failed to save progress.");
                 var restored = new PlayerProgressService(folder);
-                Check(restored.Data.lastClearedStage == 5, "Stage progression did not reload.");
-                Check(restored.FindOwnedHero("sobek").level == 2, "Hero level did not reload.");
+                Check(restored.Data.lastClearedStage == 10, "Stage progression did not reload.");
+                Check(restored.FindOwnedHero("sobek").level == 10, "Hero level did not reload.");
                 Check(restored.FindOwnedHero("sobek").weaponLevel == 1, "Gear progression did not reload.");
                 Check(restored.FindOwnedHero("sobek").skin == "ascendant",
                     "Equipped skin did not reload.");
                 Check(restored.Data.selectedTeam.Count == 5, "Formation did not reload.");
-                Check(restored.Data.stageRewardsClaimed.Count == 5, "Cleared stage log did not reload.");
-                Check(restored.Data.equipment.Count == 5, "Five unique gear rewards did not reload.");
-                Check(restored.Data.runes.Count == 1 &&
+                Check(restored.Data.stageRewardsClaimed.Count == 10, "Cleared stage log did not reload.");
+                Check(restored.Data.equipment.Count == 10, "Ten unique gear rewards did not reload.");
+                Check(restored.Data.runes.Count == 2 &&
                     restored.Data.runes[0].assignedHeroId == "sobek",
                     "Equipped rune did not persist.");
                 Check(restored.FindOwnedHero("sobek").activeSkillLevel == 2,
                     "Upgraded skills did not persist.");
+                Check(restored.FindOwnedHero("sobek").signatureWeaponRank == 1,
+                    "Signature weapon rank did not persist.");
+                Check(restored.Data.relics.Count == 1 &&
+                    restored.Data.relics[0].level == 2,
+                    "Chapter relic level did not persist.");
 
                 Check(HeroElements.DamageMultiplier(HeroElement.Fire, HeroElement.Nature) > 1f,
                     "Fire should counter Nature.");
