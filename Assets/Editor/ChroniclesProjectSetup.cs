@@ -64,9 +64,9 @@ namespace MythicChronicles.Editor
                     errors++;
                 }
             }
-            if (WorldsCatalog.Heroes.Length != 40)
+            if (WorldsCatalog.Heroes.Length != 41)
             {
-                Debug.LogError("[Chronicles] Expected 40 named heroes."); errors++;
+                Debug.LogError("[Chronicles] Expected 41 named heroes."); errors++;
             }
             var kitIds = new HashSet<string>(StringComparer.Ordinal);
             foreach (HeroKit kit in HeroAbilityCatalog.All)
@@ -120,17 +120,17 @@ namespace MythicChronicles.Editor
                     else if (hero.element == HeroElement.Darkness) counts[1]++;
                 }
             }
-            if (rCount != 2 || srCount != 8 || ssrCount != 20 ||
-                urCount != 10 || exCount != 0 || lightCount != 5 || darknessCount != 5 ||
+            if (rCount != 2 || srCount != 7 || ssrCount != 16 ||
+                urCount != 16 || exCount != 0 || lightCount != 9 || darknessCount != 7 ||
                 urByOrigin.Count != 5)
             {
                 Debug.LogError("[Chronicles] R/SR/SSR/UR/EX roster allocation mismatch.");
                 errors++;
             }
             foreach (var pair in urByOrigin)
-                if (pair.Value[0] != 1 || pair.Value[1] != 1)
+                if (pair.Value[0] < 1 || pair.Value[1] < 1)
                 {
-                    Debug.LogError("[Chronicles] UR realm must include one Light and one Dark: " + pair.Key);
+                    Debug.LogError("[Chronicles] UR realm must include at least one Light and one Dark:  " + pair.Key);
                     errors++;
                 }
             if (ChroniclesEquipment.Templates.Length != 18 ||
@@ -162,7 +162,7 @@ namespace MythicChronicles.Editor
                 }
             }
             if (errors == 0)
-                Debug.Log("[Chronicles] Catalog validation passed: 40 hero kits, five UR Light/Dark realm pairs and 60 story stages. This is NOT a Unity/Android playtest.");
+                Debug.Log("[Chronicles] Catalog validation passed: 41 hero kits, 16 UR heroes across five Light/Dark realms and 60 story stages. This is NOT a Unity/Android playtest.");
             else Debug.LogError("[Chronicles] Catalog validation failed with " + errors + " issues.");
         }
     }
