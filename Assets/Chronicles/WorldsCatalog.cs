@@ -5,11 +5,11 @@ namespace MythicChronicles
 {
     // An original shared world: mythology, folklore and historical legends.
     // "Chronicles" is an INTERNAL working title, not the game's published name.
-    public enum Origin { Egypt, Greece, Norse, EastAsia, Folklore, History }
+    public enum Origin { Egypt, Greece, Norse, EastAsia, Folklore, History, Japan, China }
     public enum CombatRole { Tank, Warrior, Assassin, Mage, Support, Healer, Controller }
     // R -> SR -> SSR are launch ranks; the two future ranks remain hidden/locked.
     // Aliases preserve compatibility with earlier development data and source.
-    public enum Rarity { R = 0, SR = 1, SSR = 2, FutureTier4 = 3, FutureTier5 = 4,
+    public enum Rarity { R = 0, SR = 1, SSR = 2, UR = 3, EX = 4,
         Rare = R, Epic = SR, Legendary = SSR }
 
     [Serializable]
@@ -79,16 +79,28 @@ namespace MythicChronicles
             new HeroDefinition("odin", "Odin", Origin.Norse, CombatRole.Support, Rarity.SSR, "A wanderer trading certainty for knowledge."),
             new HeroDefinition("hel", "Hel", Origin.Norse, CombatRole.Controller, Rarity.SR, "Guardian of the forgotten threshold."),
             new HeroDefinition("skadi", "Skadi", Origin.Norse, CombatRole.Assassin, Rarity.SR, "A winter huntress who follows no king."),
-            new HeroDefinition("amaterasu", "Amaterasu", Origin.EastAsia, CombatRole.Mage, Rarity.SSR, "A sun spirit weaving dawn across kingdoms."),
-            new HeroDefinition("susanoo", "Susanoo", Origin.EastAsia, CombatRole.Warrior, Rarity.SR, "The storm sword seeks a new oath."),
-            new HeroDefinition("sunwukong", "Sun Wukong", Origin.EastAsia, CombatRole.Assassin, Rarity.SSR, "The trickster leaps across impossible eras."),
-            new HeroDefinition("guanyin", "Guanyin", Origin.EastAsia, CombatRole.Healer, Rarity.SSR, "Mercy offered without allegiance."),
-            new HeroDefinition("nezha", "Nezha", Origin.EastAsia, CombatRole.Warrior, Rarity.SSR, "Fire wheels blaze through ruptured horizons."),
+            new HeroDefinition("amaterasu", "Amaterasu", Origin.Japan, CombatRole.Mage, Rarity.SSR, "A sun spirit weaving dawn across kingdoms."),
+            new HeroDefinition("susanoo", "Susanoo", Origin.Japan, CombatRole.Warrior, Rarity.SR, "The storm sword seeks a new oath."),
+            new HeroDefinition("sunwukong", "Sun Wukong", Origin.China, CombatRole.Assassin, Rarity.SSR, "The trickster leaps across impossible eras."),
+            new HeroDefinition("guanyin", "Guanyin", Origin.China, CombatRole.Healer, Rarity.SSR, "Mercy offered without allegiance."),
+            new HeroDefinition("nezha", "Nezha", Origin.China, CombatRole.Warrior, Rarity.SSR, "Fire wheels blaze through ruptured horizons."),
             new HeroDefinition("morgana", "Morgana", Origin.Folklore, CombatRole.Controller, Rarity.SSR, "A sorceress who negotiates with prophecy."),
             new HeroDefinition("merlin", "Merlin", Origin.Folklore, CombatRole.Mage, Rarity.SSR, "The keeper of an unfinished future."),
             new HeroDefinition("arthur", "Arthur", Origin.Folklore, CombatRole.Tank, Rarity.SSR, "A reluctant king defending those beyond his realm."),
             new HeroDefinition("cleopatra", "Cleopatra", Origin.History, CombatRole.Support, Rarity.SR, "A fictionalized queen of strategy and diplomacy."),
-            new HeroDefinition("joan", "Joan of Arc", Origin.History, CombatRole.Warrior, Rarity.SR, "A fictionalized standard-bearer between forgotten battles.")
+            new HeroDefinition("joan", "Joan of Arc", Origin.History, CombatRole.Warrior, Rarity.SR, "A fictionalized standard-bearer between forgotten battles."),
+            // Ten additional UR figures: a Light/Dark pair from each of five mythologies.
+            // Light/Dark represent cosmic attunements, not good/evil.
+            new HeroDefinition("amun", "Amun", Origin.Egypt, CombatRole.Mage, Rarity.UR, "The hidden creator reveals the first ray beyond time."),
+            new HeroDefinition("apep", "Apep", Origin.Egypt, CombatRole.Controller, Rarity.UR, "Primordial serpent of unmaking, bound to the midnight river."),
+            new HeroDefinition("zeus", "Zeus", Origin.Greece, CombatRole.Mage, Rarity.UR, "A sky sovereign who calls thunder across divided ages."),
+            new HeroDefinition("nyx", "Nyx", Origin.Greece, CombatRole.Controller, Rarity.UR, "The ancient night that existed before any throne."),
+            new HeroDefinition("baldr", "Baldr", Origin.Norse, CombatRole.Support, Rarity.UR, "The luminous dream of a world that may yet be reborn."),
+            new HeroDefinition("fenrir", "Fenrir", Origin.Norse, CombatRole.Warrior, Rarity.UR, "The great wolf challenges the chains of fate itself."),
+            new HeroDefinition("izanagi", "Izanagi", Origin.Japan, CombatRole.Tank, Rarity.UR, "A primordial creator who forges refuge between worlds."),
+            new HeroDefinition("izanami", "Izanami", Origin.Japan, CombatRole.Mage, Rarity.UR, "The primordial queen who commands the forgotten threshold."),
+            new HeroDefinition("nuwa", "Nüwa", Origin.China, CombatRole.Healer, Rarity.UR, "A divine restorer who mends the scattered sky."),
+            new HeroDefinition("hundun", "Hundun", Origin.China, CombatRole.Tank, Rarity.UR, "Embodiment of primordial chaos before form and division.")
         };
 
         public static readonly ChapterDefinition[] Chapters =
@@ -123,7 +135,7 @@ namespace MythicChronicles
         }
 
         // Starter team provides all four ordinary elements and a healer,
-        // without giving away any scarce Light/Dark SSR units at sign-up.
+        // without granting scarce Light/Dark UR units at sign-up.
         public static readonly string[] StartingHeroes =
             { "sobek", "bastet", "set", "nephthys", "persephone" };
     }
