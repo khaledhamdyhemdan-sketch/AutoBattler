@@ -42,6 +42,8 @@ namespace MythicChronicles
         public List<SummonHistoryRecord> summonHistory = new List<SummonHistoryRecord>();
         public float musicVolume = .8f, effectsVolume = .9f;
         public bool reducePortraitMotion;
+        public int tutorialStep;
+        public bool tutorialCompleted;
         public List<OwnedHero> heroes = new List<OwnedHero>();
         public List<string> selectedTeam = new List<string>();
         public List<int> stageRewardsClaimed = new List<int>();
@@ -263,6 +265,9 @@ namespace MythicChronicles
             Data.forgeDust = Math.Max(0, Data.forgeDust);
             Data.relicDust = Math.Max(0, Data.relicDust);
             Data.astralSeals = Math.Max(0, Data.astralSeals);
+            Data.tutorialStep = Mathf.Clamp(Data.tutorialStep, 0, ChroniclesTutorial.StepCount);
+            if (Data.tutorialStep == ChroniclesTutorial.StepCount ||
+                Data.lastClearedStage > 4) Data.tutorialCompleted = true;
             Data.loginDaysClaimed = Mathf.Clamp(Data.loginDaysClaimed, 0,
                 ChroniclesLoginRewards.Days);
             if (Data.lastLoginGiftUtc == null) Data.lastLoginGiftUtc = "";
@@ -461,6 +466,39 @@ namespace MythicChronicles
             if (hero == null || !OwnsSkin(heroId, skinId)) return false;
             hero.skin = skinId;
             return Save();
+        }
+
+        public bool AdvanceTutorial()
+        {
+            if (Data.tutorialCompleted) return false;
+            string original = JsonUtility.ToJson(Data);
+            Data.tutorialStep = Mathf.Min(ChroniclesTutorial.StepCount,
+                Data.tutorialStep + 1);
+            if (Data.tutorialStep >= ChroniclesTutorial.StepCount)
+                Data.tutorialCompleted = true;
+            if (Save()) return true;
+            Data = JsonUtility.FromJson<PlayerSave>(original);
+            return false;
+        }
+
+        public bool SkipTutorial()
+        {
+            string original = JsonUtility.ToJson(Data);
+            Data.tutorialStep = ChroniclesTutorial.StepCount;
+            Data.tutorialCompleted = true;
+            if (Save()) return true;
+            Data = JsonUtility.FromJson<PlayerSave>(original);
+            return false;
+        }
+
+        public bool RestartTutorial()
+        {
+            string original = JsonUtility.ToJson(Data);
+            Data.tutorialStep = 0;
+            Data.tutorialCompleted = false;
+            if (Save()) return true;
+            Data = JsonUtility.FromJson<PlayerSave>(original);
+            return false;
         }
 
         public bool SetReducedPortraitMotion(bool reduce)
