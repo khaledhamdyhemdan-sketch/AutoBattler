@@ -51,6 +51,7 @@ namespace MythicChronicles
         public List<int> darkClears = new List<int>();
         public List<TowerProgressRecord> towerProgress = new List<TowerProgressRecord>();
         public LabyrinthProgress labyrinth = new LabyrinthProgress();
+        public ArenaTrainingProgress arenaTraining = new ArenaTrainingProgress();
         public string raidUtcDay = "";
         public string raidPendingRunId = "";
         public int raidAttemptsUsed, raidBestDamage, raidRewardTier;
@@ -153,6 +154,27 @@ namespace MythicChronicles
             if (Data.towerProgress == null)
                 Data.towerProgress = new List<TowerProgressRecord>();
             if (Data.labyrinth == null) Data.labyrinth = new LabyrinthProgress();
+            if (Data.arenaTraining == null)
+                Data.arenaTraining = new ArenaTrainingProgress();
+            if (Data.arenaTraining.utcDay == null) Data.arenaTraining.utcDay = "";
+            if (Data.arenaTraining.pendingMatchToken == null)
+                Data.arenaTraining.pendingMatchToken = "";
+            Data.arenaTraining.rating = Mathf.Clamp(Data.arenaTraining.rating, 0, 5000);
+            Data.arenaTraining.bestRating = Math.Max(Data.arenaTraining.rating,
+                Mathf.Clamp(Data.arenaTraining.bestRating, 0, 5000));
+            Data.arenaTraining.attemptsToday = Mathf.Clamp(
+                Data.arenaTraining.attemptsToday, 0,
+                ChroniclesArenaTraining.DailyAttempts);
+            Data.arenaTraining.wins = Math.Max(0, Data.arenaTraining.wins);
+            Data.arenaTraining.losses = Math.Max(0, Data.arenaTraining.losses);
+            if (!string.IsNullOrEmpty(Data.arenaTraining.pendingMatchToken))
+            {
+                // The game closed mid-match. Consume the already-started attempt.
+                Data.arenaTraining.pendingMatchToken = "";
+                Data.arenaTraining.losses++;
+                Data.arenaTraining.rating = Math.Max(0,
+                    Data.arenaTraining.rating - ChroniclesArenaTraining.DefeatRating);
+            }
             Data.labyrinth.nextRoom = Mathf.Clamp(Data.labyrinth.nextRoom, 1,
                 ChroniclesLabyrinth.Rooms + 1);
             Data.labyrinth.lives = Mathf.Clamp(Data.labyrinth.lives, 0,
@@ -1060,6 +1082,92 @@ namespace MythicChronicles
                 LastError = ex.Message;
                 return false;
             }
+        }
+
+        private void RefreshArenaDay()
+        {
+            string today = ChroniclesArenaTraining.CurrentDay();
+            if (Data.arenaTraining != null && Data.arenaTraining.utcDay == today)
+                return;
+            if (Data.arenaTraining == null)
+                Data.arenaTraining = new ArenaTrainingProgress();
+            Data.arenaTraining.utcDay = today;
+            Data.arenaTraining.attemptsToday = 0;
+            Data.arenaTraining.pendingMatchToken = "";
+            Save();
+        }
+
+        public ArenaTrainingProgress ArenaTrainingState()
+        {
+            RefreshArenaDay();
+            return Data.arenaTraining;
+        }
+
+        public int ArenaAttemptsRemaining()
+        {
+            ArenaTrainingProgress state = ArenaTrainingState();
+            return Math.Max(0, ChroniclesArenaTraining.DailyAttempts -
+                state.attemptsToday);
+        }
+
+        public string BeginArenaTraining()
+        {
+            if (Data.lastClearedStage < 10 || ArenaAttemptsRemaining() <= 0 ||
+                !string.IsNullOrEmpty(Data.arenaTraining.pendingMatchToken))
+                return null;
+            string before = JsonUtility.ToJson(Data);
+            Data.arenaTraining.attemptsToday++;
+            Data.arenaTraining.pendingMatchToken = Guid.NewGuid().ToString("N");
+            if (Save()) return Data.arenaTraining.pendingMatchToken;
+            Data = JsonUtility.FromJson<PlayerSave>(before);
+            return null;
+        }
+
+        public bool CompleteArenaTraining(string token, bool victory)
+        {
+            RefreshArenaDay();
+            ArenaTrainingProgress arena = Data.arenaTraining;
+            if (string.IsNullOrEmpty(token) || token != arena.pendingMatchToken)
+                return false;
+            string before = JsonUtility.ToJson(Data);
+            try
+            {
+                arena.pendingMatchToken = "";
+                arena.rating = Mathf.Clamp(arena.rating +
+                    (victory ? ChroniclesArenaTraining.VictoryRating :
+                        -ChroniclesArenaTraining.DefeatRating), 0, 5000);
+                arena.bestRating = Math.Max(arena.bestRating, arena.rating);
+                if (victory) arena.wins++;
+                else arena.losses++;
+                Data.gold = checked(Data.gold + ChroniclesArenaTraining.Gold(victory));
+                Data.gems = checked(Data.gems + ChroniclesArenaTraining.Gems(victory));
+                if (!Save()) throw new IOException(LastError ?? "Save failed.");
+                return true;
+            }
+            catch (Exception ex)
+            {
+                Data = JsonUtility.FromJson<PlayerSave>(before);
+                LastError = ex.Message;
+                return false;
+            }
+        }
+
+        public bool AbandonArenaTraining(string token)
+        {
+            return CompleteArenaTraining(token, false);
+        }
+
+        public bool CancelArenaTrainingStart(string token)
+        {
+            ArenaTrainingProgress arena = ArenaTrainingState();
+            if (string.IsNullOrEmpty(token) || token != arena.pendingMatchToken)
+                return false;
+            string before = JsonUtility.ToJson(Data);
+            arena.pendingMatchToken = "";
+            arena.attemptsToday = Math.Max(0, arena.attemptsToday - 1);
+            if (Save()) return true;
+            Data = JsonUtility.FromJson<PlayerSave>(before);
+            return false;
         }
 
         private void RefreshLabyrinthWeek()
