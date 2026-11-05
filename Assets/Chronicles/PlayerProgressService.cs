@@ -130,7 +130,7 @@ namespace MythicChronicles
             Data.heroes.RemoveAll(h => h == null || WorldsCatalog.FindHero(h.id) == null);
             var seen = new HashSet<string>(StringComparer.Ordinal);
             Data.heroes.RemoveAll(h => !seen.Add(h.id));
-            foreach (var h in Data.heroes) { h.level = Mathf.Clamp(h.level, 1, 200); h.stars = Mathf.Clamp(h.stars, 1, 6); h.weaponLevel = Mathf.Clamp(h.weaponLevel, 0, 30); h.armorLevel = Mathf.Clamp(h.armorLevel, 0, 30); }
+            foreach (var h in Data.heroes) { h.level = Mathf.Clamp(h.level, 1, 200); h.stars = Mathf.Clamp(h.stars, 1, 6); h.weaponLevel = Mathf.Clamp(h.weaponLevel, 0, 30); h.armorLevel = Mathf.Clamp(h.armorLevel, 0, 30); if (HeroSkinCatalog.Find(h.id, h.skin) == null) h.skin = "default"; }
             seen.Clear();
             Data.selectedTeam.RemoveAll(id => !OwnsHero(id) || !seen.Add(id));
             if (Data.selectedTeam.Count > 5) Data.selectedTeam.RemoveRange(5, Data.selectedTeam.Count - 5);
@@ -240,6 +240,32 @@ namespace MythicChronicles
             Data.gems += definition.gemReward;
             Save();
             return true;
+        }
+
+        public bool OwnsSkin(string heroId, string skinId)
+        {
+            if (skinId == "default") return OwnsHero(heroId);
+            HeroSkin skin = HeroSkinCatalog.Find(heroId, skinId);
+            return skin != null && OwnsHero(heroId) &&
+                Data.ownedSkins.Contains(skin.OwnershipKey);
+        }
+
+        public bool UnlockSkin(string heroId, string skinId)
+        {
+            HeroSkin skin = HeroSkinCatalog.Find(heroId, skinId);
+            if (skin == null || !OwnsHero(heroId) || OwnsSkin(heroId, skinId) ||
+                Data.gems < skin.gemCost || skin.gemCost <= 0) return false;
+            Data.gems -= skin.gemCost;
+            Data.ownedSkins.Add(skin.OwnershipKey);
+            return Save();
+        }
+
+        public bool EquipSkin(string heroId, string skinId)
+        {
+            OwnedHero hero = FindOwnedHero(heroId);
+            if (hero == null || !OwnsSkin(heroId, skinId)) return false;
+            hero.skin = skinId;
+            return Save();
         }
 
         public bool OwnsHero(string id) { return Data.heroes.Exists(h => h.id == id); }
