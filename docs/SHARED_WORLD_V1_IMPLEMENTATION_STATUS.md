@@ -1,3 +1,16 @@
+## 2026-11-05 continuation: Raid, milestone chests and achievements
+
+Committed to `feature/egyptian-heroes-5v5`:
+
+- **World Boss PvE prototype** with 6 UTC-rotating guardians, three attempts per day, actual direct damage scoring over a 90-second battle, personal rank milestones, unique run IDs, no duplicate local claim, interrupted-session recovery, and English UI/battle results. `ChroniclesRaids.cs`, `ChroniclesBattle.cs`, `PlayerProgressService.cs`, `ChroniclesGame.cs`.
+- **Campaign milestone chests** at normal stages 20/40/60, one-time claimable even on pre-existing progressed local saves. `ChroniclesMilestones.cs`, `PlayerProgressService.cs`, `ChroniclesGame.cs`.
+- **14 permanent achievements** based on story, Elite, Dark, tower, owned heroes/UR, equipment and relic progress. Claim once, offline saved rewards, English tab under Daily/Weekly quests. `ChroniclesAchievements.cs`, `PlayerProgressService.cs`, `ChroniclesGame.cs`.
+- Added Unity Editor source checks: `ChroniclesRaidVerification.cs`, `ChroniclesMilestoneVerification.cs`, `ChroniclesAchievementVerification.cs`, with .meta files.
+- 9 related C# files passed a **structural delimiter check only** and their usage across UI/save/battle was statically confirmed; not a C# compiler/Unity test.
+
+**Still not validated:** actual Unity Editor import, compilation or scene playthrough; Android APK/AAB and device performance. Local UTC and saved currency are not server-authoritative; personal raid rank is **not a global or PvP ladder**. Final 41 individually authored character illustrations/animations, user-approved 9:16 UI, live accounts/server, Arena/Guilds and other release systems remain outstanding.
+
+---
 ## 2026-11-05: Next gameplay systems — new source commits
 
 The `feature/egyptian-heroes-5v5` branch now also includes:
