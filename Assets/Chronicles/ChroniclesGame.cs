@@ -163,7 +163,7 @@ namespace MythicChronicles
             if (GUI.Button(new Rect(274, 722, 226, 56), "SETTINGS", bigButton))
                 page = Page.Settings;
             GUI.Label(new Rect(40, 798, 460, 80),
-                "Six connected chapters • 30 collectible heroes\n" +
+                "Six connected chapters • 40 collectible heroes\n" +
                 "Different myths, one original storyline.", subtitle);
         }
 
@@ -305,7 +305,10 @@ namespace MythicChronicles
             else GUI.Label(new Rect(52, 421, 438, 120), hero.story, subtitle);
 
             if (owned == null)
-                GUI.Label(new Rect(32, 569, 476, 67), "Not yet summoned. Use earned tickets or gems.", subtitle);
+                GUI.Label(new Rect(32, 569, 476, 67),
+                    hero.rarity == Rarity.UR ?
+                        "UR champion • limited Light/Dark banner is not active yet." :
+                        "Not yet summoned. Use earned tickets or gems.", subtitle);
             else
             {
                 GUI.Label(new Rect(32, 566, 472, 74),
