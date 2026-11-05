@@ -1077,7 +1077,9 @@ namespace MythicChronicles
             if (battle == null) return;
             battle.DrawWorldLabels(scale);
             GUI.Box(new Rect(12, 22, 516, 106), "");
-            GUI.Label(new Rect(20, 29, 500, 45), WorldsCatalog.GetStage(stageId).name, subtitle);
+            GUI.Label(new Rect(20, 29, 500, 45),
+                activeTrialMode.ToString().ToUpperInvariant() + " • " +
+                WorldsCatalog.GetStage(stageId).name, subtitle);
             GUI.Label(new Rect(29, 73, 460, 36), "TIME " + Mathf.CeilToInt(battle.SecondsLeft) + " s", subtitle);
             if (GUI.Button(new Rect(20, 837, 153, 65), battle.Paused ? "RESUME" : "PAUSE"))
                 battle.Paused = !battle.Paused;
@@ -1101,7 +1103,11 @@ namespace MythicChronicles
             GUI.Box(new Rect(38, 480, 464, 142),
                 lastVictory ? "First-clear rewards are added once. Your progress is saved." :
                     "Upgrade your heroes or change formation to try again.");
-            if (GUI.Button(new Rect(42, 689, 456, 70), lastVictory ? "NEXT STAGE" : "RETRY", bigButton))
+            bool finalTrialStage = activeTrialMode != TrialMode.Normal &&
+                stageId % ChroniclesTrials.StagesPerChapter == 0;
+            if (GUI.Button(new Rect(42, 689, 456, 70),
+                !lastVictory ? "RETRY" :
+                finalTrialStage ? "RETURN TO TRIALS" : "NEXT STAGE", bigButton))
             {
                 if (lastVictory && activeTrialMode != TrialMode.Normal &&
                     stageId % ChroniclesTrials.StagesPerChapter == 0)
