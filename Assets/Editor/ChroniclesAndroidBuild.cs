@@ -40,6 +40,10 @@ namespace MythicChronicles.Editor
             string folder = Path.Combine(Directory.GetCurrentDirectory(), "Builds", "Chronicles");
             Directory.CreateDirectory(folder);
             bool previousBundle = EditorUserBuildSettings.buildAppBundle;
+            bool previousCustomKeystore = PlayerSettings.Android.useCustomKeystore;
+            // Development APKs use Unity's debug signing. The owner's
+            // release keystore stays untouched and is never stored in Git.
+            if (!bundle) PlayerSettings.Android.useCustomKeystore = false;
             EditorUserBuildSettings.buildAppBundle = bundle;
             string destination = Path.Combine(folder, bundle ? "Chronicles_Android.aab" : "Chronicles_Android.apk");
             try
@@ -49,7 +53,8 @@ namespace MythicChronicles.Editor
                     scenes = new[] { MainScene },
                     locationPathName = destination,
                     target = BuildTarget.Android,
-                    options = bundle ? BuildOptions.None : BuildOptions.Development
+                    options = bundle ? BuildOptions.None :
+                        BuildOptions.Development | BuildOptions.AllowDebugging
                 };
                 BuildReport report = BuildPipeline.BuildPlayer(settings);
                 if (report.summary.result != BuildResult.Succeeded)
@@ -61,6 +66,7 @@ namespace MythicChronicles.Editor
             finally
             {
                 EditorUserBuildSettings.buildAppBundle = previousBundle;
+                PlayerSettings.Android.useCustomKeystore = previousCustomKeystore;
             }
         }
     }
