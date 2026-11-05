@@ -49,6 +49,15 @@ namespace MythicChronicles.Editor
                 Check(service.SummonHero() != null, "Available summon ticket failed.");
                 Check(service.Data.summonTickets == tickets - 1, "Summon ticket was not consumed.");
 
+                HeroSkin alternate = HeroSkinCatalog.Find("horus", "ascendant");
+                Check(alternate != null, "Hero alternate skin metadata missing.");
+                int beforeSkinGems = service.Data.gems;
+                Check(service.UnlockSkin("horus", "ascendant"), "Unable to unlock owned hero skin.");
+                Check(service.Data.gems == beforeSkinGems - alternate.gemCost,
+                    "Incorrect gem charge for skin.");
+                Check(!service.UnlockSkin("horus", "ascendant"), "Skin must not charge a second time.");
+                Check(service.EquipSkin("horus", "ascendant"), "Owned skin must be equippable.");
+
                 service.Data.lastIdleClaimTicks = DateTime.UtcNow.AddMinutes(-140).Ticks;
                 int idleGold = service.ClaimIdleGold();
                 Check(idleGold > 0, "Idle collection should return accumulated currency.");
@@ -62,6 +71,8 @@ namespace MythicChronicles.Editor
                 Check(restored.Data.lastClearedStage == 1, "Stage progression did not reload.");
                 Check(restored.FindOwnedHero("horus").level == 2, "Hero level did not reload.");
                 Check(restored.FindOwnedHero("horus").weaponLevel == 1, "Gear progression did not reload.");
+                Check(restored.FindOwnedHero("horus").skin == "ascendant",
+                    "Equipped skin did not reload.");
                 Check(restored.Data.selectedTeam.Count == 5, "Formation did not reload.");
                 Check(restored.Data.stageRewardsClaimed.Count == 1, "Cleared stage log did not reload.");
 
