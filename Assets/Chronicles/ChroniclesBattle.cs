@@ -16,6 +16,7 @@ namespace MythicChronicles
             public int side, level;
             public float hp, maxHp, attack, armor, energy, shield, attackCd, skillCd, stunned, flash;
             public float burn, burnTick, cursed, frozen, rallied, tauntSeconds, passiveTimer;
+            public float skillFactor = 1f, ultimateFactor = 1f, passiveFactor = 1f;
             public bool savedOnce;
             public Combatant forcedTarget;
             public bool boss;
@@ -45,7 +46,7 @@ namespace MythicChronicles
         public float SecondsLeft { get { return Mathf.Max(0f, 90f - elapsed); } }
         public float Speed { get; set; } = 1f;
 
-        public void Initialize(StageDefinition chosen, IList<OwnedHero> squad, Action<bool> onFinished)
+        public void Initialize(StageDefinition chosen, IList<OwnedHero> squad, PlayerSave savedProgress, Action<bool> onFinished)
         {
             if (chosen == null || squad == null || squad.Count != 5) throw new ArgumentException("Battle requires stage and five heroes.");
             stage = chosen; finished = onFinished;
@@ -54,7 +55,22 @@ namespace MythicChronicles
             {
                 HeroDefinition hero = WorldsCatalog.FindHero(squad[i].id);
                 if (hero == null) throw new ArgumentException("Unknown hero: " + squad[i].id);
-                Spawn(hero, 0, i, squad[i].level, false, squad[i].weaponLevel, squad[i].armorLevel, squad[i].stars, squad[i].skin);
+                int actualLevel = ChroniclesGrowth.EffectiveLevel(savedProgress, squad[i]);
+                Spawn(hero, 0, i, actualLevel, false, squad[i].weaponLevel,
+                    squad[i].armorLevel, squad[i].stars, squad[i].skin);
+                Combatant fighter = units[units.Count - 1];
+                HeroGrowthStats growth = ChroniclesGrowth.Calculate(savedProgress, squad[i]);
+                EquipmentBonuses gear = ChroniclesEquipment.Calculate(
+                    savedProgress == null ? null : savedProgress.equipment, hero.id);
+                fighter.attack = (fighter.attack + gear.attack) *
+                    growth.attackMultiplier * gear.attackMultiplier;
+                fighter.maxHp = (fighter.maxHp + gear.health) *
+                    growth.hpMultiplier * gear.healthMultiplier;
+                fighter.armor = (fighter.armor + gear.defense) * growth.defenseMultiplier;
+                fighter.hp = fighter.maxHp;
+                fighter.skillFactor = growth.skillMultiplier;
+                fighter.ultimateFactor = growth.ultimateMultiplier;
+                fighter.passiveFactor = growth.passiveMultiplier;
             }
             var opponents = new List<HeroDefinition>();
             Origin origin = WorldsCatalog.Chapters[stage.chapter - 1].origin;
@@ -575,7 +591,7 @@ namespace MythicChronicles
             if (kit.passive == HeroPassive.Stormborn)
                 actor.rallied = Mathf.Max(actor.rallied, 3.2f);
             actor.visual.Play(HeroAnimation.Skill);
-            CastEffect(actor, target, kit.skill, kit.skillPower, false);
+            CastEffect(actor, target, kit.skill, kit.skillPower * actor.skillFactor, false);
             Floating(kit.skillName, actor, Color.yellow);
         }
 
@@ -586,7 +602,7 @@ namespace MythicChronicles
             actor.visual.Play(HeroAnimation.Ultimate);
             if (ChroniclesAudioDirector.Instance != null)
                 ChroniclesAudioDirector.Instance.HeroUltimate(actor.hero.id);
-            CastEffect(actor, target, kit.ultimate, kit.ultimatePower, true);
+            CastEffect(actor, target, kit.ultimate, kit.ultimatePower * actor.ultimateFactor, true);
             Floating(kit.ultimateName, actor, new Color(1f, .75f, .22f));
         }
 
