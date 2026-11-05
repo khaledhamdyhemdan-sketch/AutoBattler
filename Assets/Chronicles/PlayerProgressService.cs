@@ -101,7 +101,7 @@ namespace MythicChronicles
                 Data.createdUtc = DateTime.UtcNow.ToString("o");
                 Data.lastIdleClaimTicks = DateTime.UtcNow.Ticks;
                 foreach (var id in WorldsCatalog.StartingHeroes) Data.heroes.Add(new OwnedHero { id = id });
-                Data.selectedTeam.AddRange(new[] { "sobek", "anubis", "sekhmet", "isis", "ra" });
+                Data.selectedTeam.AddRange(WorldsCatalog.StartingHeroes);
                 Save();
             }
             Repair();
@@ -682,10 +682,16 @@ namespace MythicChronicles
             else if (Data.gems >= 120) Data.gems -= 120;
             else return null;
 
-            Rarity tier = UnityEngine.Random.value < .25f ? Rarity.Legendary : Rarity.Epic;
+            // Preliminary standard-banner odds: R 20%, SR 65%, SSR 15%.
+            // The 4 Light/Dark SSR units are EXCLUDED until a special
+            // limited banner with separate odds/pity is implemented.
+            float random = UnityEngine.Random.value;
+            Rarity tier = random < .20f ? Rarity.R :
+                random < .85f ? Rarity.SR : Rarity.SSR;
             var candidates = new List<HeroDefinition>();
             foreach (var hero in WorldsCatalog.Heroes)
-                if (hero.rarity == tier) candidates.Add(hero);
+                if (hero.rarity == tier && !HeroElements.IsSpecial(hero))
+                    candidates.Add(hero);
             if (candidates.Count == 0) return null;
             HeroDefinition selected = candidates[UnityEngine.Random.Range(0, candidates.Count)];
             OwnedHero owned = FindOwnedHero(selected.id);
