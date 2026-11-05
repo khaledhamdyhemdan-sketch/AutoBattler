@@ -10,6 +10,24 @@
 - Device-local saves and clocks are **not trusted** for online economy, UR pity, leaderboard results, purchases, guild raids or rankings. A client cannot upload arbitrary level/hero ownership to turn it into authoritative balances.
 - No secrets, keystores or database passwords should be committed to GitHub.
 
+## Implemented public game catalog (offline Alpha)
+
+The following **read-only** endpoints are now implemented and tested without
+player authentication. Neither endpoint modifies progression or executes draws.
+
+| Endpoint | Authorization | Behavior |
+|---|---|---|
+| `GET /v1/catalog/heroes` | Public | English roster of 41 unique heroes, tier, element, origin and role |
+| `GET /v1/catalog/banners` | Public | Standard/Astral probabilities, 40/70 hard pity, and explicit `liveSummoning:false` |
+
+Both endpoints source their data from `shared/hero-catalog.json`. CI enforces
+that the shared list matches `WorldsCatalog.cs` / `HeroElements.cs`.
+The Unity Alpha includes `ChroniclesCatalogClient`, an optional HTTPS-only
+probe for those two routes; **no endpoint URL is preconfigured and no player
+tokens, currencies, or saves are sent**. Unity Editor can use local loopback
+HTTP for isolated testing only. Google/Apple identity, real matchmaking and
+server-authoritative summons are still not implemented.
+
 ## API proposal (`/v1`)
 
 | Endpoint | Authorization | Behavior |
