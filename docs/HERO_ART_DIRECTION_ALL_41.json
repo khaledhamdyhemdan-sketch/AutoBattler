@@ -689,7 +689,7 @@
       "staticPath": "Assets/Resources/Chronicles/Portraits/Static/hundun.png",
       "framesFolder": "Assets/Resources/Chronicles/Portraits/Animated/hundun",
       "prefab": "Assets/Resources/Chronicles/Heroes/hundun/default.prefab",
-      "productionStatus": "NOT_PRODUCED"
+      "productionStatus": "CANDIDATE_STATIC_AND_8_FRAMES_UNITY_REVIEW_PENDING"
     },
     {
       "id": "apollo",
