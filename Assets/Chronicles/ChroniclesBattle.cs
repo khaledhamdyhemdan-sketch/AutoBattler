@@ -73,6 +73,27 @@ namespace MythicChronicles
                 else enemy = opponents[(stage.id * 3 + i) % opponents.Count];
                 Spawn(enemy, 1, i, 1 + stage.id / 3, stage.boss && i == 0);
             }
+            ApplySynergy();
+        }
+
+        private void ApplySynergy()
+        {
+            for (int team = 0; team <= 1; team++)
+            {
+                var heroes = new List<HeroDefinition>(5);
+                foreach (Combatant fighter in units)
+                    if (fighter.side == team) heroes.Add(fighter.hero);
+                TeamSynergyBonus bonus = TeamSynergy.Calculate(heroes);
+                foreach (Combatant fighter in units)
+                {
+                    if (fighter.side != team) continue;
+                    fighter.attack *= bonus.attackMultiplier;
+                    fighter.maxHp *= bonus.hpMultiplier;
+                    fighter.hp = fighter.maxHp;
+                    fighter.energy = bonus.startingEnergy;
+                }
+                Debug.Log("[Chronicles] Team " + team + " synergy: " + bonus.description);
+            }
         }
 
         private Material CreateMaterial(Color color)
