@@ -1,0 +1,21 @@
+{
+  "hero": {
+    "id": "amaterasu",
+    "name": "Amaterasu",
+    "origin": "Japan",
+    "role": "Mage",
+    "rarity": "UR",
+    "element": "Light",
+    "silhouette": "Solar Japanese court sovereign in vermilion-white-gold ceremonial silk",
+    "weapon": "Sacred mirror and illuminated hand fan",
+    "setting": "Sacred cave entrance opening into an eastern sunrise",
+    "idle": "Mirror rotates slowly; layered silk and blossoms move",
+    "ultimateVfx": "The heavenly mirror reflects a fan of white-gold rays",
+    "staticPath": "Assets/Resources/Chronicles/Portraits/Static/amaterasu.png",
+    "framesFolder": "Assets/Resources/Chronicles/Portraits/Animated/amaterasu",
+    "prefab": "Assets/Resources/Chronicles/Heroes/amaterasu/default.prefab",
+    "productionStatus": "NOT_PRODUCED"
+  },
+  "static": "Use case: stylized-concept. ONE individual original luxury painterly ANIME mythology game portrait of Amaterasu from Japan, UR Light Mage. Adult FEMALE woman. Exact design brief: Solar Japanese court sovereign in vermilion-white-gold ceremonial silk. Distinctive weapon/props: Sacred mirror and illuminated hand fan. Setting: Sacred cave entrance opening into an eastern sunrise. Actual game abilities: Dawn Ribbon; Heavenly Radiance; Morning Light; Ignite the enemy formation.; Send a wave of radiant fire.; Increase healing received by the team.. Express role and divine/heroic presence through a restrained scene motif inspired by: The heavenly mirror reflects a fan of white-gold rays. Imposing cinematic low-angle three-quarter composition, readable face/silhouette at thumbnail, ornate convincing materials, powerful dignified character-specific presence. BOTH forearms, wrists and hands fully inside canvas and readable, anatomically natural fingers gripping the named props; no hidden/missing hand. Place large named props within composition. Preserve specified gender/species/culture; fully covered appropriate ceremonial outfit or armor for humanoids. Premium polished original anime finish, not copied from any game, distinct from other roster heroes. Full-bleed vertical2:3 target1024x1536. No writing, runic letters, hieroglyph text, numbers, logos, watermark, card frame, UI, panel borders, collage, extra people or extra limbs.",
+  "animation": "Edit target: supplied Amaterasu portrait. EXACTLY8 sequential subtle idle frames in a STRICT regular4-column x2-row grid, zero gaps or margins, requested2048x1536 sheet; every equal cell repeats COMPLETE2:3 portrait with identical framing. Preserve same Adult FEMALE woman. Lock identity, face/anatomy, gender/species, costume patterns, colors, named props (Sacred mirror and illuminated hand fan), both hands/limbs and their grips. Fixed camera and identical background (Sacred cave entrance opening into an eastern sunrise). Subtle character idle inspired by Mirror rotates slowly; layered silk and blossoms move, reduced to tiny organic motion returning to start, no changing pose or spinning weapon. Eyes if present: open1-2, halfclosed3, closed4, halfopen5, open6-8. Only small hair/fur/cloth/feather movement and gentle character-specific glow pulse; no camera zoom, large particles or attack scene. First/last nearly identical for looping. Preserve both hands and all props fully visible in every frame; for nonhumanoid creatures no added human hands. No labels, typography, UI, numbers, borders, dividers, watermark, new objects or extra limbs. Consistent original premium anime details."
+}

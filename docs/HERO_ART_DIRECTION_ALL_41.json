@@ -366,7 +366,7 @@
       "staticPath": "Assets/Resources/Chronicles/Portraits/Static/amaterasu.png",
       "framesFolder": "Assets/Resources/Chronicles/Portraits/Animated/amaterasu",
       "prefab": "Assets/Resources/Chronicles/Heroes/amaterasu/default.prefab",
-      "productionStatus": "NOT_PRODUCED"
+      "productionStatus": "CANDIDATE_STATIC_AND_8_FRAMES_UNITY_REVIEW_PENDING"
     },
     {
       "id": "susanoo",
