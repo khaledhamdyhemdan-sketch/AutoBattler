@@ -171,7 +171,10 @@ namespace MythicChronicles
             if (stage == null) { page = Page.Chapters; return; }
             GUI.Label(new Rect(22, 261, 496, 90), stage.boss ? "BOSS ENCOUNTER" : "STORY ENCOUNTER", heading);
             GUI.Label(new Rect(25, 349, 490, 80), stage.name, heading);
-            GUI.Box(new Rect(32, 449, 476, 174), stage.narrative);
+            StoryMoment moment = WorldsStory.Get(stageId);
+            GUI.Box(new Rect(32, 449, 476, 174), "");
+            GUI.Label(new Rect(45, 454, 448, 40), moment == null ? "Narrator" : moment.speaker, heading);
+            GUI.Label(new Rect(45, 509, 448, 105), moment == null ? stage.narrative : moment.line, subtitle);
             GUI.Label(new Rect(35, 633, 475, 58),
                 "Recommended power: " + stage.recommendedPower + "\n" +
                 "First-clear reward: " + stage.gold + " Gold, " + stage.gems + " Gems", subtitle);
