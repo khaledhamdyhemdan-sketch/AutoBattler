@@ -1,0 +1,90 @@
+#if UNITY_EDITOR
+using System;
+using System.Collections.Generic;
+using UnityEditor;
+using UnityEditor.SceneManagement;
+using UnityEngine;
+using UnityEngine.SceneManagement;
+using MythicChronicles;
+
+namespace MythicChronicles.Editor
+{
+    public static class ChroniclesProjectSetup
+    {
+        private const string ScenePath = "Assets/Chronicles/Chronicles_Main.unity";
+
+        [MenuItem("Tools/Chronicles/Create Main Game Scene")]
+        public static void CreateMainGameScene()
+        {
+            if (!EditorSceneManager.SaveCurrentModifiedScenesIfUserWantsTo()) return;
+            Scene scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
+            GameObject root = new GameObject("Chronicles Game Root");
+            root.AddComponent<ChroniclesGame>();
+            if (!EditorSceneManager.SaveScene(scene, ScenePath))
+            {
+                Debug.LogError("[Chronicles] Failed to create main scene.");
+                return;
+            }
+            var scenes = new List<EditorBuildSettingsScene>(EditorBuildSettings.scenes);
+            scenes.RemoveAll(s => s.path == ScenePath);
+            scenes.Insert(0, new EditorBuildSettingsScene(ScenePath, true));
+            EditorBuildSettings.scenes = scenes.ToArray();
+            AssetDatabase.SaveAssets();
+            AssetDatabase.Refresh();
+            Debug.Log("[Chronicles] Main portrait game scene created and added as first Build Settings scene.");
+            EditorGUIUtility.PingObject(AssetDatabase.LoadAssetAtPath<SceneAsset>(ScenePath));
+        }
+
+        [MenuItem("Tools/Chronicles/Validate Game Catalog")]
+        public static void ValidateGameCatalog()
+        {
+            var seen = new HashSet<string>(StringComparer.Ordinal);
+            var originCounts = new Dictionary<Origin, int>();
+            int errors = 0;
+            foreach (var hero in WorldsCatalog.Heroes)
+            {
+                if (string.IsNullOrWhiteSpace(hero.id) || !seen.Add(hero.id))
+                {
+                    Debug.LogError("[Chronicles] Duplicate or empty hero ID: " + hero.id);
+                    errors++;
+                }
+                if (string.IsNullOrWhiteSpace(hero.story) || string.IsNullOrWhiteSpace(hero.name))
+                {
+                    Debug.LogError("[Chronicles] Hero needs name and lore: " + hero.id);
+                    errors++;
+                }
+                if (!originCounts.ContainsKey(hero.origin)) originCounts[hero.origin] = 0;
+                originCounts[hero.origin]++;
+            }
+            foreach (var id in WorldsCatalog.StartingHeroes)
+            {
+                if (WorldsCatalog.FindHero(id) == null)
+                {
+                    Debug.LogError("[Chronicles] Starter not in catalog: " + id);
+                    errors++;
+                }
+            }
+            if (WorldsCatalog.Heroes.Length != 30)
+            {
+                Debug.LogError("[Chronicles] Expected 30 named heroes."); errors++;
+            }
+            for (int i = 1; i <= 60; i++)
+            {
+                StageDefinition stage = WorldsCatalog.GetStage(i);
+                if (stage == null || stage.chapter != (i - 1) / 10 + 1 || stage.id != i)
+                { Debug.LogError("[Chronicles] Invalid stage " + i); errors++; }
+            }
+            foreach (Origin origin in Enum.GetValues(typeof(Origin)))
+            {
+                if (!originCounts.ContainsKey(origin))
+                {
+                    Debug.LogWarning("[Chronicles] No heroes yet for " + origin);
+                }
+            }
+            if (errors == 0)
+                Debug.Log("[Chronicles] Catalog validation passed: 30 identities, 6 worlds, 60 stage definitions. This is NOT a Unity/Android playtest.");
+            else Debug.LogError("[Chronicles] Catalog validation failed with " + errors + " issues.");
+        }
+    }
+}
+#endif
