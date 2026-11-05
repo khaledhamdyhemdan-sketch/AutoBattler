@@ -45,6 +45,8 @@ namespace MythicChronicles
         public List<OwnedHero> heroes = new List<OwnedHero>();
         public List<string> selectedTeam = new List<string>();
         public List<int> stageRewardsClaimed = new List<int>();
+        public List<int> eliteClears = new List<int>();
+        public List<int> darkClears = new List<int>();
         public List<QuestCounter> quests = new List<QuestCounter>();
         public List<QuestCounter> weeklyQuests = new List<QuestCounter>();
         public List<string> claimedDailyQuests = new List<string>();
@@ -132,6 +134,13 @@ namespace MythicChronicles
             if (Data.heroes == null) Data.heroes = new List<OwnedHero>();
             if (Data.selectedTeam == null) Data.selectedTeam = new List<string>();
             if (Data.stageRewardsClaimed == null) Data.stageRewardsClaimed = new List<int>();
+            if (Data.eliteClears == null) Data.eliteClears = new List<int>();
+            if (Data.darkClears == null) Data.darkClears = new List<int>();
+            var seenElite = new HashSet<int>();
+            Data.eliteClears.RemoveAll(id => id < 1 || id > 60 || !seenElite.Add(id));
+            var seenDark = new HashSet<int>();
+            Data.darkClears.RemoveAll(id => id < 1 || id > 60 ||
+                !seenDark.Add(id) || !Data.eliteClears.Contains(id));
             if (Data.quests == null) Data.quests = new List<QuestCounter>();
             if (Data.weeklyQuests == null) Data.weeklyQuests = new List<QuestCounter>();
             if (Data.claimedDailyQuests == null) Data.claimedDailyQuests = new List<string>();
@@ -854,6 +863,57 @@ namespace MythicChronicles
                 result.heroIds.Clear();
                 result.error = "Summon could not be saved: " + ex.Message;
                 return result;
+            }
+        }
+
+        public bool CanPlayTrial(int stageId, TrialMode mode)
+        {
+            return ChroniclesTrials.CanPlay(Data, stageId, mode);
+        }
+
+        public bool CompleteTrial(int stageId, TrialMode mode)
+        {
+            if (mode == TrialMode.Normal || !CanPlayTrial(stageId, mode))
+                return false;
+            ResetDailyIfNeeded();
+            ResetWeeklyIfNeeded();
+            string before = JsonUtility.ToJson(Data);
+            try
+            {
+                IncrementQuest("win_1");
+                IncrementQuest("win_3");
+                IncrementWeekly("win_10");
+                if (stageId % ChroniclesTrials.StagesPerChapter == 0)
+                    IncrementWeekly("boss_3");
+
+                List<int> clearLog = mode == TrialMode.Elite ?
+                    Data.eliteClears : Data.darkClears;
+                if (!clearLog.Contains(stageId))
+                {
+                    TrialReward reward = ChroniclesTrials.FirstClearReward(stageId, mode);
+                    if (reward == null) return false;
+                    clearLog.Add(stageId);
+                    Data.gold = checked(Data.gold + reward.gold);
+                    Data.gems = checked(Data.gems + reward.gems);
+                    Data.forgeDust = checked(Data.forgeDust + reward.forgeDust);
+                    Data.astralSeals = checked(Data.astralSeals + reward.astralSeals);
+                    if (stageId % 5 == 0)
+                        Data.runes.Add(new RuneInstance
+                        {
+                            instanceId = "trial_" + mode + "_rune_" + stageId,
+                            type = (RuneType)((stageId / 5 - 1) % 4),
+                            level = 1,
+                            assignedHeroId = ""
+                        });
+                }
+                if (!Save()) throw new IOException(LastError ?? "Save failed.");
+                return true;
+            }
+            catch (Exception ex)
+            {
+                Data = JsonUtility.FromJson<PlayerSave>(before);
+                LastError = ex.Message;
+                return false;
             }
         }
 
