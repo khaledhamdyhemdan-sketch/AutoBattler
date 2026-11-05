@@ -148,6 +148,9 @@ for (const [origin, counts] of origins) {
     origin + ' must have Light and Darkness UR heroes');
 }
 const unmetTargets = rosterTargets(canonical).filter(t => !t.ok);
+// Owner decision 2026-11-05: every faction needs 10+ heroes and Light+Darkness UR.
+assert.deepEqual(unmetTargets, [], 'Roster target not met (10+ heroes and Light+Dark UR per faction): ' +
+  unmetTargets.map(t => t.origin + ' ' + t.heroes + '/10 UR L' + t.lightUR + '/D' + t.darkUR).join(', '));
 
 function listFiles(folder) {
   const entries = fs.readdirSync(folder, { withFileTypes: true });

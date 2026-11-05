@@ -1655,6 +1655,223 @@
         ]
       ],
       "visual_approval": "MANUAL_REVIEW_REQUIRED"
+    },
+    {
+      "hero_id": "poseidon",
+      "static": false,
+      "frames": 0,
+      "dimensions": [],
+      "visual_approval": "MANUAL_REVIEW_REQUIRED"
+    },
+    {
+      "hero_id": "medusa",
+      "static": false,
+      "frames": 0,
+      "dimensions": [],
+      "visual_approval": "MANUAL_REVIEW_REQUIRED"
+    },
+    {
+      "hero_id": "heimdall",
+      "static": false,
+      "frames": 0,
+      "dimensions": [],
+      "visual_approval": "MANUAL_REVIEW_REQUIRED"
+    },
+    {
+      "hero_id": "loki",
+      "static": false,
+      "frames": 0,
+      "dimensions": [],
+      "visual_approval": "MANUAL_REVIEW_REQUIRED"
+    },
+    {
+      "hero_id": "eir",
+      "static": false,
+      "frames": 0,
+      "dimensions": [],
+      "visual_approval": "MANUAL_REVIEW_REQUIRED"
+    },
+    {
+      "hero_id": "tsukuyomi",
+      "static": false,
+      "frames": 0,
+      "dimensions": [],
+      "visual_approval": "MANUAL_REVIEW_REQUIRED"
+    },
+    {
+      "hero_id": "raijin",
+      "static": false,
+      "frames": 0,
+      "dimensions": [],
+      "visual_approval": "MANUAL_REVIEW_REQUIRED"
+    },
+    {
+      "hero_id": "tamamo",
+      "static": false,
+      "frames": 0,
+      "dimensions": [],
+      "visual_approval": "MANUAL_REVIEW_REQUIRED"
+    },
+    {
+      "hero_id": "inari",
+      "static": false,
+      "frames": 0,
+      "dimensions": [],
+      "visual_approval": "MANUAL_REVIEW_REQUIRED"
+    },
+    {
+      "hero_id": "benzaiten",
+      "static": false,
+      "frames": 0,
+      "dimensions": [],
+      "visual_approval": "MANUAL_REVIEW_REQUIRED"
+    },
+    {
+      "hero_id": "hachiman",
+      "static": false,
+      "frames": 0,
+      "dimensions": [],
+      "visual_approval": "MANUAL_REVIEW_REQUIRED"
+    },
+    {
+      "hero_id": "erlangshen",
+      "static": false,
+      "frames": 0,
+      "dimensions": [],
+      "visual_approval": "MANUAL_REVIEW_REQUIRED"
+    },
+    {
+      "hero_id": "zhongkui",
+      "static": false,
+      "frames": 0,
+      "dimensions": [],
+      "visual_approval": "MANUAL_REVIEW_REQUIRED"
+    },
+    {
+      "hero_id": "change",
+      "static": false,
+      "frames": 0,
+      "dimensions": [],
+      "visual_approval": "MANUAL_REVIEW_REQUIRED"
+    },
+    {
+      "hero_id": "fuxi",
+      "static": false,
+      "frames": 0,
+      "dimensions": [],
+      "visual_approval": "MANUAL_REVIEW_REQUIRED"
+    },
+    {
+      "hero_id": "houyi",
+      "static": false,
+      "frames": 0,
+      "dimensions": [],
+      "visual_approval": "MANUAL_REVIEW_REQUIRED"
+    },
+    {
+      "hero_id": "ladyofthelake",
+      "static": false,
+      "frames": 0,
+      "dimensions": [],
+      "visual_approval": "MANUAL_REVIEW_REQUIRED"
+    },
+    {
+      "hero_id": "babayaga",
+      "static": false,
+      "frames": 0,
+      "dimensions": [],
+      "visual_approval": "MANUAL_REVIEW_REQUIRED"
+    },
+    {
+      "hero_id": "lancelot",
+      "static": false,
+      "frames": 0,
+      "dimensions": [],
+      "visual_approval": "MANUAL_REVIEW_REQUIRED"
+    },
+    {
+      "hero_id": "scheherazade",
+      "static": false,
+      "frames": 0,
+      "dimensions": [],
+      "visual_approval": "MANUAL_REVIEW_REQUIRED"
+    },
+    {
+      "hero_id": "robinhood",
+      "static": false,
+      "frames": 0,
+      "dimensions": [],
+      "visual_approval": "MANUAL_REVIEW_REQUIRED"
+    },
+    {
+      "hero_id": "sinbad",
+      "static": false,
+      "frames": 0,
+      "dimensions": [],
+      "visual_approval": "MANUAL_REVIEW_REQUIRED"
+    },
+    {
+      "hero_id": "guinevere",
+      "static": false,
+      "frames": 0,
+      "dimensions": [],
+      "visual_approval": "MANUAL_REVIEW_REQUIRED"
+    },
+    {
+      "hero_id": "alexander",
+      "static": false,
+      "frames": 0,
+      "dimensions": [],
+      "visual_approval": "MANUAL_REVIEW_REQUIRED"
+    },
+    {
+      "hero_id": "hannibal",
+      "static": false,
+      "frames": 0,
+      "dimensions": [],
+      "visual_approval": "MANUAL_REVIEW_REQUIRED"
+    },
+    {
+      "hero_id": "leonidas",
+      "static": false,
+      "frames": 0,
+      "dimensions": [],
+      "visual_approval": "MANUAL_REVIEW_REQUIRED"
+    },
+    {
+      "hero_id": "musashi",
+      "static": false,
+      "frames": 0,
+      "dimensions": [],
+      "visual_approval": "MANUAL_REVIEW_REQUIRED"
+    },
+    {
+      "hero_id": "saladin",
+      "static": false,
+      "frames": 0,
+      "dimensions": [],
+      "visual_approval": "MANUAL_REVIEW_REQUIRED"
+    },
+    {
+      "hero_id": "boudica",
+      "static": false,
+      "frames": 0,
+      "dimensions": [],
+      "visual_approval": "MANUAL_REVIEW_REQUIRED"
+    },
+    {
+      "hero_id": "chingshih",
+      "static": false,
+      "frames": 0,
+      "dimensions": [],
+      "visual_approval": "MANUAL_REVIEW_REQUIRED"
+    },
+    {
+      "hero_id": "hypatia",
+      "static": false,
+      "frames": 0,
+      "dimensions": [],
+      "visual_approval": "MANUAL_REVIEW_REQUIRED"
     }
   ],
   "errors": [],
