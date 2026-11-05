@@ -1,3 +1,15 @@
+## 2026-11-05: Next gameplay systems — new source commits
+
+The `feature/egyptian-heroes-5v5` branch now also includes:
+- **English Standard / Astral Covenant summons** with 1×/10× draws, source-defined base rates, SSR hard pity at 40, Light/Dark UR hard pity at 70, local duplicate fragments, persisted summon history and rollback on save errors.
+- **English 28-day cumulative login gifts**, UTC-based once-a-day claims, 7-day milestone rewards and earned Astral Seals.
+- **Story variants:** 60 existing Normal encounters remain unchanged; 60 Elite and 60 Dark difficulty variants (ten of each per chapter) now have separate unlocks, first-clear rewards, campaign rank and English menu navigation.
+- **Seven faction towers:** Egypt, Greece, Norse, Japan, China, Folklore and History, each with **100 procedurally scaled floors**, independent local highest-floor rank, origin-lineup requirement (two matching heroes from a team of five) and progression rewards.
+- UR banner's English preview uses different Light/Dark art treatments from the existing hero portrait renderer; actual art is still **procedural development illustration**, not finished production key art or a guaranteed featured-rate banner.
+- Unity editor test *source files* were committed for summon, login, trials and tower progression. Static bracket and English-glyph audits were run on modified scripts, but **Unity compilation, test execution and Android builds have not been run or verified**.
+
+See [detailed system report](IMPLEMENTATION_SUMMON_LOGIN_TRIALS_2026_11_05.md) for exact functionality, rates, restrictions and release blockers.
+
 ## 2026-11-05: English-language 41-hero portrait integration (continuation)
 
 - The owner's conversation remains **Egyptian Arabic**. **In-game player-facing copy is English**.
