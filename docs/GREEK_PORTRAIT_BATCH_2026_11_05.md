@@ -7,6 +7,7 @@ Runtime language remains English. Portraits contain no baked text/UI/borders.
 | Hero | Static | Frames | Visual review | Unity/device status |
 |---|---|---|---|---|
 | Artemis | 1024x1536 PNG | 8 x 362x543 | Adult female, crescent circlet, green cloak, silver bow, quiver; blink present; minor generative drift | Awaiting Unity installation |
+| Persephone | 1024x1536 PNG | 8 x 362x543 | Adult female, pomegranate, auburn hair, blossom/ivy crown; blink present; minor detail drift | Awaiting Unity installation |
 
 These are candidate idle loops, not final production animation approval.
 Full source sheets, exact prompts, GIF previews and frame-difference metrics are
