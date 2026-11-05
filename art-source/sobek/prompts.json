@@ -1,0 +1,21 @@
+{
+  "hero": {
+    "id": "sobek",
+    "name": "Sobek",
+    "origin": "Egypt",
+    "role": "Tank",
+    "rarity": "R",
+    "element": "Water",
+    "silhouette": "Powerful crocodile-headed river protector with plated green armor",
+    "weapon": "Broad Nile shield and river-etched glaive",
+    "setting": "Emerald riverbank and ancient stone embankment",
+    "idle": "Water trails across armor scales as he shifts weight",
+    "ultimateVfx": "Summoned flood barriers crash into approaching enemies",
+    "staticPath": "Assets/Resources/Chronicles/Portraits/Static/sobek.png",
+    "framesFolder": "Assets/Resources/Chronicles/Portraits/Animated/sobek",
+    "prefab": "Assets/Resources/Chronicles/Heroes/sobek/default.prefab",
+    "productionStatus": "NOT_PRODUCED"
+  },
+  "static": "Use case: stylized-concept. ONE individual original luxury painterly ANIME mythology game portrait of Sobek from Egypt, R Water Tank. Adult male crocodile-headed guardian, no human face; massive protective build. Exact design brief: Powerful crocodile-headed river protector with plated green armor. Distinctive weapon/props: Broad Nile shield and river-etched glaive. Setting: Emerald riverbank and ancient stone embankment. Actual game abilities: River Guard; Flood of Teeth; Crocodile Hide; Shield yourself and force enemies to target you.; Strike several foes at once.; Take less incoming damage.. Express role and divine/heroic presence through a restrained scene motif inspired by: Summoned flood barriers crash into approaching enemies. Imposing cinematic low-angle three-quarter composition, readable face/silhouette at thumbnail, ornate convincing materials, powerful dignified character-specific presence. BOTH forearms, wrists and hands fully inside canvas and readable, anatomically natural fingers gripping the named props; no hidden/missing hand. Place large named props within composition. Preserve specified gender/species/culture; fully covered appropriate ceremonial outfit or armor for humanoids. Premium polished original anime finish, not copied from any game, distinct from other roster heroes. Full-bleed vertical2:3 target1024x1536. No writing, runic letters, hieroglyph text, numbers, logos, watermark, card frame, UI, panel borders, collage, extra people or extra limbs.",
+  "animation": "Edit target: supplied Sobek portrait. EXACTLY8 sequential subtle idle frames in a STRICT regular4-column x2-row grid, zero gaps or margins, requested2048x1536 sheet; every equal cell repeats COMPLETE2:3 portrait with identical framing. Preserve same Adult male crocodile-headed guardian, no human face; massive protective build. Lock identity, face/anatomy, gender/species, costume patterns, colors, named props (Broad Nile shield and river-etched glaive), both hands/limbs and their grips. Fixed camera and identical background (Emerald riverbank and ancient stone embankment). Subtle character idle inspired by Water trails across armor scales as he shifts weight, reduced to tiny organic motion returning to start, no changing pose or spinning weapon. Eyes if present: open1-2, halfclosed3, closed4, halfopen5, open6-8. Only small hair/fur/cloth/feather movement and gentle character-specific glow pulse; no camera zoom, large particles or attack scene. First/last nearly identical for looping. Preserve both hands and all props fully visible in every frame; for nonhumanoid creatures no added human hands. No labels, typography, UI, numbers, borders, dividers, watermark, new objects or extra limbs. Consistent original premium anime details."
+}

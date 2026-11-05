@@ -77,7 +77,7 @@
       "staticPath": "Assets/Resources/Chronicles/Portraits/Static/sobek.png",
       "framesFolder": "Assets/Resources/Chronicles/Portraits/Animated/sobek",
       "prefab": "Assets/Resources/Chronicles/Heroes/sobek/default.prefab",
-      "productionStatus": "NOT_PRODUCED"
+      "productionStatus": "CANDIDATE_STATIC_AND_8_FRAMES_UNITY_REVIEW_PENDING"
     },
     {
       "id": "set",
