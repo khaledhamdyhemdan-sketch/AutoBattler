@@ -8,7 +8,7 @@ namespace MythicChronicles
     // to be replaced by production UI Toolkit art without changing progression logic.
     public sealed class ChroniclesGame : MonoBehaviour
     {
-        private enum Page { Home, Chapters, StageStory, Heroes, HeroDetails, Formation, Skins, Summon, Quests, WeeklyQuests, Idle, Settings, Battle, Results }
+        private enum Page { Home, Chapters, StageStory, Heroes, HeroDetails, Formation, Skins, Gear, Training, Runes, Summon, Quests, WeeklyQuests, Idle, Settings, Battle, Results }
         private Page page = Page.Home;
         private PlayerProgressService progress;
         private ChroniclesAudioDirector audio;
@@ -23,7 +23,7 @@ namespace MythicChronicles
         private string notice = "";
         private string lastSummoned = "";
         private bool lastVictory;
-        private Vector2 chapterScroll, rosterScroll, formationScroll;
+        private Vector2 chapterScroll, rosterScroll, formationScroll, gearScroll, runeScroll;
         private GUIStyle heading, subtitle, tiny;
         private GUIStyle bigButton;
         private Texture2D panelTex;
@@ -113,6 +113,9 @@ namespace MythicChronicles
                 case Page.HeroDetails: HeroDetails(); break;
                 case Page.Formation: Formation(); break;
                 case Page.Skins: Skins(); break;
+                case Page.Gear: Gear(); break;
+                case Page.Training: Training(); break;
+                case Page.Runes: Runes(); break;
                 case Page.Summon: Summon(); break;
                 case Page.Quests: Quests(false); break;
                 case Page.WeeklyQuests: Quests(true); break;
@@ -288,12 +291,10 @@ namespace MythicChronicles
                 if (GUI.Button(new Rect(40, 650, 460, 59), "UPGRADE HERO", bigButton))
                     notice = progress.UpgradeHero(hero.id) ? "Level increased and saved." :
                         "Upgrade unavailable: gold or level cap.";
-                if (GUI.Button(new Rect(40, 718, 219, 60), "UPGRADE WEAPON"))
-                    notice = progress.UpgradeEquipment(hero.id, true) ? "Weapon improved!" :
-                        "Weapon upgrade unavailable.";
-                if (GUI.Button(new Rect(278, 718, 222, 60), "UPGRADE ARMOR"))
-                    notice = progress.UpgradeEquipment(hero.id, false) ? "Armor improved!" :
-                        "Armor upgrade unavailable.";
+                if (GUI.Button(new Rect(40, 718, 219, 60), "EQUIPMENT"))
+                    { page = Page.Gear; notice = ""; }
+                if (GUI.Button(new Rect(278, 718, 222, 60), "SKILL TRAINING"))
+                    { page = Page.Training; notice = ""; }
                 if (GUI.Button(new Rect(40, 787, 460, 51),
                     "ASCEND (" + (owned.stars * 20) + " FRAGMENTS)"))
                     notice = progress.AscendHero(hero.id) ? "Star rank increased!" :
@@ -340,6 +341,131 @@ namespace MythicChronicles
             }
             if (GUI.Button(new Rect(40, 817, 460, 58), "BACK TO HERO", bigButton))
                 page = Page.HeroDetails;
+        }
+
+        private void Gear()
+        {
+            HeroDefinition hero = WorldsCatalog.FindHero(selectedHero);
+            if (hero == null) { page = Page.Heroes; return; }
+            EquipmentBonuses bonus = progress.GearBonus(hero.id);
+            GUI.Label(new Rect(30, 236, 480, 55), hero.name.ToUpperInvariant() + " EQUIPMENT", heading);
+            GUI.Label(new Rect(30, 288, 480, 80),
+                "Six slots • " + bonus.equippedCount + "/6 equipped" +
+                "\nATK +" + Mathf.RoundToInt(bonus.attack) +
+                "  HP +" + Mathf.RoundToInt(bonus.health) +
+                "  DEF +" + Mathf.RoundToInt(bonus.defense) +
+                "\nSET: " + bonus.summary, subtitle);
+            if (progress.Data.equipment.Count == 0)
+                GUI.Label(new Rect(36, 390, 465, 110),
+                    "Win campaign stages to earn equipment. Each stage drops a piece once.", subtitle);
+            gearScroll = GUI.BeginScrollView(new Rect(18, 385, 504, 438), gearScroll,
+                new Rect(0, 0, 478, Mathf.Max(440, progress.Data.equipment.Count * 98)));
+            for (int i = 0; i < progress.Data.equipment.Count; i++)
+            {
+                GearInstance item = progress.Data.equipment[i];
+                GearTemplate gear = ChroniclesEquipment.Find(item.templateId);
+                if (gear == null) continue;
+                float y = i * 98f;
+                GUI.Box(new Rect(4, y, 469, 92), "");
+                string wearing = item.equippedHeroId == hero.id ? "EQUIPPED" :
+                    string.IsNullOrEmpty(item.equippedHeroId) ? "IN BAG" : "ON " + item.equippedHeroId;
+                GUI.Label(new Rect(11, y + 8, 456, 38),
+                    gear.name + "  +" + item.level + "  [" + gear.rarity + "]", tiny);
+                GUI.Label(new Rect(11, y + 37, 192, 43), wearing, tiny);
+                if (item.equippedHeroId == hero.id)
+                {
+                    if (GUI.Button(new Rect(206, y + 45, 113, 39), "REMOVE"))
+                        notice = progress.UnequipGear(item.instanceId) ? "Item removed." : "Cannot remove.";
+                }
+                else
+                {
+                    if (GUI.Button(new Rect(206, y + 45, 113, 39), "EQUIP"))
+                        notice = progress.EquipGear(item.instanceId, hero.id) ? "Item equipped." : "Cannot equip.";
+                }
+                GUI.enabled = item.level < 30 && progress.Data.gold >= ChroniclesEquipment.UpgradeCost(item);
+                if (GUI.Button(new Rect(327, y + 45, 133, 39), "UPGRADE"))
+                    notice = progress.UpgradeGear(item.instanceId) ? "Gear upgraded." : "Upgrade failed.";
+                GUI.enabled = true;
+            }
+            GUI.EndScrollView();
+            if (GUI.Button(new Rect(40, 844, 460, 50), "BACK TO HERO", bigButton))
+                page = Page.HeroDetails;
+        }
+
+        private void Training()
+        {
+            OwnedHero hero = progress.FindOwnedHero(selectedHero);
+            if (hero == null) { page = Page.Heroes; return; }
+            GUI.Label(new Rect(24, 244, 490, 60), "HERO TRAINING", heading);
+            GUI.Label(new Rect(22, 303, 495, 56),
+                "Resonance LV " + progress.ResonanceLevel() +
+                " • Effective LV " + ChroniclesGrowth.EffectiveLevel(progress.Data, hero), subtitle);
+            string[] skillTypes = { "active", "ultimate", "passive" };
+            int[] levels = { hero.activeSkillLevel, hero.ultimateSkillLevel, hero.passiveSkillLevel };
+            for (int i = 0; i < skillTypes.Length; i++)
+            {
+                float y = 367 + i * 89;
+                GUI.Box(new Rect(30, y, 480, 78), "");
+                GUI.Label(new Rect(45, y + 10, 248, 55),
+                    skillTypes[i].ToUpperInvariant() + " Lv." + levels[i] +
+                    "\nNext: " + ChroniclesGrowth.SkillCost(levels[i]) + " Gold", tiny);
+                GUI.enabled = levels[i] < ChroniclesGrowth.SkillCap && levels[i] < hero.stars + 4;
+                if (GUI.Button(new Rect(310, y + 15, 179, 48), "LEVEL UP"))
+                    notice = progress.UpgradeSkill(hero.id, skillTypes[i]) ? "Skill upgraded." : "Insufficient gold.";
+                GUI.enabled = true;
+            }
+            GUI.Label(new Rect(35, 650, 465, 35),
+                "Talent Paths: Attack " + hero.attackTalents + " • Defense " +
+                hero.defenseTalents + " / " + ChroniclesGrowth.MaxTalents, tiny);
+            if (GUI.Button(new Rect(40, 691, 221, 49), "+ ATTACK TALENT"))
+                notice = progress.BuyTalent(hero.id, true) ? "Attack talent purchased." : "Talent locked or low gold.";
+            if (GUI.Button(new Rect(275, 691, 224, 49), "+ DEFENSE TALENT"))
+                notice = progress.BuyTalent(hero.id, false) ? "Defense talent purchased." : "Talent locked or low gold.";
+            if (GUI.Button(new Rect(40, 756, 220, 49), "RESET TALENTS"))
+                notice = progress.ResetTalents(hero.id) ? "Talent costs refunded." : "No talents to reset.";
+            if (GUI.Button(new Rect(274, 756, 225, 49), "RESET LEVEL"))
+                notice = progress.ResetHeroLevel(hero.id) ? "Level resources refunded." : "Already at Lv.1.";
+            if (GUI.Button(new Rect(40, 825, 220, 59), "RUNES", bigButton))
+                page = Page.Runes;
+            if (GUI.Button(new Rect(274, 825, 225, 59), "BACK TO HERO"))
+                page = Page.HeroDetails;
+        }
+
+        private void Runes()
+        {
+            HeroDefinition hero = WorldsCatalog.FindHero(selectedHero);
+            if (hero == null) { page = Page.Heroes; return; }
+            GUI.Label(new Rect(30, 244, 480, 59), hero.name.ToUpperInvariant() + " RUNES", heading);
+            GUI.Label(new Rect(35, 304, 465, 66),
+                "One rune of each type per hero. Earn a rune every five first-clear campaign stages.", subtitle);
+            runeScroll = GUI.BeginScrollView(new Rect(18, 376, 504, 442), runeScroll,
+                new Rect(0, 0, 478, Mathf.Max(445, progress.Data.runes.Count * 101)));
+            for (int i = 0; i < progress.Data.runes.Count; i++)
+            {
+                RuneInstance rune = progress.Data.runes[i];
+                float y = i * 101f;
+                GUI.Box(new Rect(5, y, 469, 95), "");
+                GUI.Label(new Rect(14, y + 7, 450, 35),
+                    rune.type + " RUNE — LV " + rune.level, tiny);
+                GUI.Label(new Rect(14, y + 36, 180, 45),
+                    rune.assignedHeroId == hero.id ? "EQUIPPED" :
+                    string.IsNullOrEmpty(rune.assignedHeroId) ? "AVAILABLE" : rune.assignedHeroId, tiny);
+                if (rune.assignedHeroId == hero.id)
+                {
+                    if (GUI.Button(new Rect(199, y + 43, 126, 40), "REMOVE"))
+                        notice = progress.UnequipRune(rune.instanceId) ? "Rune removed." : "Failed.";
+                }
+                else if (GUI.Button(new Rect(199, y + 43, 126, 40), "EQUIP"))
+                    notice = progress.EquipRune(rune.instanceId, hero.id) ? "Rune equipped." : "Failed.";
+                GUI.enabled = rune.level < 20 &&
+                    progress.Data.gold >= ChroniclesGrowth.RuneUpgradeCost(rune.level);
+                if (GUI.Button(new Rect(334, y + 43, 129, 40), "UPGRADE"))
+                    notice = progress.UpgradeRune(rune.instanceId) ? "Rune upgraded." : "Failed.";
+                GUI.enabled = true;
+            }
+            GUI.EndScrollView();
+            if (GUI.Button(new Rect(41, 835, 458, 59), "BACK TO TRAINING", bigButton))
+                page = Page.Training;
         }
 
         private void Formation()
@@ -488,7 +614,7 @@ namespace MythicChronicles
             { notice = "Stage is locked."; return; }
             if (battle != null) Destroy(battle.gameObject);
             battle = new GameObject("Chronicles - Campaign Battle").AddComponent<ChroniclesBattle>();
-            battle.Initialize(stage, chosen, OnBattleFinished);
+            battle.Initialize(stage, chosen, progress.Data, OnBattleFinished);
             if (menuCamera != null) menuCamera.enabled = false;
             if (menuAudio != null) menuAudio.enabled = false;
             page = Page.Battle; notice = "";
