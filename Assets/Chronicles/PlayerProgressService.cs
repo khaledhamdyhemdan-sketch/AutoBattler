@@ -28,7 +28,7 @@ namespace MythicChronicles
     [Serializable]
     public sealed class PlayerSave
     {
-        public int version = 1;
+        public int version = 2;
         public string createdUtc;
         public string lastDailyUtc;
         public string lastWeeklyUtc;
@@ -265,9 +265,12 @@ namespace MythicChronicles
             Data.forgeDust = Math.Max(0, Data.forgeDust);
             Data.relicDust = Math.Max(0, Data.relicDust);
             Data.astralSeals = Math.Max(0, Data.astralSeals);
+            if (Data.version < 2 && Data.lastClearedStage > 4)
+                Data.tutorialCompleted = true; // don't interrupt returning campaign players
+            Data.version = 2;
             Data.tutorialStep = Mathf.Clamp(Data.tutorialStep, 0, ChroniclesTutorial.StepCount);
-            if (Data.tutorialStep == ChroniclesTutorial.StepCount ||
-                Data.lastClearedStage > 4) Data.tutorialCompleted = true;
+            if (Data.tutorialStep == ChroniclesTutorial.StepCount)
+                Data.tutorialCompleted = true;
             Data.loginDaysClaimed = Mathf.Clamp(Data.loginDaysClaimed, 0,
                 ChroniclesLoginRewards.Days);
             if (Data.lastLoginGiftUtc == null) Data.lastLoginGiftUtc = "";
