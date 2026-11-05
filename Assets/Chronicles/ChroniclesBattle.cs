@@ -84,13 +84,14 @@ namespace MythicChronicles
                 foreach (Combatant fighter in units)
                     if (fighter.side == team) heroes.Add(fighter.hero);
                 TeamSynergyBonus bonus = TeamSynergy.Calculate(heroes);
+                bool diplomat = heroes.Exists(h => h.id == "cleopatra");
                 foreach (Combatant fighter in units)
                 {
                     if (fighter.side != team) continue;
                     fighter.attack *= bonus.attackMultiplier;
                     fighter.maxHp *= bonus.hpMultiplier;
                     fighter.hp = fighter.maxHp;
-                    fighter.energy = bonus.startingEnergy;
+                    fighter.energy = bonus.startingEnergy + (diplomat ? 14f : 0f);
                 }
                 Debug.Log("[Chronicles] Team " + team + " synergy: " + bonus.description);
             }
@@ -278,7 +279,8 @@ namespace MythicChronicles
                     Hit(f, target, f.attack);
                     float baseCooldown = f.hero.role == CombatRole.Assassin ? .85f : 1.25f;
                     if (f.frozen > 0f) baseCooldown *= 1.45f;
-                    if (kit != null && kit.passive == HeroPassive.Stormborn) baseCooldown *= .8f;
+                    if (kit != null && kit.passive == HeroPassive.Stormborn && f.rallied > 0f)
+                        baseCooldown *= .8f;
                     f.attackCd = baseCooldown;
                     f.energy = Mathf.Min(100f, f.energy + (kit != null &&
                         kit.passive == HeroPassive.Enchantress ? 23f : 17f));
@@ -540,7 +542,7 @@ namespace MythicChronicles
             }
         }
 
-        private void Heal(Combatant target, float value)
+        private void Heal(Combatant target, float value, Combatant healer = null)
         {
             if (target == null || !target.Alive) return;
             foreach (Combatant teammate in units)
@@ -553,8 +555,8 @@ namespace MythicChronicles
             if (actual <= 0f) return;
             target.hp += actual;
             Floating("+" + Mathf.RoundToInt(actual), target, Color.green);
-            HeroKit healedKit = HeroAbilityCatalog.For(target.hero.id);
-            if (healedKit != null && healedKit.passive == HeroPassive.Compassion)
+            HeroKit healerKit = healer == null ? null : HeroAbilityCatalog.For(healer.hero.id);
+            if (healerKit != null && healerKit.passive == HeroPassive.Compassion)
                 Shield(target, actual * .16f);
         }
 
@@ -570,6 +572,8 @@ namespace MythicChronicles
             HeroKit kit = HeroAbilityCatalog.For(actor.hero.id);
             if (kit == null) { Hit(actor, target, actor.attack * 1.4f); return; }
             actor.energy = Mathf.Min(100f, actor.energy + 13f);
+            if (kit.passive == HeroPassive.Stormborn)
+                actor.rallied = Mathf.Max(actor.rallied, 3.2f);
             actor.visual.Play(HeroAnimation.Skill);
             CastEffect(actor, target, kit.skill, kit.skillPower, false);
             Floating(kit.skillName, actor, Color.yellow);
@@ -636,7 +640,14 @@ namespace MythicChronicles
                         if (enemy.side == actor.side || !enemy.Alive) continue;
                         if (!ultimate && enemy != target) continue;
                         Hit(actor, enemy, actor.attack * power * (ultimate ? .6f : 1f));
-                        if (enemy.Alive) enemy.cursed = Mathf.Max(enemy.cursed, ultimate ? 6f : 4.5f);
+                        if (enemy.Alive)
+                        {
+                            HeroKit curseKit = HeroAbilityCatalog.For(actor.hero.id);
+                            float curseDuration = ultimate ? 6f : 4.5f;
+                            if (curseKit != null && curseKit.passive == HeroPassive.Sorcery)
+                                curseDuration *= 1.3f;
+                            enemy.cursed = Mathf.Max(enemy.cursed, curseDuration);
+                        }
                     }
                     break;
                 case AbilityEffect.LifeDrain:
@@ -644,12 +655,12 @@ namespace MythicChronicles
                     Heal(actor, actor.attack * power * .52f);
                     break;
                 case AbilityEffect.HealLowest:
-                    Heal(LowestFriend(actor), actor.attack * power);
+                    Heal(LowestFriend(actor), actor.attack * power, actor);
                     break;
                 case AbilityEffect.HealTeam:
                     foreach (Combatant ally in units)
                         if (ally.side == actor.side && ally.Alive)
-                            Heal(ally, actor.attack * power * .85f);
+                            Heal(ally, actor.attack * power * .85f, actor);
                     break;
                 case AbilityEffect.ShieldSelf:
                     Shield(actor, actor.maxHp * .12f * power);
