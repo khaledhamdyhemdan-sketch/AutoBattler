@@ -227,16 +227,26 @@ namespace MythicChronicles.Editor
                         else if (hero.element == HeroElement.Darkness) count[1]++;
                     }
                 }
-                Check(rCount == 2 && srCount == 8 && ssrCount == 20 &&
-                    urCount == 10 && exCount == 0 &&
-                    light == 5 && dark == 5 && urPairByRealm.Count == 5,
-                    "40-character tier distribution or UR element balance mismatch.");
+                Check(rCount == 2 && srCount == 7 && ssrCount == 16 &&
+                    urCount == 16 && exCount == 0 &&
+                    light == 9 && dark == 7 && urPairByRealm.Count == 5,
+                    "41-character tier distribution or UR element balance mismatch.");
                 foreach (var realm in urPairByRealm)
-                    Check(realm.Value[0] == 1 && realm.Value[1] == 1,
-                        "Each UR mythology must have exactly one Light and one Dark.");
-                Check(WorldsCatalog.Heroes.Length == 40 &&
-                    HeroAbilityCatalog.All.Length == 40,
-                    "All forty characters must have skill kits.");
+                    Check(realm.Value[0] >= 1 && realm.Value[1] >= 1,
+                        "Each UR mythology must have at least one Light and one Dark.");
+                Check(WorldsCatalog.Heroes.Length == 41 &&
+                    HeroAbilityCatalog.All.Length == 41,
+                    "All forty-one characters must have skill kits.");
+                // Every promoted hero must preserve its original persistent ID.
+                string[] promotedIds = { "ra", "hades", "odin", "hel", "amaterasu" };
+                foreach (string id in promotedIds)
+                    Check(WorldsCatalog.FindHero(id) != null &&
+                        WorldsCatalog.FindHero(id).rarity == Rarity.UR,
+                        "Promoted myth hero must retain ID and new UR rank: " + id);
+                Check(WorldsCatalog.FindHero("apollo") != null &&
+                    HeroAbilityCatalog.For("apollo") != null,
+                    "Apollo's additional UR hero kit must exist.");
+
                 foreach (string starterId in WorldsCatalog.StartingHeroes)
                     Check(!HeroElements.IsSpecial(WorldsCatalog.FindHero(starterId)),
                         "A rare Light/Dark hero must not be a free starter.");
