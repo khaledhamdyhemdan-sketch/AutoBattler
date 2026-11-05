@@ -1,0 +1,21 @@
+{
+  "hero": {
+    "id": "izanami",
+    "name": "Izanami",
+    "origin": "Japan",
+    "role": "Mage",
+    "rarity": "UR",
+    "element": "Darkness",
+    "silhouette": "Somber queen of Yomi with long dark funerary garments",
+    "weapon": "Underworld lantern and ornamental gate key",
+    "setting": "Yomi threshold with dim lanterns and falling petals",
+    "idle": "Lanterns fade in sequence and sleeves trail black silk",
+    "ultimateVfx": "The gate of Yomi releases a rolling underworld mist",
+    "staticPath": "Assets/Resources/Chronicles/Portraits/Static/izanami.png",
+    "framesFolder": "Assets/Resources/Chronicles/Portraits/Animated/izanami",
+    "prefab": "Assets/Resources/Chronicles/Heroes/izanami/default.prefab",
+    "productionStatus": "NOT_PRODUCED"
+  },
+  "static": "Use case: stylized-concept. ONE individual original luxury painterly ANIME mythology game portrait of Izanami from Japan, UR Darkness Mage. Adult FEMALE woman. Exact design brief: Somber queen of Yomi with long dark funerary garments. Distinctive weapon/props: Underworld lantern and ornamental gate key. Setting: Yomi threshold with dim lanterns and falling petals. Actual game abilities: Yomi's Embrace; Realm of No Return; The Last Threshold; Drain a target's vitality.; Conjure a dark gate across the battlefield.; Gain a shield when an enemy falls.. Express role and divine/heroic presence through a restrained scene motif inspired by: The gate of Yomi releases a rolling underworld mist. Imposing cinematic low-angle three-quarter composition, readable face/silhouette at thumbnail, ornate convincing materials, powerful dignified character-specific presence. BOTH forearms, wrists and hands fully inside canvas and readable, anatomically natural fingers gripping the named props; no hidden/missing hand. Place large named props within composition. Preserve specified gender/species/culture; fully covered appropriate ceremonial outfit or armor for humanoids. Premium polished original anime finish, not copied from any game, distinct from other roster heroes. Full-bleed vertical2:3 target1024x1536. No writing, runic letters, hieroglyph text, numbers, logos, watermark, card frame, UI, panel borders, collage, extra people or extra limbs.",
+  "animation": "Edit target: supplied Izanami portrait. EXACTLY8 sequential subtle idle frames in a STRICT regular4-column x2-row grid, zero gaps or margins, requested2048x1536 sheet; every equal cell repeats COMPLETE2:3 portrait with identical framing. Preserve same Adult FEMALE woman. Lock identity, face/anatomy, gender/species, costume patterns, colors, named props (Underworld lantern and ornamental gate key), both hands/limbs and their grips. Fixed camera and identical background (Yomi threshold with dim lanterns and falling petals). Subtle character idle inspired by Lanterns fade in sequence and sleeves trail black silk, reduced to tiny organic motion returning to start, no changing pose or spinning weapon. Eyes if present: open1-2, halfclosed3, closed4, halfopen5, open6-8. Only small hair/fur/cloth/feather movement and gentle character-specific glow pulse; no camera zoom, large particles or attack scene. First/last nearly identical for looping. Preserve both hands and all props fully visible in every frame; for nonhumanoid creatures no added human hands. No labels, typography, UI, numbers, borders, dividers, watermark, new objects or extra limbs. Consistent original premium anime details."
+}
