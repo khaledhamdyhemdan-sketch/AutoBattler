@@ -90,6 +90,7 @@ namespace MythicChronicles
         private void OnDestroy()
         {
             if (panelTex != null) Destroy(panelTex);
+            ChroniclesHeroPortrait.Clear();
         }
 
         private void OnGUI()
@@ -341,7 +342,7 @@ namespace MythicChronicles
             GUI.EndScrollView();
             if (visible.Count == 0)
                 GUI.Label(new Rect(40, 535, 456, 80),
-                    "No heroes belong to this tier.", subtitle);
+                    "No heroes match the selected filters.", subtitle);
         }
 
         private void HeroDetails()
