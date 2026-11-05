@@ -71,6 +71,9 @@ namespace MythicChronicles
                 fighter.skillFactor = growth.skillMultiplier;
                 fighter.ultimateFactor = growth.ultimateMultiplier;
                 fighter.passiveFactor = growth.passiveMultiplier;
+                fighter.attack *= 1f + squad[i].signatureWeaponRank * .03f;
+                fighter.skillFactor *= 1f + squad[i].signatureWeaponRank * .035f;
+                fighter.ultimateFactor *= 1f + squad[i].signatureWeaponRank * .055f;
             }
             var opponents = new List<HeroDefinition>();
             Origin origin = WorldsCatalog.Chapters[stage.chapter - 1].origin;
@@ -90,6 +93,25 @@ namespace MythicChronicles
                 Spawn(enemy, 1, i, 1 + stage.id / 3, stage.boss && i == 0);
             }
             ApplySynergy();
+            ApplyRelic(savedProgress);
+        }
+
+        private void ApplyRelic(PlayerSave saved)
+        {
+            if (saved == null || saved.relics == null) return;
+            WorldRelic relic = ChroniclesRelics.Find(saved.equippedRelicId);
+            RelicRank owned = saved.relics.Find(x => x.id == saved.equippedRelicId);
+            if (relic == null || owned == null) return;
+            float power = 1f + (Math.Max(1, owned.level) - 1) * .22f;
+            foreach (Combatant combatant in units)
+            {
+                if (combatant.side != 0) continue;
+                combatant.attack *= 1f + relic.attackBonus * power;
+                combatant.maxHp *= 1f + relic.hpBonus * power;
+                combatant.hp = combatant.maxHp;
+                combatant.energy = Mathf.Min(100f,
+                    combatant.energy + relic.startingEnergy * power);
+            }
         }
 
         private void ApplySynergy()
