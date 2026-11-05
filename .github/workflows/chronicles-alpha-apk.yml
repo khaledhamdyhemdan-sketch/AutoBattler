@@ -1,0 +1,80 @@
+name: Build Chronicles Alpha APK (manual)
+
+# Intentionally manual only. No push-triggered build or flood of mail.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: chronicles-alpha-apk
+  cancel-in-progress: false
+
+jobs:
+  android-alpha:
+    name: Unity 6.3 Android APK - private test artifact
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check source before launching Unity
+        run: node tools/chronicles-source-audit.mjs
+
+      - name: Confirm Unity license is configured
+        env:
+          UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
+          UNITY_EMAIL: ${{ secrets.UNITY_EMAIL }}
+          UNITY_PASSWORD: ${{ secrets.UNITY_PASSWORD }}
+        run: |
+          if [ -z "$UNITY_LICENSE" ] || [ -z "$UNITY_EMAIL" ] || [ -z "$UNITY_PASSWORD" ]; then
+            echo "::error::Unity activation is missing. Configure UNITY_LICENSE, UNITY_EMAIL and UNITY_PASSWORD as GitHub Actions secrets (never commit or paste them in chats)."
+            exit 1
+          fi
+
+      - name: Cache Unity import results
+        uses: actions/cache@v4
+        with:
+          path: Library
+          key: chronicles-unity6-android-${{ hashFiles('Packages/**', 'ProjectSettings/**') }}
+          restore-keys: chronicles-unity6-android-
+
+      - name: Build test APK with matching Unity Editor
+        uses: game-ci/unity-builder@v4
+        env:
+          UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
+          UNITY_EMAIL: ${{ secrets.UNITY_EMAIL }}
+          UNITY_PASSWORD: ${{ secrets.UNITY_PASSWORD }}
+        with:
+          unityVersion: 6000.3.0f1
+          targetPlatform: Android
+          buildMethod: MythicChronicles.Editor.ChroniclesAndroidBuild.BuildApk
+          androidAppBundle: false
+          projectPath: .
+          buildsPath: Builds/Chronicles
+
+      - name: Verify first Android package exists
+        shell: bash
+        run: |
+          test -s Builds/Chronicles/Chronicles_Android.apk || {
+            echo "::error::Unity did not produce the expected Chronicles_Android.apk."
+            exit 1
+          }
+          ls -lh Builds/Chronicles/Chronicles_Android.apk
+          sha256sum Builds/Chronicles/Chronicles_Android.apk > Builds/Chronicles/Chronicles_Android.apk.sha256
+
+      - name: Upload test APK (not Google Play)
+        uses: actions/upload-artifact@v4
+        with:
+          name: Chronicles-Alpha-Android-APK
+          path: |
+            Builds/Chronicles/Chronicles_Android.apk
+            Builds/Chronicles/Chronicles_Android.apk.sha256
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Explain next step
+        run: |
+          echo "This is a sideloadable alpha APK, not a Google Play release." >> "$GITHUB_STEP_SUMMARY"
+          echo "It is not tested until installed on an Android device." >> "$GITHUB_STEP_SUMMARY"
