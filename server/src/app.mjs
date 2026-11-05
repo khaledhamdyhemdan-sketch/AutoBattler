@@ -1,6 +1,6 @@
 import { randomUUID } from 'node:crypto';
 import {
-  bearerToken, guestName, hashedSession, newSessionToken, readJson
+  bearerToken, guestName, hashedSession, newSessionToken, readJson, validUuid
 } from './security.mjs';
 
 const DAY_MS = 24 * 60 * 60 * 1000;
@@ -139,8 +139,13 @@ export function createHandler({ pool, pepper, devGuest = false, logger = console
           onlineAccountLinking: false, liveArena: false, liveGuilds: false,
           paidSummons: false, developerGuest: !!devGuest }); return;
       }
+      const readOnlySocial = req.method === 'GET' && (
+        pathname === '/v1/arena/profile' ||
+        pathname === '/v1/arena/seasons/current' ||
+        pathname === '/v1/guilds' ||
+        pathname.startsWith('/v1/guilds/'));
       if ((req.method === 'GET' && (pathname === '/v1/me' ||
-            pathname === '/v1/heroes')) ||
+            pathname === '/v1/heroes')) || readOnlySocial ||
           (req.method === 'POST' && pathname === '/v1/auth/logout')) {
         const account = await accountForSession(req, pool, pepper);
         if (!account) {
@@ -157,6 +162,62 @@ export function createHandler({ pool, pepper, devGuest = false, logger = console
         }
         if (pathname === '/v1/me') {
           send(res, 200, { account: accountView(account) }); return;
+        }
+        if (pathname === '/v1/arena/seasons/current') {
+          const { rows } = await pool.query(
+            `SELECT season_id,name,start_at,ends_at FROM arena_seasons
+              WHERE start_at <= now() AND ends_at > now()
+              ORDER BY start_at DESC LIMIT 1`
+          );
+          send(res, 200, { season: rows[0] ?? null, liveRankedArena: false });
+          return;
+        }
+        if (pathname === '/v1/arena/profile') {
+          const { rows } = await pool.query(
+            `SELECT season_id,rating,wins,losses,defense_hero_ids,updated_at
+               FROM arena_profiles WHERE account_id = $1 LIMIT 1`,
+            [account.account_id]
+          );
+          send(res, 200, { profile: rows[0] ?? null,
+            liveRankedArena: false, authoritative: true });
+          return;
+        }
+        if (pathname === '/v1/guilds') {
+          const { rows } = await pool.query(
+            `SELECT g.guild_id,g.name,g.description,g.owner_id,
+               COUNT(m.account_id)::integer AS member_count
+               FROM game_guilds g LEFT JOIN guild_members m
+                 ON m.guild_id = g.guild_id
+               GROUP BY g.guild_id,g.name,g.description,g.owner_id
+               ORDER BY member_count DESC,g.name ASC LIMIT 40`
+          );
+          send(res, 200, { guilds: rows, liveGuildFeatures: false });
+          return;
+        }
+        if (pathname.startsWith('/v1/guilds/')) {
+          const id = pathname.slice('/v1/guilds/'.length);
+          if (!validUuid(id)) {
+            failure(res, 400, 'INVALID_GUILD', 'A valid guild ID is required.');
+            return;
+          }
+          const { rows } = await pool.query(
+            `SELECT guild_id,name,description,owner_id,created_at
+               FROM game_guilds WHERE guild_id=$1 LIMIT 1`, [id]
+          );
+          if (rows.length === 0) {
+            failure(res, 404, 'GUILD_NOT_FOUND', 'Guild not found.');
+            return;
+          }
+          const members = await pool.query(
+            `SELECT m.account_id,a.display_name,m.guild_role,m.joined_at
+               FROM guild_members m JOIN game_accounts a
+                 ON a.account_id = m.account_id
+               WHERE m.guild_id=$1
+               ORDER BY m.joined_at,m.account_id LIMIT 30`, [id]
+          );
+          send(res, 200, { guild: { ...rows[0], members:members.rows },
+            liveGuildFeatures: false });
+          return;
         }
         const heroes = await pool.query(
           `SELECT hero_id,level,stars,fragments,signature_rank
