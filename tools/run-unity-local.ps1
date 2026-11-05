@@ -53,6 +53,7 @@ function Invoke-UnityStep {
     Write-Host "Running $Title..." -ForegroundColor Cyan
     $unityArguments = @(
         '-batchmode', '-nographics', '-quit',
+        '-buildTarget', 'Android',
         '-projectPath', $project,
         '-executeMethod', $Method,
         '-logFile', $log
