@@ -814,7 +814,9 @@ namespace MythicChronicles
         {
             GUI.Label(new Rect(125, 182, 360, 50), "TEAM FORMATION", heading);
             GUI.Label(new Rect(35, 235, 466, 66),
-                "Select five owned heroes. Order is used to place your team in front and back rows.", subtitle);
+                inTower ? "TOWER: " + ChroniclesTowers.DisplayName(selectedTowerOrigin) +
+                    "\nPick 5 heroes, including at least 2 from this mythology." :
+                    "Select five owned heroes. Order is used to place your team in front and back rows.", subtitle);
             formationScroll = GUI.BeginScrollView(new Rect(20, 317, 500, 413), formationScroll,
                 new Rect(0, 0, 473, progress.Data.heroes.Count * 66));
             for (int i = 0; i < progress.Data.heroes.Count; i++)
@@ -861,6 +863,8 @@ namespace MythicChronicles
                 "%  •  START ENERGY +" + elemental.startingEnergy, subtitle);
             GUI.enabled = progress.Data.selectedTeam.Count == 5;
             if (GUI.Button(new Rect(40, 803, 460, 70),
+                inTower ? "START " + selectedTowerOrigin.ToString().ToUpperInvariant() +
+                    " TOWER FLOOR " + selectedTowerFloor :
                 "START " + (activeTrialMode == TrialMode.Normal ?
                     "" : activeTrialMode.ToString().ToUpperInvariant() + " ") +
                 "STAGE " + stageId, bigButton))
@@ -1096,14 +1100,19 @@ namespace MythicChronicles
             }
             StageDefinition stage = WorldsCatalog.GetStage(stageId);
             bool unlocked = stage != null &&
-                (activeTrialMode == TrialMode.Normal ?
-                    stageId <= progress.Data.lastClearedStage + 1 :
-                    progress.CanPlayTrial(stageId, activeTrialMode));
+                (inTower ?
+                    progress.CanEnterTower(selectedTowerOrigin, selectedTowerFloor,
+                        progress.Data.selectedTeam) :
+                    activeTrialMode == TrialMode.Normal ?
+                        stageId <= progress.Data.lastClearedStage + 1 :
+                        progress.CanPlayTrial(stageId, activeTrialMode));
             if (!unlocked)
             { notice = "Stage is locked."; return; }
             if (battle != null) Destroy(battle.gameObject);
             battle = new GameObject("Chronicles - Campaign Battle").AddComponent<ChroniclesBattle>();
-            battle.Initialize(stage, chosen, progress.Data, OnBattleFinished, activeTrialMode);
+            battle.Initialize(stage, chosen, progress.Data, OnBattleFinished,
+                activeTrialMode, inTower ? (Origin?)selectedTowerOrigin : null,
+                inTower ? selectedTowerFloor : 0);
             if (menuCamera != null) menuCamera.enabled = false;
             if (menuAudio != null) menuAudio.enabled = false;
             page = Page.Battle; notice = "";
@@ -1115,9 +1124,12 @@ namespace MythicChronicles
             lastVictory = victory;
             if (victory)
             {
-                bool saved = activeTrialMode == TrialMode.Normal ?
-                    progress.CompleteStage(stageId) :
-                    progress.CompleteTrial(stageId, activeTrialMode);
+                bool saved = inTower ?
+                    progress.CompleteTower(selectedTowerOrigin, selectedTowerFloor,
+                        progress.Data.selectedTeam) :
+                    activeTrialMode == TrialMode.Normal ?
+                        progress.CompleteStage(stageId) :
+                        progress.CompleteTrial(stageId, activeTrialMode);
                 if (!saved) notice = "Battle won, but progress could not be saved.";
             }
             if (audio != null) audio.SetState(victory ? AudioScene.Victory : AudioScene.Defeat);
@@ -1130,6 +1142,8 @@ namespace MythicChronicles
             battle.DrawWorldLabels(scale);
             GUI.Box(new Rect(12, 22, 516, 106), "");
             GUI.Label(new Rect(20, 29, 500, 45),
+                inTower ? ChroniclesTowers.DisplayName(selectedTowerOrigin) +
+                    " • FLOOR " + selectedTowerFloor :
                 activeTrialMode.ToString().ToUpperInvariant() + " • " +
                 WorldsCatalog.GetStage(stageId).name, subtitle);
             GUI.Label(new Rect(29, 73, 460, 36), "TIME " + Mathf.CeilToInt(battle.SecondsLeft) + " s", subtitle);
@@ -1150,25 +1164,48 @@ namespace MythicChronicles
             GUI.Label(new Rect(25, 248, 490, 95), lastVictory ? "VICTORY!" : "DEFEAT", heading);
             StageDefinition stage = WorldsCatalog.GetStage(stageId);
             GUI.Label(new Rect(35, 362, 470, 100),
+                inTower ? ChroniclesTowers.DisplayName(selectedTowerOrigin) +
+                    " • FLOOR " + selectedTowerFloor +
+                    "\nTower rank: " + ChroniclesTowers.Rank(selectedTowerFloor) :
                 activeTrialMode + " • " + stage.name +
-                "\nCampaign rank: " + ChroniclesTrials.CampaignRank(progress.Data), subtitle);
+                    "\nCampaign rank: " + ChroniclesTrials.CampaignRank(progress.Data),
+                subtitle);
             GUI.Box(new Rect(38, 480, 464, 142),
                 lastVictory ? "First-clear rewards are added once. Your progress is saved." :
                     "Upgrade your heroes or change formation to try again.");
             bool finalTrialStage = activeTrialMode != TrialMode.Normal &&
                 stageId % ChroniclesTrials.StagesPerChapter == 0;
+            bool finishedTower = inTower &&
+                selectedTowerFloor >= ChroniclesTowers.MaxFloor;
             if (GUI.Button(new Rect(42, 689, 456, 70),
                 !lastVictory ? "RETRY" :
+                inTower ? (finishedTower ? "RETURN TO TOWERS" : "NEXT FLOOR") :
                 finalTrialStage ? "RETURN TO TRIALS" : "NEXT STAGE", bigButton))
             {
-                if (lastVictory && activeTrialMode != TrialMode.Normal &&
-                    stageId % ChroniclesTrials.StagesPerChapter == 0)
+                if (lastVictory && inTower)
+                {
+                    if (finishedTower)
+                    {
+                        inTower = false;
+                        chapterScroll = Vector2.zero;
+                        page = Page.Towers;
+                    }
+                    else
+                    {
+                        selectedTowerFloor++;
+                        StageDefinition nextFloor = ChroniclesTowers.StageFor(
+                            selectedTowerOrigin, selectedTowerFloor);
+                        if (nextFloor != null) stageId = nextFloor.id;
+                        page = Page.Formation;
+                    }
+                }
+                else if (lastVictory && finalTrialStage)
                 {
                     page = Page.Trials;
                 }
                 else
                 {
-                    if (lastVictory) stageId = Mathf.Min(60, stageId + 1);
+                    if (lastVictory && !inTower) stageId = Mathf.Min(60, stageId + 1);
                     page = Page.Formation;
                 }
                 CleanupBattle();
@@ -1199,6 +1236,7 @@ namespace MythicChronicles
             CleanupBattle();
             notice = "";
             activeTrialMode = TrialMode.Normal;
+            inTower = false;
             page = Page.Home;
             if (audio != null) audio.SetState(AudioScene.Menu);
         }
