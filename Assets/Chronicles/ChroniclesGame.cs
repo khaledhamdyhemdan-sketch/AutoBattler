@@ -8,7 +8,7 @@ namespace MythicChronicles
     // to be replaced by production UI Toolkit art without changing progression logic.
     public sealed class ChroniclesGame : MonoBehaviour
     {
-        private enum Page { Home, Chapters, StageStory, Heroes, HeroDetails, Formation, Skins, Gear, Forge, Training, Runes, Summon, Quests, WeeklyQuests, Idle, Settings, Battle, Results }
+        private enum Page { Home, Chapters, StageStory, Heroes, HeroDetails, Formation, Skins, Gear, Forge, Training, Runes, SignatureWeapon, RelicVault, Summon, Quests, WeeklyQuests, Idle, Settings, Battle, Results }
         private Page page = Page.Home;
         private PlayerProgressService progress;
         private ChroniclesAudioDirector audio;
@@ -117,6 +117,8 @@ namespace MythicChronicles
                 case Page.Forge: Forge(); break;
                 case Page.Training: Training(); break;
                 case Page.Runes: Runes(); break;
+                case Page.SignatureWeapon: SignatureWeapon(); break;
+                case Page.RelicVault: RelicVault(); break;
                 case Page.Summon: Summon(); break;
                 case Page.Quests: Quests(false); break;
                 case Page.WeeklyQuests: Quests(true); break;
@@ -156,7 +158,9 @@ namespace MythicChronicles
                 page = Page.WeeklyQuests;
             if (GUI.Button(new Rect(274, 645, 226, 64), "AFK REWARDS", bigButton))
                 page = Page.Idle;
-            if (GUI.Button(new Rect(40, 722, 460, 56), "SETTINGS", bigButton))
+            if (GUI.Button(new Rect(40, 722, 222, 56), "RELIC VAULT", bigButton))
+                page = Page.RelicVault;
+            if (GUI.Button(new Rect(274, 722, 226, 56), "SETTINGS", bigButton))
                 page = Page.Settings;
             GUI.Label(new Rect(40, 798, 460, 80),
                 "Six connected chapters • 30 collectible heroes\n" +
@@ -479,10 +483,68 @@ namespace MythicChronicles
                 notice = progress.ResetTalents(hero.id) ? "Talent costs refunded." : "No talents to reset.";
             if (GUI.Button(new Rect(274, 756, 225, 49), "RESET LEVEL"))
                 notice = progress.ResetHeroLevel(hero.id) ? "Level resources refunded." : "Already at Lv.1.";
-            if (GUI.Button(new Rect(40, 825, 220, 59), "RUNES", bigButton))
+            if (GUI.Button(new Rect(34, 825, 147, 59), "RUNES"))
                 page = Page.Runes;
-            if (GUI.Button(new Rect(274, 825, 225, 59), "BACK TO HERO"))
+            if (GUI.Button(new Rect(193, 825, 148, 59), "SIGNATURE"))
+                page = Page.SignatureWeapon;
+            if (GUI.Button(new Rect(350, 825, 158, 59), "BACK TO HERO"))
                 page = Page.HeroDetails;
+        }
+
+        private void SignatureWeapon()
+        {
+            OwnedHero hero = progress.FindOwnedHero(selectedHero);
+            HeroDefinition definition = WorldsCatalog.FindHero(selectedHero);
+            if (hero == null || definition == null) { page = Page.Heroes; return; }
+            GUI.Label(new Rect(30, 245, 480, 68), "SIGNATURE WEAPON", heading);
+            GUI.Label(new Rect(35, 331, 470, 74),
+                definition.name + " • Ancient Soulbound Weapon", subtitle);
+            GUI.Box(new Rect(45, 423, 450, 192), "");
+            GUI.Label(new Rect(62, 451, 421, 147),
+                "Rank: " + hero.signatureWeaponRank + " / 5" +
+                "\nUnlock at hero level 10." +
+                "\nEach rank improves ATK, skill power and Ultimate." +
+                "\nEnhancement requires hero fragments and gold.", subtitle);
+            GUI.enabled = hero.level >= 10 && hero.signatureWeaponRank < 5;
+            if (GUI.Button(new Rect(45, 675, 450, 75), "ENHANCE SIGNATURE", bigButton))
+                notice = progress.UpgradeSignatureWeapon(hero.id) ?
+                    "Signature weapon upgraded!" : "Need more gold or fragments.";
+            GUI.enabled = true;
+            if (GUI.Button(new Rect(45, 800, 450, 65), "BACK TO TRAINING", bigButton))
+                page = Page.Training;
+        }
+
+        private void RelicVault()
+        {
+            GUI.Label(new Rect(30, 244, 480, 58), "RELIC VAULT", heading);
+            GUI.Label(new Rect(35, 305, 471, 59),
+                "Earn an original artifact by defeating each chapter guardian." +
+                "\nRelic dust: " + progress.Data.relicDust, subtitle);
+            gearScroll = GUI.BeginScrollView(new Rect(18, 376, 502, 448), gearScroll,
+                new Rect(0, 0, 477, ChroniclesRelics.All.Length * 102));
+            for (int i = 0; i < ChroniclesRelics.All.Length; i++)
+            {
+                WorldRelic relic = ChroniclesRelics.All[i];
+                RelicRank owned = progress.Data.relics.Find(x => x.id == relic.id);
+                bool equipped = progress.Data.equippedRelicId == relic.id;
+                float y = 102f * i;
+                GUI.Box(new Rect(5, y, 468, 97), "");
+                GUI.Label(new Rect(16, y + 5, 450, 34),
+                    relic.name + "  •  " +
+                    (owned == null ? "LOCKED" : "LV " + owned.level), tiny);
+                GUI.Label(new Rect(13, y + 33, 448, 25), relic.description, tiny);
+                GUI.enabled = owned != null && !equipped;
+                if (GUI.Button(new Rect(19, y + 63, 199, 28), equipped ? "EQUIPPED" : "EQUIP"))
+                    notice = progress.EquipRelic(relic.id) ? "Relic equipped." : "Equip unavailable.";
+                GUI.enabled = owned != null && owned.level < 5;
+                if (GUI.Button(new Rect(243, y + 63, 218, 28), "UPGRADE"))
+                    notice = progress.UpgradeRelic(relic.id) ? "Relic upgraded." :
+                        "Need more relic dust or gold.";
+                GUI.enabled = true;
+            }
+            GUI.EndScrollView();
+            if (GUI.Button(new Rect(39, 838, 460, 59), "RETURN HOME", bigButton))
+                GoHome();
         }
 
         private void Runes()
