@@ -1,3 +1,5 @@
+> **تحديث 2026-11-05:** تم استبدال توزيع الـ30 بطلًا و4 Light/Dark SSR بخطة 40 بطلًا، منهم **10 UR حصريًا نور/ظلام**، ورتبة **EX مقفولة**. التفاصيل المعتمدة حاليًا: [UR/EX Roster v2](UR_EX_MYTHOLOGY_ROSTER_V2.md). ما يلي أرشيف قواعد v1 ويحتوي معلومات قديمة.
+
 # Elements, Rarity Tiers and Hero Gallery — Game Design v1
 
 **Status:** Implemented as source rules, not yet Unity/Android tested or balanced.
