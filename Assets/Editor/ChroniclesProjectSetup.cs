@@ -108,6 +108,17 @@ namespace MythicChronicles.Editor
                     Debug.LogError("[Chronicles] Only UR heroes may have Light/Dark: " + hero.id);
                     errors++;
                 }
+                URCardIdentity card = URCardCatalog.For(hero.id);
+                if ((hero.rarity == Rarity.UR) != (card != null))
+                {
+                    Debug.LogError("[Chronicles] UR card identity missing or set on non-UR: " + hero.id);
+                    errors++;
+                }
+                if (card != null && card.element != hero.element)
+                {
+                    Debug.LogError("[Chronicles] UR card must match Light/Dark element: " + hero.id);
+                    errors++;
+                }
                 if (hero.rarity == Rarity.UR)
                 {
                     int[] counts;
@@ -122,7 +133,7 @@ namespace MythicChronicles.Editor
             }
             if (rCount != 2 || srCount != 7 || ssrCount != 16 ||
                 urCount != 16 || exCount != 0 || lightCount != 9 || darknessCount != 7 ||
-                urByOrigin.Count != 5)
+                urByOrigin.Count != 5 || URCardCatalog.Count != 16)
             {
                 Debug.LogError("[Chronicles] R/SR/SSR/UR/EX roster allocation mismatch.");
                 errors++;
