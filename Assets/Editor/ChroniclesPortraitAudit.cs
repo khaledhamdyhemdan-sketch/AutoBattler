@@ -100,6 +100,38 @@ namespace MythicChronicles.Editor
                 Debug.LogError("[Portrait Audit] Expected exactly 41 catalog heroes.");
             }
 
+            // Verify English across story content, not just character cards.
+            for (int stage = 1; stage <= 60; stage++)
+            {
+                StoryMoment moment = WorldsStory.Get(stage);
+                StageDefinition stageDefinition = WorldsCatalog.GetStage(stage);
+                if ((moment != null && (ContainsArabic(moment.speaker) ||
+                    ContainsArabic(moment.line))) ||
+                    (stageDefinition != null && (ContainsArabic(stageDefinition.name) ||
+                        ContainsArabic(stageDefinition.narrative))))
+                {
+                    englishIssues++;
+                    Debug.LogError("[English Audit] Non-English story text in stage " + stage);
+                }
+            }
+
+            // Scan player-facing C# scripts for Arabic character glyphs.
+            // Visual assets must be manually checked for any baked text.
+            string sourceFolder = Path.Combine(Application.dataPath, "Chronicles");
+            if (Directory.Exists(sourceFolder))
+            {
+                foreach (string file in Directory.GetFiles(sourceFolder, "*.cs",
+                    SearchOption.AllDirectories))
+                {
+                    if (ContainsArabic(File.ReadAllText(file)))
+                    {
+                        englishIssues++;
+                        Debug.LogError("[English Audit] Arabic glyph in game script: " +
+                            Path.GetFileName(file));
+                    }
+                }
+            }
+
             string destination = "Assets/Chronicles/PortraitArtAudit.csv";
             File.WriteAllText(destination, report.ToString(), new UTF8Encoding(false));
             AssetDatabase.ImportAsset(destination, ImportAssetOptions.ForceUpdate);
