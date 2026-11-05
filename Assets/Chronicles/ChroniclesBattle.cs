@@ -39,8 +39,11 @@ namespace MythicChronicles
         private Camera cam;
         private StageDefinition stage;
         private Action<bool> finished;
-        private bool ended;
+        private bool ended, raidMode;
+        private float raidDamage;
         private float elapsed, introTime = 2.8f;
+        public int RaidDamageScore { get { return Mathf.FloorToInt(
+            Mathf.Clamp(raidDamage, 0f, 2000000f)); } }
         public bool Paused { get; set; }
         public bool Complete { get { return ended; } }
         public float SecondsLeft { get { return Mathf.Max(0f, 90f - elapsed); } }
@@ -49,8 +52,10 @@ namespace MythicChronicles
         public void Initialize(StageDefinition chosen, IList<OwnedHero> squad,
             PlayerSave savedProgress, Action<bool> onFinished,
             TrialMode mode = TrialMode.Normal, Origin? towerOrigin = null,
-            int towerFloor = 0)
+            int towerFloor = 0, bool raidBattle = false)
         {
+            raidMode = raidBattle;
+            raidDamage = 0f;
             if (chosen == null || squad == null || squad.Count != 5) throw new ArgumentException("Battle requires stage and five heroes.");
             stage = chosen; finished = onFinished;
             BuildArena();
@@ -126,6 +131,17 @@ namespace MythicChronicles
                     opponent.hp = opponent.maxHp;
                     opponent.attack *= attackScale;
                     opponent.armor *= 1f + (towerFloor - 1) * .025f;
+                }
+            }
+            if (raidMode && stage.boss)
+            {
+                foreach (Combatant opponent in units)
+                {
+                    if (opponent.side != 1 || !opponent.boss) continue;
+                    opponent.maxHp = Mathf.Max(220000f,
+                        opponent.maxHp * 18f);
+                    opponent.hp = opponent.maxHp;
+                    opponent.armor = Mathf.Max(opponent.armor, 92f);
                 }
             }
             ApplySynergy();
@@ -586,8 +602,12 @@ namespace MythicChronicles
             float absorbed = Mathf.Min(defender.shield, damage);
             defender.shield -= absorbed;
             damage = Mathf.Max(0f, damage - absorbed);
-            defender.hp = Mathf.Max(0f, defender.hp - damage);
-            defender.energy = Mathf.Min(100f, defender.energy + damage * .12f);
+            float actualDamage = Mathf.Min(defender.hp, damage);
+            if (raidMode && defender.side == 1 && defender.boss &&
+                attacker != null && attacker.side == 0)
+                raidDamage += actualDamage;
+            defender.hp = Mathf.Max(0f, defender.hp - actualDamage);
+            defender.energy = Mathf.Min(100f, defender.energy + actualDamage * .12f);
             Floating("-" + Mathf.RoundToInt(damage), defender, new Color(1f, .72f, .54f));
 
             if (attacker != null && attackingKit != null &&
