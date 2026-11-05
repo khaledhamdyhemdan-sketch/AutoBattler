@@ -580,6 +580,8 @@ namespace MythicChronicles
             HeroKit kit = HeroAbilityCatalog.For(actor.hero.id);
             if (kit == null) { Hit(actor, target, actor.attack * 3f); return; }
             actor.visual.Play(HeroAnimation.Ultimate);
+            if (ChroniclesAudioDirector.Instance != null)
+                ChroniclesAudioDirector.Instance.HeroUltimate(actor.hero.id);
             CastEffect(actor, target, kit.ultimate, kit.ultimatePower, true);
             Floating(kit.ultimateName, actor, new Color(1f, .75f, .22f));
         }
