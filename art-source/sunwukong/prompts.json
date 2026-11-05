@@ -1,0 +1,21 @@
+{
+  "hero": {
+    "id": "sunwukong",
+    "name": "Sun Wukong",
+    "origin": "China",
+    "role": "Assassin",
+    "rarity": "SSR",
+    "element": "Fire",
+    "silhouette": "Golden-eyed monkey king in vivid red-gold martial armor",
+    "weapon": "Ruyi Jingu Bang staff and fluttering ribbons",
+    "setting": "Mountain peaks above cloud seas",
+    "idle": "Staff spins once behind his back; cloud tail curls",
+    "ultimateVfx": "Dozens of staff afterimages strike enemies in a rush",
+    "staticPath": "Assets/Resources/Chronicles/Portraits/Static/sunwukong.png",
+    "framesFolder": "Assets/Resources/Chronicles/Portraits/Animated/sunwukong",
+    "prefab": "Assets/Resources/Chronicles/Heroes/sunwukong/default.prefab",
+    "productionStatus": "NOT_PRODUCED"
+  },
+  "static": "Use case: stylized-concept. ONE individual original luxury painterly ANIME mythology game portrait of Sun Wukong from China, SSR Fire Assassin. Adult MALE MONKEY king, expressive simian face, golden eyes, circlet, red scarf; no plain human face. Exact design brief: Golden-eyed monkey king in vivid red-gold martial armor. Distinctive weapon/props: Ruyi Jingu Bang staff and fluttering ribbons. Setting: Mountain peaks above cloud seas. Actual game abilities: Cloud Dash; Seventy-Two Shapes; Immortal Mischief; Pummel a foe with playful feints.; Strike the vulnerable back line.; Avoid a portion of attacks.. Express role and divine/heroic presence through a restrained scene motif inspired by: Dozens of staff afterimages strike enemies in a rush. Imposing cinematic low-angle three-quarter composition, readable face/silhouette at thumbnail, ornate convincing materials, powerful dignified character-specific presence. BOTH forearms, wrists and hands fully inside canvas and readable, anatomically natural fingers gripping the named props; no hidden/missing hand. Place large named props within composition. Preserve specified gender/species/culture; fully covered appropriate ceremonial outfit or armor for humanoids. Premium polished original anime finish, not copied from any game, distinct from other roster heroes. Full-bleed vertical2:3 target1024x1536. No writing, runic letters, hieroglyph text, numbers, logos, watermark, card frame, UI, panel borders, collage, extra people or extra limbs.",
+  "animation": "Edit target: supplied Sun Wukong portrait. EXACTLY8 sequential subtle idle frames in a STRICT regular4-column x2-row grid, zero gaps or margins, requested2048x1536 sheet; every equal cell repeats COMPLETE2:3 portrait with identical framing. Preserve same Adult MALE MONKEY king, expressive simian face, golden eyes, circlet, red scarf; no plain human face. Lock identity, face/anatomy, gender/species, costume patterns, colors, named props (Ruyi Jingu Bang staff and fluttering ribbons), both hands/limbs and their grips. Fixed camera and identical background (Mountain peaks above cloud seas). Subtle character idle inspired by Staff spins once behind his back; cloud tail curls, reduced to tiny organic motion returning to start, no changing pose or spinning weapon. Eyes if present: open1-2, halfclosed3, closed4, halfopen5, open6-8. Only small hair/fur/cloth/feather movement and gentle character-specific glow pulse; no camera zoom, large particles or attack scene. First/last nearly identical for looping. Preserve both hands and all props fully visible in every frame; for nonhumanoid creatures no added human hands. No labels, typography, UI, numbers, borders, dividers, watermark, new objects or extra limbs. Consistent original premium anime details."
+}
