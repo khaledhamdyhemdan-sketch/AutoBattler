@@ -1,3 +1,5 @@
+> **Roster superseded — latest 2026-11-05:** 41 hero IDs, 16 UR Light/Dark across five mythologies (Odin, Hades, Hel, Apollo, Ra and Amaterasu included). Full current roster at [UR expansion v3](UR_EXPANSION_16_AND_ODIN_V3.md). Production art, UR banner and APK remain incomplete. Older roster numbers are a historical baseline.
+
 > **Latest roster update — 2026-11-05:** Catalog now has **40 heroes (2 R, 8 SR, 20 SSR, 10 UR)**. The ten UR include one Light and one Darkness from each of Egypt, Greece, Norse, Japan and China. **EX is locked**. Unique skill kits and skin metadata have been extended to 40. The UR banner and final art are **not yet implemented**; Unity/Android are **not tested**. See [UR/EX roster v2](UR_EX_MYTHOLOGY_ROSTER_V2.md). The 30-hero references below describe an older baseline.
 
 # Shared-World Hero Collector — Implementation Status
