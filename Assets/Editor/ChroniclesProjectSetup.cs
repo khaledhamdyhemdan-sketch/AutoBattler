@@ -172,9 +172,12 @@ namespace MythicChronicles.Editor
             if (ChroniclesLoginRewards.Days != 28 ||
                 ChroniclesLoginRewards.ForDay(28) == null ||
                 ChroniclesTrials.Chapters != 6 ||
-                ChroniclesTrials.StagesPerChapter != 10)
+                ChroniclesTrials.StagesPerChapter != 10 ||
+                ChroniclesTowers.TowerOrigins.Length != 7 ||
+                ChroniclesTowers.StageFor(Origin.Egypt, 100) == null ||
+                ChroniclesTowers.StageFor(Origin.China, 100) == null)
             {
-                Debug.LogError("[Chronicles] Daily rewards or trial stage definitions invalid.");
+                Debug.LogError("[Chronicles] Daily rewards, trials or faction tower definitions invalid.");
                 errors++;
             }
             if (ChroniclesEquipment.Templates.Length != 18 ||
