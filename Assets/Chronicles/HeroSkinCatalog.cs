@@ -18,7 +18,7 @@ namespace MythicChronicles
 
     public static class HeroSkinCatalog
     {
-        // 40 optional costume concepts; ALL require original production-ready visual assets.
+        // 41 optional costume concepts; ALL require original production-ready visual assets.
         // These definitions implement entitlement/equip logic, not missing animations or art.
         private static readonly string[] AltNames =
         {
@@ -29,7 +29,7 @@ namespace MythicChronicles
             "Heavenly Dawn", "Ocean Tempest", "Cloud Monarch", "Lotus Mercy", "Flame Lotus",
             "Mirror Witch", "Arcane Clockwork", "Everlasting Crown", "Ptolemaic Radiance", "Silver Banner",
             "Veiled Origin", "Star-Eater", "Thunder Throne", "Infinite Night", "Golden Renewal",
-            "Unbound Moon", "Worldforger", "Yomi Empress", "Sky Weaver", "The First Silence"
+            "Unbound Moon", "Worldforger", "Yomi Empress", "Sky Weaver", "The First Silence", "Delphic Sunrise"
         };
 
         private static readonly Dictionary<string, List<HeroSkin>> ByHero = Build();
