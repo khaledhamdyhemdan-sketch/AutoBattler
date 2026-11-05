@@ -25,6 +25,7 @@ namespace MythicChronicles
         public int version = 1;
         public string createdUtc;
         public string lastDailyUtc;
+        public string lastWeeklyUtc;
         public long lastIdleClaimTicks;
         public int gold = 2500, gems = 350, summonTickets = 3, heroFragments;
         public int lastClearedStage;
@@ -32,7 +33,9 @@ namespace MythicChronicles
         public List<string> selectedTeam = new List<string>();
         public List<int> stageRewardsClaimed = new List<int>();
         public List<QuestCounter> quests = new List<QuestCounter>();
+        public List<QuestCounter> weeklyQuests = new List<QuestCounter>();
         public List<string> claimedDailyQuests = new List<string>();
+        public List<string> claimedWeeklyQuests = new List<string>();
         public List<string> ownedSkins = new List<string>();
     }
 
@@ -54,6 +57,14 @@ namespace MythicChronicles
             new QuestInfo("upgrade_1", "Upgrade any hero", 1, 180, 15),
             new QuestInfo("summon_1", "Summon a hero", 1, 180, 15),
             new QuestInfo("idle_1", "Collect idle earnings", 1, 120, 10)
+        };
+        public static readonly QuestInfo[] WeeklyQuests =
+        {
+            new QuestInfo("win_10", "Win 10 campaign battles", 10, 1000, 90),
+            new QuestInfo("upgrade_7", "Upgrade heroes or gear 7 times", 7, 850, 65),
+            new QuestInfo("summon_5", "Summon 5 times", 5, 650, 100),
+            new QuestInfo("boss_3", "Defeat 3 chapter bosses", 3, 1000, 90),
+            new QuestInfo("idle_minutes_180", "Claim 180 minutes of AFK rewards", 180, 550, 55)
         };
         public PlayerSave Data { get; private set; }
         public string LastError { get; private set; }
@@ -84,6 +95,7 @@ namespace MythicChronicles
             }
             Repair();
             ResetDailyIfNeeded();
+            ResetWeeklyIfNeeded();
         }
 
         private PlayerSave ReadSave(string path)
@@ -104,7 +116,9 @@ namespace MythicChronicles
             if (Data.selectedTeam == null) Data.selectedTeam = new List<string>();
             if (Data.stageRewardsClaimed == null) Data.stageRewardsClaimed = new List<int>();
             if (Data.quests == null) Data.quests = new List<QuestCounter>();
+            if (Data.weeklyQuests == null) Data.weeklyQuests = new List<QuestCounter>();
             if (Data.claimedDailyQuests == null) Data.claimedDailyQuests = new List<string>();
+            if (Data.claimedWeeklyQuests == null) Data.claimedWeeklyQuests = new List<string>();
             if (Data.ownedSkins == null) Data.ownedSkins = new List<string>();
             Data.gold = Math.Max(0, Data.gold);
             Data.gems = Math.Max(0, Data.gems);
@@ -184,6 +198,50 @@ namespace MythicChronicles
             return true;
         }
 
+        private void ResetWeeklyIfNeeded()
+        {
+            DateTime today = DateTime.UtcNow.Date;
+            int daysSinceMonday = ((int)today.DayOfWeek + 6) % 7;
+            string week = today.AddDays(-daysSinceMonday).ToString("yyyy-MM-dd");
+            if (Data.lastWeeklyUtc == week) return;
+            Data.lastWeeklyUtc = week;
+            Data.weeklyQuests.Clear();
+            Data.claimedWeeklyQuests.Clear();
+            Save();
+        }
+
+        private void IncrementWeekly(string id, int amount = 1)
+        {
+            ResetWeeklyIfNeeded();
+            QuestCounter counter = Data.weeklyQuests.Find(q => q.id == id);
+            if (counter == null)
+            {
+                counter = new QuestCounter { id = id };
+                Data.weeklyQuests.Add(counter);
+            }
+            counter.progress = Mathf.Clamp(counter.progress + amount, 0, 100000);
+        }
+
+        public int WeeklyQuestProgress(string id)
+        {
+            ResetWeeklyIfNeeded();
+            QuestCounter counter = Data.weeklyQuests.Find(q => q.id == id);
+            return counter == null ? 0 : counter.progress;
+        }
+
+        public bool ClaimWeeklyQuest(string id)
+        {
+            ResetWeeklyIfNeeded();
+            QuestInfo definition = Array.Find(WeeklyQuests, q => q.id == id);
+            if (definition == null || Data.claimedWeeklyQuests.Contains(id) ||
+                WeeklyQuestProgress(id) < definition.target) return false;
+            Data.claimedWeeklyQuests.Add(id);
+            Data.gold += definition.goldReward;
+            Data.gems += definition.gemReward;
+            Save();
+            return true;
+        }
+
         public bool OwnsHero(string id) { return Data.heroes.Exists(h => h.id == id); }
         public OwnedHero FindOwnedHero(string id) { return Data.heroes.Find(h => h.id == id); }
 
@@ -206,6 +264,7 @@ namespace MythicChronicles
             Data.gold -= cost;
             hero.level++;
             IncrementQuest("upgrade_1");
+            IncrementWeekly("upgrade_7");
             Save();
             return true;
         }
@@ -222,6 +281,7 @@ namespace MythicChronicles
             if (weapon) h.weaponLevel++;
             else h.armorLevel++;
             IncrementQuest("upgrade_1");
+            IncrementWeekly("upgrade_7");
             Save();
             return true;
         }
@@ -237,6 +297,7 @@ namespace MythicChronicles
             Data.gold -= goldNeeded;
             h.stars++;
             IncrementQuest("upgrade_1");
+            IncrementWeekly("upgrade_7");
             Save();
             return true;
         }
@@ -260,6 +321,7 @@ namespace MythicChronicles
             if (owned == null) Data.heroes.Add(new OwnedHero { id = selected.id });
             else { owned.fragments += 10; Data.heroFragments += 10; }
             IncrementQuest("summon_1");
+            IncrementWeekly("summon_5");
             Save();
             return selected.id;
         }
@@ -270,6 +332,9 @@ namespace MythicChronicles
             if (stageId < 1 || stageId > 60 || stageId > Data.lastClearedStage + 1) return false;
             IncrementQuest("win_1");
             IncrementQuest("win_3");
+            IncrementWeekly("win_10");
+            if (WorldsCatalog.GetStage(stageId).boss)
+                IncrementWeekly("boss_3");
             if (!Data.stageRewardsClaimed.Contains(stageId))
             {
                 var stage = WorldsCatalog.GetStage(stageId);
@@ -303,6 +368,7 @@ namespace MythicChronicles
             Data.lastIdleClaimTicks = Math.Min(DateTime.UtcNow.Ticks,
                 Data.lastIdleClaimTicks + TimeSpan.FromMinutes(minutes).Ticks);
             IncrementQuest("idle_1");
+            IncrementWeekly("idle_minutes_180", minutes);
             Save();
             return collected;
         }
