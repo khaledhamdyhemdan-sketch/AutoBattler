@@ -8,7 +8,7 @@ namespace MythicChronicles
     // to be replaced by production UI Toolkit art without changing progression logic.
     public sealed class ChroniclesGame : MonoBehaviour
     {
-        private enum Page { Home, Chapters, StageStory, Heroes, HeroDetails, Formation, Skins, Gear, Forge, Training, Runes, SignatureWeapon, RelicVault, Summon, Quests, WeeklyQuests, Idle, Login, Settings, Battle, Results }
+        private enum Page { Home, Chapters, Trials, StageStory, Heroes, HeroDetails, Formation, Skins, Gear, Forge, Training, Runes, SignatureWeapon, RelicVault, Summon, Quests, WeeklyQuests, Idle, Login, Settings, Battle, Results }
         private Page page = Page.Home;
         private PlayerProgressService progress;
         private ChroniclesAudioDirector audio;
@@ -17,6 +17,7 @@ namespace MythicChronicles
         private Camera menuCamera;
         private AudioListener menuAudio;
         private int stageId = 1;
+        private TrialMode activeTrialMode = TrialMode.Normal;
         private string selectedHero = "horus";
         private bool showHeroSkills;
         private bool showHeroMotion = true;
@@ -114,6 +115,7 @@ namespace MythicChronicles
             {
                 case Page.Home: Home(); break;
                 case Page.Chapters: Chapters(); break;
+                case Page.Trials: Trials(); break;
                 case Page.StageStory: StageStory(); break;
                 case Page.Heroes: Heroes(); break;
                 case Page.HeroDetails: HeroDetails(); break;
@@ -156,7 +158,10 @@ namespace MythicChronicles
             GUI.Box(new Rect(35, 290, 470, 107),
                 "CAMPAIGN PROGRESS\n" + progress.Data.lastClearedStage + " / 60 stages cleared\n" +
                 "Current chapter: " + WorldsCatalog.Chapters[Mathf.Min(5, progress.Data.lastClearedStage / 10)].title);
-            if (GUI.Button(new Rect(40, 421, 460, 64), "CAMPAIGN", bigButton)) page = Page.Chapters;
+            if (GUI.Button(new Rect(40, 421, 221, 64), "CAMPAIGN", bigButton))
+            { activeTrialMode = TrialMode.Normal; chapterScroll = Vector2.zero; page = Page.Chapters; }
+            if (GUI.Button(new Rect(275, 421, 225, 64), "ELITE / DARK", bigButton))
+            { chapterScroll = Vector2.zero; page = Page.Trials; }
             if (GUI.Button(new Rect(40, 497, 222, 62), "HEROES (" + progress.Data.heroes.Count + ")", bigButton)) page = Page.Heroes;
             if (GUI.Button(new Rect(274, 497, 226, 62), "FORMATION", bigButton)) page = Page.Formation;
             if (GUI.Button(new Rect(40, 570, 222, 62), "SUMMON", bigButton)) page = Page.Summon;
@@ -174,6 +179,61 @@ namespace MythicChronicles
                 page = Page.Settings;
             GUI.Label(new Rect(40, 854, 460, 36),
                 "Six chapters • 41 heroes • One original world.", subtitle);
+        }
+
+        private void Trials()
+        {
+            GUI.Label(new Rect(32, 191, 475, 58), "ELITE & DARK TRIALS", heading);
+            GUI.Label(new Rect(22, 242, 498, 67),
+                "CAMPAIGN RANK: " + ChroniclesTrials.CampaignRank(progress.Data) +
+                "\nClear Normal chapters to unlock Elite; defeat Elite bosses to unlock Dark.",
+                subtitle);
+            chapterScroll = GUI.BeginScrollView(
+                new Rect(20, 310, 500, 580), chapterScroll,
+                new Rect(0, 0, 475, WorldsCatalog.Chapters.Length * 192));
+            for (int i = 0; i < WorldsCatalog.Chapters.Length; i++)
+            {
+                ChapterDefinition chapter = WorldsCatalog.Chapters[i];
+                int elite = ChroniclesTrials.Cleared(progress.Data, TrialMode.Elite,
+                    chapter.number);
+                int dark = ChroniclesTrials.Cleared(progress.Data, TrialMode.Dark,
+                    chapter.number);
+                int eliteNext = ChroniclesTrials.NextAvailable(
+                    progress.Data, TrialMode.Elite, chapter.number);
+                int darkNext = ChroniclesTrials.NextAvailable(
+                    progress.Data, TrialMode.Dark, chapter.number);
+                float y = i * 192f;
+                GUI.Box(new Rect(4, y, 462, 181), "");
+                GUI.Label(new Rect(16, y + 9, 442, 47),
+                    chapter.number + ". " + chapter.title, subtitle);
+                GUI.Label(new Rect(16, y + 54, 442, 34),
+                    "ELITE " + elite + "/10  |  DARK " + dark + "/10", tiny);
+                GUI.enabled = eliteNext > 0;
+                if (GUI.Button(new Rect(16, y + 104, 215, 59),
+                    elite == 10 ? "ELITE COMPLETE" :
+                    eliteNext > 0 ? "ELITE STAGE " + eliteNext :
+                        "ELITE LOCKED"))
+                    SelectTrial(eliteNext, TrialMode.Elite, chapter.number);
+                GUI.enabled = darkNext > 0;
+                if (GUI.Button(new Rect(241, y + 104, 209, 59),
+                    dark == 10 ? "DARK COMPLETE" :
+                    darkNext > 0 ? "DARK STAGE " + darkNext :
+                        "DARK LOCKED"))
+                    SelectTrial(darkNext, TrialMode.Dark, chapter.number);
+                GUI.enabled = true;
+            }
+            GUI.EndScrollView();
+        }
+
+        private void SelectTrial(int id, TrialMode mode, int chapter)
+        {
+            if (id < 1 || !progress.CanPlayTrial(id, mode)) return;
+            stageId = id;
+            activeTrialMode = mode;
+            storyStartedAt = Time.unscaledTime;
+            page = Page.StageStory;
+            notice = "";
+            if (audio != null) audio.SetState(AudioScene.Story, chapter);
         }
 
         private void Chapters()
@@ -199,6 +259,7 @@ namespace MythicChronicles
                         (id <= progress.Data.lastClearedStage ? "\nCLEARED" : "")))
                     {
                         stageId = id;
+                        activeTrialMode = TrialMode.Normal;
                         storyStartedAt = Time.unscaledTime;
                         page = Page.StageStory;
                         if (audio != null) audio.SetState(AudioScene.Story, chapter.number);
@@ -221,6 +282,8 @@ namespace MythicChronicles
             if (background != null)
                 GUI.DrawTexture(new Rect(27, 241, 486, 216), background, ScaleMode.ScaleAndCrop);
             GUI.Label(new Rect(22, 257, 496, 78),
+                activeTrialMode == TrialMode.Dark ? "DARK ENCOUNTER" :
+                activeTrialMode == TrialMode.Elite ? "ELITE ENCOUNTER" :
                 stage.boss ? "BOSS ENCOUNTER" : "STORY ENCOUNTER", heading);
             GUI.Label(new Rect(25, 349, 490, 72), stage.name, heading);
 
@@ -244,16 +307,23 @@ namespace MythicChronicles
             if (GUI.Button(new Rect(180, 658, 180, 35), "SHOW ALL DIALOGUE"))
                 storyStartedAt = Time.unscaledTime - 30f;
             GUI.Label(new Rect(35, 690, 475, 50),
-                "Recommended power: " + stage.recommendedPower +
-                "  |  First-clear: " + stage.gold + " Gold, " +
-                stage.gems + " Gems", subtitle);
+                "Recommended power: " +
+                Mathf.RoundToInt(stage.recommendedPower *
+                    ChroniclesTrials.EnemyHealthMultiplier(activeTrialMode)) +
+                "\nFirst clear: " + (activeTrialMode == TrialMode.Normal ?
+                    stage.gold + " Gold, " + stage.gems + " Gems" :
+                    ChroniclesTrials.FirstClearReward(stageId, activeTrialMode).Description),
+                subtitle);
             if (GUI.Button(new Rect(42, 753, 458, 70), "PREPARE TEAM", bigButton))
             {
                 notice = "";
                 page = Page.Formation;
             }
-            if (GUI.Button(new Rect(42, 831, 458, 51), "BACK TO CHAPTERS"))
-                page = Page.Chapters;
+            if (GUI.Button(new Rect(42, 831, 458, 51),
+                activeTrialMode == TrialMode.Normal ?
+                    "BACK TO CHAPTERS" : "BACK TO TRIALS"))
+                page = activeTrialMode == TrialMode.Normal ?
+                    Page.Chapters : Page.Trials;
         }
 
         private void Heroes()
@@ -738,7 +808,10 @@ namespace MythicChronicles
                 Mathf.RoundToInt((elemental.attackMultiplier - 1f) * 100f) +
                 "%  •  START ENERGY +" + elemental.startingEnergy, subtitle);
             GUI.enabled = progress.Data.selectedTeam.Count == 5;
-            if (GUI.Button(new Rect(40, 803, 460, 70), "START STAGE " + stageId, bigButton))
+            if (GUI.Button(new Rect(40, 803, 460, 70),
+                "START " + (activeTrialMode == TrialMode.Normal ?
+                    "" : activeTrialMode.ToString().ToUpperInvariant() + " ") +
+                "STAGE " + stageId, bigButton))
                 BeginBattle();
             GUI.enabled = true;
         }
@@ -970,11 +1043,15 @@ namespace MythicChronicles
                 chosen.Add(unit);
             }
             StageDefinition stage = WorldsCatalog.GetStage(stageId);
-            if (stage == null || stageId > progress.Data.lastClearedStage + 1)
+            bool unlocked = stage != null &&
+                (activeTrialMode == TrialMode.Normal ?
+                    stageId <= progress.Data.lastClearedStage + 1 :
+                    progress.CanPlayTrial(stageId, activeTrialMode));
+            if (!unlocked)
             { notice = "Stage is locked."; return; }
             if (battle != null) Destroy(battle.gameObject);
             battle = new GameObject("Chronicles - Campaign Battle").AddComponent<ChroniclesBattle>();
-            battle.Initialize(stage, chosen, progress.Data, OnBattleFinished);
+            battle.Initialize(stage, chosen, progress.Data, OnBattleFinished, activeTrialMode);
             if (menuCamera != null) menuCamera.enabled = false;
             if (menuAudio != null) menuAudio.enabled = false;
             page = Page.Battle; notice = "";
@@ -984,7 +1061,13 @@ namespace MythicChronicles
         private void OnBattleFinished(bool victory)
         {
             lastVictory = victory;
-            if (victory) progress.CompleteStage(stageId);
+            if (victory)
+            {
+                bool saved = activeTrialMode == TrialMode.Normal ?
+                    progress.CompleteStage(stageId) :
+                    progress.CompleteTrial(stageId, activeTrialMode);
+                if (!saved) notice = "Battle won, but progress could not be saved.";
+            }
             if (audio != null) audio.SetState(victory ? AudioScene.Victory : AudioScene.Defeat);
             page = Page.Results;
         }
@@ -1012,14 +1095,24 @@ namespace MythicChronicles
             GUI.DrawTexture(new Rect(0, 0, 540, 960), panelTex);
             GUI.Label(new Rect(25, 248, 490, 95), lastVictory ? "VICTORY!" : "DEFEAT", heading);
             StageDefinition stage = WorldsCatalog.GetStage(stageId);
-            GUI.Label(new Rect(35, 362, 470, 100), stage.name, subtitle);
+            GUI.Label(new Rect(35, 362, 470, 100),
+                activeTrialMode + " • " + stage.name +
+                "\nCampaign rank: " + ChroniclesTrials.CampaignRank(progress.Data), subtitle);
             GUI.Box(new Rect(38, 480, 464, 142),
                 lastVictory ? "First-clear rewards are added once. Your progress is saved." :
                     "Upgrade your heroes or change formation to try again.");
             if (GUI.Button(new Rect(42, 689, 456, 70), lastVictory ? "NEXT STAGE" : "RETRY", bigButton))
             {
-                if (lastVictory) stageId = Mathf.Min(60, stageId + 1);
-                page = Page.Formation;
+                if (lastVictory && activeTrialMode != TrialMode.Normal &&
+                    stageId % ChroniclesTrials.StagesPerChapter == 0)
+                {
+                    page = Page.Trials;
+                }
+                else
+                {
+                    if (lastVictory) stageId = Mathf.Min(60, stageId + 1);
+                    page = Page.Formation;
+                }
                 CleanupBattle();
             }
             if (GUI.Button(new Rect(42, 781, 456, 65), "RETURN HOME", bigButton)) GoHome();
@@ -1047,6 +1140,7 @@ namespace MythicChronicles
             }
             CleanupBattle();
             notice = "";
+            activeTrialMode = TrialMode.Normal;
             page = Page.Home;
             if (audio != null) audio.SetState(AudioScene.Menu);
         }
