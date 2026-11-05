@@ -36,6 +36,7 @@ namespace MythicChronicles
         public int gold = 2500, gems = 350, summonTickets = 3, heroFragments, forgeDust, relicDust, nextItemSerial = 1;
         public int lastClearedStage;
         public float musicVolume = .8f, effectsVolume = .9f;
+        public bool reducePortraitMotion;
         public List<OwnedHero> heroes = new List<OwnedHero>();
         public List<string> selectedTeam = new List<string>();
         public List<int> stageRewardsClaimed = new List<int>();
@@ -324,6 +325,12 @@ namespace MythicChronicles
             OwnedHero hero = FindOwnedHero(heroId);
             if (hero == null || !OwnsSkin(heroId, skinId)) return false;
             hero.skin = skinId;
+            return Save();
+        }
+
+        public bool SetReducedPortraitMotion(bool reduce)
+        {
+            Data.reducePortraitMotion = reduce;
             return Save();
         }
 
