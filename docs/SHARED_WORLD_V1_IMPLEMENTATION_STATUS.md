@@ -1,3 +1,13 @@
+## 2026-11-05: English-language 41-hero portrait integration (continuation)
+
+- The owner's conversation remains **Egyptian Arabic**. **In-game player-facing copy is English**.
+- Current Unity source includes 41 distinct **procedural placeholder** illustrations and two playback modes (STATIC / MOTION) plus a saved Reduced Motion option, connected to Hero Collection, Hero Details and Summon.
+- Added `ChroniclesPortraitAssets.cs`: cached production static image and zero-padded frame-sequence lookup, with a cap of two animated hero frame sets cached at a time for mobile memory. Added proper generated-portrait cleanup.
+- Added an **English-only six-element filter** to the collection in addition to R / SR / SSR / UR / EX (locked).
+- Added `Tools/Chronicles/Audit 41 Portraits And English` Editor audit and updated catalog validator for all 41 portrait IDs. The audit checks missing production static/animated assets, 8+ consecutive animation frames and Arabic glyphs in hero/stage/game code.
+- Authored an English [41-hero CSV production manifest](HERO_PORTRAITS_41_ASSET_MANIFEST.csv) and [integration guide](ENGLISH_ONLY_41_HERO_PORTRAIT_PIPELINE.md).
+- **Unfinished:** most individually produced anime static illustrations and real 2D/rigged character animations are **not imported**; procedural fallback animation is not equivalent to professionally animated portraits. No actual Unity Editor run, Android QA, signed APK/AAB or production art verification was performed.
+
 > **Roster superseded — latest 2026-11-05:** 41 hero IDs, 16 UR Light/Dark across five mythologies (Odin, Hades, Hel, Apollo, Ra and Amaterasu included). Full current roster at [UR expansion v3](UR_EXPANSION_16_AND_ODIN_V3.md). Production art, UR banner and APK remain incomplete. Older roster numbers are a historical baseline.
 
 > **Latest roster update — 2026-11-05:** Catalog now has **40 heroes (2 R, 8 SR, 20 SSR, 10 UR)**. The ten UR include one Light and one Darkness from each of Egypt, Greece, Norse, Japan and China. **EX is locked**. Unique skill kits and skin metadata have been extended to 40. The UR banner and final art are **not yet implemented**; Unity/Android are **not tested**. See [UR/EX roster v2](UR_EX_MYTHOLOGY_ROSTER_V2.md). The 30-hero references below describe an older baseline.
