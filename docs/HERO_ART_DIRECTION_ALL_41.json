@@ -281,7 +281,7 @@
       "staticPath": "Assets/Resources/Chronicles/Portraits/Static/freyja.png",
       "framesFolder": "Assets/Resources/Chronicles/Portraits/Animated/freyja",
       "prefab": "Assets/Resources/Chronicles/Heroes/freyja/default.prefab",
-      "productionStatus": "NOT_PRODUCED"
+      "productionStatus": "CANDIDATE_STATIC_AND_8_FRAMES_UNITY_REVIEW_PENDING"
     },
     {
       "id": "thor",
