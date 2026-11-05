@@ -14,9 +14,13 @@ namespace MythicChronicles
         public int weaponLevel, armorLevel;
         public int activeSkillLevel = 1, ultimateSkillLevel = 1, passiveSkillLevel = 1;
         public int attackTalents, defenseTalents;
+        public int signatureWeaponRank;
         public int fragments;
         public string skin = "default";
     }
+
+    [Serializable]
+    public sealed class RelicRank { public string id; public int level = 1; }
 
     [Serializable]
     public sealed class QuestCounter { public string id; public int progress; }
@@ -29,7 +33,7 @@ namespace MythicChronicles
         public string lastDailyUtc;
         public string lastWeeklyUtc;
         public long lastIdleClaimTicks;
-        public int gold = 2500, gems = 350, summonTickets = 3, heroFragments, forgeDust, nextItemSerial = 1;
+        public int gold = 2500, gems = 350, summonTickets = 3, heroFragments, forgeDust, relicDust, nextItemSerial = 1;
         public int lastClearedStage;
         public float musicVolume = .8f, effectsVolume = .9f;
         public List<OwnedHero> heroes = new List<OwnedHero>();
@@ -42,6 +46,8 @@ namespace MythicChronicles
         public List<string> ownedSkins = new List<string>();
         public List<GearInstance> equipment = new List<GearInstance>();
         public List<RuneInstance> runes = new List<RuneInstance>();
+        public List<RelicRank> relics = new List<RelicRank>();
+        public string equippedRelicId = "";
     }
 
     public sealed class QuestInfo
@@ -127,11 +133,13 @@ namespace MythicChronicles
             if (Data.ownedSkins == null) Data.ownedSkins = new List<string>();
             if (Data.equipment == null) Data.equipment = new List<GearInstance>();
             if (Data.runes == null) Data.runes = new List<RuneInstance>();
+            if (Data.relics == null) Data.relics = new List<RelicRank>();
             Data.gold = Math.Max(0, Data.gold);
             Data.gems = Math.Max(0, Data.gems);
             Data.summonTickets = Math.Max(0, Data.summonTickets);
             Data.heroFragments = Math.Max(0, Data.heroFragments);
             Data.forgeDust = Math.Max(0, Data.forgeDust);
+            Data.relicDust = Math.Max(0, Data.relicDust);
             Data.nextItemSerial = Math.Max(1, Data.nextItemSerial);
             Data.lastClearedStage = Mathf.Clamp(Data.lastClearedStage, 0, 60);
             Data.musicVolume = Mathf.Clamp01(Data.musicVolume);
@@ -147,6 +155,7 @@ namespace MythicChronicles
                 h.passiveSkillLevel = Mathf.Clamp(h.passiveSkillLevel, 1, ChroniclesGrowth.SkillCap);
                 h.attackTalents = Mathf.Clamp(h.attackTalents, 0, ChroniclesGrowth.MaxTalents);
                 h.defenseTalents = Mathf.Clamp(h.defenseTalents, 0, ChroniclesGrowth.MaxTalents);
+                h.signatureWeaponRank = Mathf.Clamp(h.signatureWeaponRank, 0, 5);
                 if (h.attackTalents + h.defenseTalents > ChroniclesGrowth.MaxTalents)
                     h.defenseTalents = ChroniclesGrowth.MaxTalents - h.attackTalents;
             }
@@ -174,6 +183,13 @@ namespace MythicChronicles
                     !runeSlots.Add(rune.assignedHeroId + ":" + rune.type))
                     rune.assignedHeroId = "";
             }
+            var uniqueRelics = new HashSet<string>(StringComparer.Ordinal);
+            Data.relics.RemoveAll(item => item == null ||
+                ChroniclesRelics.Find(item.id) == null || !uniqueRelics.Add(item.id));
+            foreach (RelicRank owned in Data.relics)
+                owned.level = Mathf.Clamp(owned.level, 1, 5);
+            if (!Data.relics.Exists(item => item.id == Data.equippedRelicId))
+                Data.equippedRelicId = "";
             seen.Clear();
             Data.selectedTeam.RemoveAll(id => !OwnsHero(id) || !seen.Add(id));
             if (Data.selectedTeam.Count > 5) Data.selectedTeam.RemoveRange(5, Data.selectedTeam.Count - 5);
@@ -461,6 +477,44 @@ namespace MythicChronicles
             return ChroniclesEquipment.Calculate(Data.equipment, heroId);
         }
 
+        public bool UpgradeSignatureWeapon(string heroId)
+        {
+            OwnedHero hero = FindOwnedHero(heroId);
+            if (hero == null || hero.level < 10 || hero.signatureWeaponRank >= 5) return false;
+            int goldCost = 850 + hero.signatureWeaponRank * 700;
+            int fragmentCost = hero.signatureWeaponRank * 10;
+            if (Data.gold < goldCost || hero.fragments < fragmentCost) return false;
+            Data.gold -= goldCost;
+            hero.fragments -= fragmentCost;
+            hero.signatureWeaponRank++;
+            IncrementQuest("upgrade_1");
+            IncrementWeekly("upgrade_7");
+            return Save();
+        }
+
+        public bool EquipRelic(string id)
+        {
+            if (ChroniclesRelics.Find(id) == null ||
+                !Data.relics.Exists(relic => relic.id == id)) return false;
+            Data.equippedRelicId = id;
+            return Save();
+        }
+
+        public bool UpgradeRelic(string id)
+        {
+            RelicRank rank = Data.relics.Find(x => x.id == id);
+            if (rank == null || rank.level >= 5) return false;
+            int dustCost = rank.level * 10;
+            int goldCost = rank.level * 450;
+            if (Data.relicDust < dustCost || Data.gold < goldCost) return false;
+            Data.relicDust -= dustCost;
+            Data.gold -= goldCost;
+            rank.level++;
+            IncrementQuest("upgrade_1");
+            IncrementWeekly("upgrade_7");
+            return Save();
+        }
+
         public bool DismantleGear(string instanceId)
         {
             GearInstance item = Data.equipment.Find(x => x.instanceId == instanceId);
@@ -657,6 +711,14 @@ namespace MythicChronicles
                 var stage = WorldsCatalog.GetStage(stageId);
                 Data.stageRewardsClaimed.Add(stageId);
                 GrantStageEquipment(stageId);
+                WorldRelic rewardRelic = ChroniclesRelics.FromBossStage(stageId);
+                if (rewardRelic != null && !Data.relics.Exists(x => x.id == rewardRelic.id))
+                {
+                    Data.relics.Add(new RelicRank { id = rewardRelic.id, level = 1 });
+                    Data.relicDust += 15;
+                    if (string.IsNullOrEmpty(Data.equippedRelicId))
+                        Data.equippedRelicId = rewardRelic.id;
+                }
                 Data.gold += stage.gold;
                 Data.gems += stage.gems;
             }
