@@ -9,7 +9,7 @@
   "scripts": {
     "start": "node src/index.mjs",
     "test": "node --test test/*.test.mjs",
-    "check": "node --check src/index.mjs && node --check src/app.mjs && node --check src/security.mjs"
+    "check": "node --check src/index.mjs && node --check src/app.mjs && node --check src/security.mjs && node --check src/catalog.mjs"
   },
   "dependencies": {
     "pg": "^8.13.1"
