@@ -8,7 +8,7 @@ namespace MythicChronicles
     // to be replaced by production UI Toolkit art without changing progression logic.
     public sealed class ChroniclesGame : MonoBehaviour
     {
-        private enum Page { Home, More, Chapters, Trials, Towers, Raid, Labyrinth, ArenaTraining, StageStory, Heroes, HeroDetails, Formation, Skins, Gear, Forge, Training, Runes, SignatureWeapon, RelicVault, Summon, Quests, WeeklyQuests, Achievements, Idle, Login, Settings, Battle, Results }
+        private enum Page { Home, More, Shop, Mailbox, Chapters, Trials, Towers, Raid, Labyrinth, ArenaTraining, StageStory, Heroes, HeroDetails, Formation, Skins, Gear, Forge, Training, Runes, SignatureWeapon, RelicVault, Summon, Quests, WeeklyQuests, Achievements, Idle, Login, Settings, Battle, Results }
         private Page page = Page.Home;
         private PlayerProgressService progress;
         private ChroniclesAudioDirector audio;
@@ -121,6 +121,8 @@ namespace MythicChronicles
             {
                 case Page.Home: Home(); break;
                 case Page.More: More(); break;
+                case Page.Shop: Shop(); break;
+                case Page.Mailbox: Mailbox(); break;
                 case Page.Chapters: Chapters(); break;
                 case Page.Trials: Trials(); break;
                 case Page.Towers: Towers(); break;
@@ -261,7 +263,8 @@ namespace MythicChronicles
                 "AFK REWARDS", "LOGIN REWARDS",
                 "RELIC VAULT", "FACTION TOWERS",
                 "WORLD BOSS", "LABYRINTH",
-                "ARENA TRAINING", "SETTINGS"
+                "ARENA TRAINING", "SHOP",
+                "MAILBOX", "SETTINGS"
             };
             for (int i = 0; i < names.Length; i++)
             {
@@ -282,9 +285,68 @@ namespace MythicChronicles
                     case 8: inRaid = false; page = Page.Raid; break;
                     case 9: inLabyrinth = false; page = Page.Labyrinth; break;
                     case 10: inArenaTraining = false; page = Page.ArenaTraining; break;
-                    case 11: page = Page.Settings; break;
+                    case 11: page = Page.Shop; break;
+                    case 12: page = Page.Mailbox; break;
+                    case 13: page = Page.Settings; break;
                 }
             }
+        }
+
+        private void Shop()
+        {
+            GUI.Label(new Rect(26, 214, 488, 63), "DAILY RESOURCE SHOP", heading);
+            GUI.Label(new Rect(29, 269, 479, 67),
+                "OFFLINE SHOP • NO REAL-MONEY PURCHASES" +
+                "\nGOLD " + progress.Data.gold + "  •  GEMS " + progress.Data.gems,
+                subtitle);
+            gearScroll = GUI.BeginScrollView(new Rect(19, 343, 505, 537),
+                gearScroll, new Rect(0, 0, 471, ChroniclesShop.Offers.Length * 105));
+            for (int i = 0; i < ChroniclesShop.Offers.Length; i++)
+            {
+                ShopOffer offer = ChroniclesShop.Offers[i];
+                int left = progress.ShopRemaining(offer.id);
+                float y = i * 105f;
+                GUI.Box(new Rect(6, y, 460, 99), "");
+                GUI.Label(new Rect(16, y + 7, 287, 27), offer.name, subtitle);
+                GUI.Label(new Rect(16, y + 36, 289, 57),
+                    offer.RewardLabel + "\n" + offer.CostLabel +
+                    "  •  LEFT " + left + "/" + offer.dailyLimit, tiny);
+                GUI.enabled = left > 0;
+                if (GUI.Button(new Rect(314, y + 21, 142, 59),
+                    left > 0 ? "EXCHANGE" : "SOLD OUT"))
+                    notice = progress.BuyShopOffer(offer.id) ?
+                        "Purchased: " + offer.RewardLabel :
+                        "Insufficient funds or daily limit reached.";
+                GUI.enabled = true;
+            }
+            GUI.EndScrollView();
+        }
+
+        private void Mailbox()
+        {
+            GUI.Label(new Rect(26, 215, 488, 62), "MAILBOX", heading);
+            GUI.Label(new Rect(31, 279, 477, 58),
+                progress.UnclaimedMailCount() + " UNCLAIMED REWARD MESSAGES" +
+                "\nOffline inbox. Future server notices are not active.", subtitle);
+            gearScroll = GUI.BeginScrollView(new Rect(19, 353, 505, 529),
+                gearScroll, new Rect(0, 0, 471, Mathf.Max(529,
+                    progress.Data.mailbox.Count * 145 + 8)));
+            for (int i = 0; i < progress.Data.mailbox.Count; i++)
+            {
+                RewardMail mail = progress.Data.mailbox[i];
+                float y = i * 145f;
+                GUI.Box(new Rect(5, y, 463, 137), "");
+                GUI.Label(new Rect(18, y + 8, 435, 32), mail.subject, subtitle);
+                GUI.Label(new Rect(17, y + 45, 435, 49),
+                    mail.body + "\n" + mail.RewardSummary, tiny);
+                GUI.enabled = !mail.claimed;
+                if (GUI.Button(new Rect(290, y + 97, 166, 32),
+                    mail.claimed ? "CLAIMED" : "CLAIM REWARD"))
+                    notice = progress.ClaimMailReward(mail.id) ?
+                        "Mailbox reward collected." : "Already claimed.";
+                GUI.enabled = true;
+            }
+            GUI.EndScrollView();
         }
 
         private void ArenaTraining()
