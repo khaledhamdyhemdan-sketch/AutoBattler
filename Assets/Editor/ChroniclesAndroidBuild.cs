@@ -23,6 +23,14 @@ namespace MythicChronicles.Editor
                 throw new InvalidOperationException("Main game scene is missing. Run Tools/Chronicles/Create Main Game Scene.");
             if (!BuildPipeline.IsBuildTargetSupported(BuildTargetGroup.Android, BuildTarget.Android))
                 throw new InvalidOperationException("Android Build Support is not installed in Unity Hub.");
+            if (EditorUserBuildSettings.activeBuildTarget != BuildTarget.Android)
+                throw new InvalidOperationException(
+                    "Switch to Android build target before building. " +
+                    "The local PowerShell script supplies -buildTarget Android.");
+            if (AssetDatabase.LoadAssetAtPath<SceneAsset>(MainScene) == null)
+                throw new InvalidOperationException(
+                    "The main Chronicles scene cannot be imported by Unity.");
+            PlayerSettings.defaultInterfaceOrientation = ScreenOrientation.Portrait;
 
             if (bundle && (!PlayerSettings.Android.useCustomKeystore ||
                            string.IsNullOrEmpty(PlayerSettings.Android.keystoreName)))
