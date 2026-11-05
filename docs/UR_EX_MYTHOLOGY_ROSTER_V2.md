@@ -1,3 +1,5 @@
+> **SUPERSEDED by [UR expansion v3](UR_EXPANSION_16_AND_ODIN_V3.md):** 41 total heroes, 16 UR (including Odin, Apollo, Hades, Hel, Ra and Amaterasu), 9 Light/7 Darkness. Historical numbers below are no longer current.
+
 # UR + EX Expansion: Cross-Mythology Hero Roster v2
 
 **Date:** 2026-11-05  
