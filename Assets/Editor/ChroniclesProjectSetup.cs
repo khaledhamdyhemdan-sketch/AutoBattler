@@ -83,6 +83,25 @@ namespace MythicChronicles.Editor
                     Debug.LogError("[Chronicles] Hero has no skill kit: " + hero.id);
                     errors++;
                 }
+            if (HeroPortraitIdentityCatalog.All.Length != WorldsCatalog.Heroes.Length)
+            {
+                Debug.LogError("[Chronicles] Every hero needs a unique static/motion portrait identity.");
+                errors++;
+            }
+            var portraitIds = new HashSet<string>(StringComparer.Ordinal);
+            foreach (PortraitIdentity portrait in HeroPortraitIdentityCatalog.All)
+                if (WorldsCatalog.FindHero(portrait.heroId) == null ||
+                    !portraitIds.Add(portrait.heroId))
+                {
+                    Debug.LogError("[Chronicles] Unknown or duplicate portrait: " + portrait.heroId);
+                    errors++;
+                }
+            foreach (HeroDefinition hero in WorldsCatalog.Heroes)
+                if (!ChroniclesHeroPortrait.HasIdentity(hero.id))
+                {
+                    Debug.LogError("[Chronicles] Missing hero portrait: " + hero.id);
+                    errors++;
+                }
             int rCount = 0, srCount = 0, ssrCount = 0, urCount = 0, exCount = 0;
             int lightCount = 0, darknessCount = 0;
             var urByOrigin = new Dictionary<Origin, int[]>();
