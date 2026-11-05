@@ -86,7 +86,7 @@ namespace MythicChronicles
                     AnimatedLightOverlay(heroId, local, phase, profile);
                 }
             }
-            DrawRarityBorder(local, heroId);
+            DrawRarityBorder(local, heroId, animated);
             GUI.EndGroup();
         }
 
@@ -125,10 +125,15 @@ namespace MythicChronicles
             GUI.color = old;
         }
 
-        private static void DrawRarityBorder(Rect r, string id)
+        private static void DrawRarityBorder(Rect r, string id, bool animated)
         {
             HeroDefinition hero = WorldsCatalog.FindHero(id);
             if (hero == null) return;
+            if (hero.rarity == Rarity.UR && ChroniclesPremiumFrame.Supports(id))
+            {
+                ChroniclesPremiumFrame.Draw(r, id, animated);
+                return;
+            }
             Color color = hero.rarity == Rarity.UR ?
                 (hero.element == HeroElement.Light ? new Color(1f, .83f, .42f) :
                     new Color(.70f, .45f, 1f)) :
