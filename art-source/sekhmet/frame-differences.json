@@ -1,0 +1,17 @@
+{
+  "cell_size": [
+    362,
+    543
+  ],
+  "adjacent_mean_absolute_rgb_difference": [
+    9.00043242473266,
+    8.21684658927112,
+    7.624728250731731,
+    17.440923998385614,
+    10.100242836163595,
+    6.595258929146784,
+    6.530766595782926,
+    16.72913932216151
+  ],
+  "note": "Includes final-to-first seam. Visual review remains required."
+}
