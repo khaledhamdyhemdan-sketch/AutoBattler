@@ -100,6 +100,26 @@ namespace MythicChronicles.Editor
                 Check(service.EquipRune(rune.instanceId, "horus"), "Rune re-equip failed.");
                 Check(ChroniclesGrowth.Calculate(service.Data, horus).attackMultiplier > 1f,
                     "Attack talent/rune modifiers should be observable.");
+                Check(service.AutoEquip("horus"), "Auto-equip should work for an owned hero.");
+                Check(service.GearBonus("horus").equippedCount >= 1,
+                    "Auto-equip should fill open slots.");
+                GearInstance equipped = service.Data.equipment.Find(x =>
+                    x.equippedHeroId == "horus");
+                Check(equipped != null, "Auto-equip left hero empty.");
+                Check(service.AutoEquip("anubis"), "Auto-equip another hero failed.");
+                Check(equipped.equippedHeroId == "horus",
+                    "Auto-equip must not steal another hero's equipment.");
+
+                service.Data.forgeDust = 500; // Test-only materials; no live grant
+                Check(service.CraftGear("sun_weapon"), "Forging known gear failed.");
+                GearInstance crafted = service.Data.equipment.Find(x =>
+                    x.instanceId.StartsWith("crafted_", StringComparison.Ordinal));
+                Check(crafted != null, "Crafted gear should have a stable instance ID.");
+                int dustBeforeSalvage = service.Data.forgeDust;
+                Check(service.DismantleGear(crafted.instanceId), "Unequipped crafted gear salvage failed.");
+                Check(service.Data.forgeDust > dustBeforeSalvage,
+                    "Dismantling must add forge dust.");
+                Check(!service.DismantleGear(crafted.instanceId), "Gear cannot be dismantled twice.");
 
                 service.Data.lastIdleClaimTicks = DateTime.UtcNow.AddMinutes(-140).Ticks;
                 int idleGold = service.ClaimIdleGold();
