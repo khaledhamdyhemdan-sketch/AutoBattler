@@ -19,6 +19,8 @@ namespace MythicChronicles
         private int stageId = 1;
         private string selectedHero = "horus";
         private bool showHeroSkills;
+        private bool showHeroMotion = true;
+        private int galleryTierFilter = -1;
         private float storyStartedAt;
         private string notice = "";
         private string lastSummoned = "";
@@ -249,121 +251,160 @@ namespace MythicChronicles
 
         private void Heroes()
         {
-            GUI.Label(new Rect(130, 181, 300, 50), "HERO GALLERY", heading);
-            GUI.Label(new Rect(30, 222, 475, 40),
-                "Collected " + progress.Data.heroes.Count + " / " +
-                WorldsCatalog.Heroes.Length + " • Origin + Element + Rarity", subtitle);
-            string[] tiers = { "R", "SR", "SSR", "UR", "EX" };
-            for (int tier = 0; tier < tiers.Length; tier++)
+            GUI.Label(new Rect(110, 181, 320, 48), "HERO COLLECTION", heading);
+            GUI.Label(new Rect(30, 226, 480, 36),
+                progress.Data.heroes.Count + " / " + WorldsCatalog.Heroes.Length +
+                " owned  •  STATIC PORTRAITS", subtitle);
+            string[] tabs = { "ALL", "R", "SR", "SSR", "UR", "EX" };
+            for (int i = 0; i < tabs.Length; i++)
             {
-                float x = 25f + tier * 101f;
-                if (tier == 4)
+                float x = 22f + i * 83f;
+                if (i == 5)
                 {
-                    GUI.DrawTexture(new Rect(x, 267f, 95f, 61f), Texture2D.blackTexture);
-                    GUI.Label(new Rect(x + 4f, 277f, 87f, 42f),
-                        "LOCKED\n" + tiers[tier], subtitle);
+                    GUI.DrawTexture(new Rect(x, 268, 77, 45), Texture2D.blackTexture);
+                    GUI.Label(new Rect(x, 270, 77, 39), "EX 🔒", subtitle);
+                    continue;
                 }
-                else GUI.Box(new Rect(x, 267f, 95f, 61f),
-                    tiers[tier] + (tier == 3 ? "\nLIMITED" : "\nAVAILABLE"));
+                Color old = GUI.backgroundColor;
+                if (galleryTierFilter == i - 1)
+                    GUI.backgroundColor = new Color(.86f, .73f, .46f);
+                if (GUI.Button(new Rect(x, 268, 77, 45), tabs[i]))
+                {
+                    galleryTierFilter = i - 1;
+                    rosterScroll = Vector2.zero;
+                }
+                GUI.backgroundColor = old;
             }
-            rosterScroll = GUI.BeginScrollView(new Rect(20, 336, 505, 541), rosterScroll,
-                new Rect(0, 0, 474, WorldsCatalog.Heroes.Length * 76));
-            for (int i = 0; i < WorldsCatalog.Heroes.Length; i++)
+
+            var visible = new List<HeroDefinition>();
+            foreach (HeroDefinition hero in WorldsCatalog.Heroes)
+                if (galleryTierFilter < 0 || (int)hero.rarity == galleryTierFilter)
+                    visible.Add(hero);
+            visible.Sort((first, second) =>
             {
-                HeroDefinition hero = WorldsCatalog.Heroes[i];
-                OwnedHero owned = progress.FindOwnedHero(hero.id);
-                string element = hero.element.ToString().ToUpperInvariant();
-                string scarcity = HeroElements.IsSpecial(hero) ? " • RARE ELEMENT" : "";
-                URCardIdentity urCard = hero.rarity == Rarity.UR ? URCardCatalog.For(hero.id) : null;
-                string title = urCard != null
-                    ? "UR " + hero.name.ToUpperInvariant() + " | " + element + " | " + urCard.title
-                    : hero.name + " | " + hero.rarity + " | " + element +
-                        " | " + hero.origin + scarcity;
-                Texture2D cardArt = hero.rarity == Rarity.UR ?
-                    ChroniclesStageArt.HeroCard(hero.id) : null;
-                string text = cardArt == null
-                    ? title + "\n" + hero.role +
-                        (owned == null ? " — NOT OWNED" : " — LEVEL " + owned.level)
-                    : hero.name + " | UR " + element + "\n" + hero.role +
-                        (owned == null ? " — NOT OWNED" : " — LEVEL " + owned.level);
-                Color previousBackground = GUI.backgroundColor;
-                if (urCard != null)
-                    GUI.backgroundColor = urCard.element == HeroElement.Light
-                        ? new Color(1f, .84f, .45f) : new Color(.64f, .46f, .82f);
-                bool selected = GUI.Button(new Rect(4, i * 76, 461, 69), text);
-                GUI.backgroundColor = previousBackground;
-                if (cardArt != null)
-                    GUI.DrawTexture(new Rect(387, i * 76 + 4, 75, 61),
-                        cardArt, ScaleMode.ScaleToFit);
-                if (urCard != null)
+                int byRarity = second.rarity.CompareTo(first.rarity);
+                return byRarity != 0 ? byRarity :
+                    string.CompareOrdinal(first.name, second.name);
+            });
+
+            int rows = Mathf.CeilToInt(visible.Count / 3f);
+            rosterScroll = GUI.BeginScrollView(
+                new Rect(17, 323, 509, 560), rosterScroll,
+                new Rect(0, 0, 477, Mathf.Max(560, rows * 222 + 12)));
+            for (int i = 0; i < visible.Count; i++)
+            {
+                HeroDefinition hero = visible[i];
+                int column = i % 3, row = i / 3;
+                float x = 4f + column * 157f;
+                float y = 4f + row * 222f;
+                // Generate only thumbnails inside or near the viewport.
+                if (y + 218f < rosterScroll.y - 30f ||
+                    y > rosterScroll.y + 600f) continue;
+                GUI.Box(new Rect(x, y, 150, 212), "");
+                ChroniclesHeroPortrait.Draw(hero.id,
+                    new Rect(x + 4, y + 4, 142, 164), false);
+                Color oldColor = GUI.color;
+                GUI.color = new Color(.035f, .032f, .074f, .96f);
+                GUI.DrawTexture(new Rect(x + 4, y + 156, 142, 53),
+                    Texture2D.whiteTexture);
+                GUI.color = oldColor;
+                GUI.Label(new Rect(x + 7, y + 162, 136, 22),
+                    hero.name + "  " + hero.rarity, tiny);
+                GUI.Label(new Rect(x + 7, y + 185, 137, 24),
+                    hero.element.ToString() +
+                    (progress.OwnsHero(hero.id) ? " • OWNED" : " • LOCKED"), tiny);
+                if (GUI.Button(new Rect(x, y, 150, 212), "", GUIStyle.none))
                 {
-                    Color previousColor = GUI.color;
-                    GUI.color = urCard.border;
-                    GUI.DrawTexture(new Rect(4, i * 76, 5, 69), Texture2D.whiteTexture);
-                    GUI.color = previousColor;
+                    selectedHero = hero.id;
+                    showHeroMotion = true;
+                    notice = "";
+                    page = Page.HeroDetails;
                 }
-                if (selected)
-                { selectedHero = hero.id; notice = ""; page = Page.HeroDetails; }
             }
             GUI.EndScrollView();
+            if (visible.Count == 0)
+                GUI.Label(new Rect(40, 535, 456, 80),
+                    "No heroes belong to this tier.", subtitle);
         }
 
-                private void HeroDetails()
+        private void HeroDetails()
         {
             HeroDefinition hero = WorldsCatalog.FindHero(selectedHero);
             if (hero == null) { page = Page.Heroes; return; }
             OwnedHero owned = progress.FindOwnedHero(hero.id);
             HeroKit kit = HeroAbilityCatalog.For(hero.id);
-            GUI.Label(new Rect(25, 243, 490, 62), hero.name.ToUpperInvariant(), heading);
-            GUI.Label(new Rect(28, 309, 484, 39), hero.origin + "  •  " + hero.element + "  •  " + hero.role + "  •  " + hero.rarity, subtitle);
-            URCardIdentity card = hero.rarity == Rarity.UR ? URCardCatalog.For(hero.id) : null;
-            if (card != null)
-            {
-                Color prior = GUI.color;
-                GUI.color = card.border;
-                GUI.DrawTexture(new Rect(42, 346, 455, 5), Texture2D.whiteTexture);
-                GUI.color = prior;
-            }
-            GUI.Box(new Rect(36, 358, 465, 197), "");
-            if (GUI.Button(new Rect(49, 367, 216, 37), "STORY")) showHeroSkills = false;
-            if (GUI.Button(new Rect(275, 367, 216, 37), "ABILITIES")) showHeroSkills = true;
+            URCardIdentity premium = hero.rarity == Rarity.UR ?
+                URCardCatalog.For(hero.id) : null;
+            GUI.Label(new Rect(28, 235, 485, 54),
+                hero.name.ToUpperInvariant(), heading);
+            GUI.Label(new Rect(26, 292, 487, 39),
+                hero.rarity + " • " + hero.element + " • " +
+                hero.origin + " • " + hero.role, subtitle);
+
+            // Both static and animated portraits are available for EVERY hero.
+            ChroniclesHeroPortrait.Draw(hero.id,
+                new Rect(30, 350, 228, 280), showHeroMotion);
+            if (GUI.Button(new Rect(30, 636, 109, 37),
+                showHeroMotion ? "● MOTION" : "MOTION"))
+                showHeroMotion = true;
+            if (GUI.Button(new Rect(146, 636, 112, 37),
+                !showHeroMotion ? "● STATIC" : "STATIC"))
+                showHeroMotion = false;
+
+            GUI.Box(new Rect(268, 350, 243, 323), "");
+            if (GUI.Button(new Rect(276, 360, 109, 36), "STORY"))
+                showHeroSkills = false;
+            if (GUI.Button(new Rect(392, 360, 110, 36), "SKILLS"))
+                showHeroSkills = true;
             if (showHeroSkills && kit != null)
             {
-                GUI.Label(new Rect(52, 410, 438, 138),
-                    "Skill: " + kit.skillName + " — " + kit.skillDescription +
-                    "\nUltimate: " + kit.ultimateName + " — " + kit.ultimateDescription +
-                    "\nPassive: " + kit.passiveName + " — " + kit.passiveDescription, tiny);
+                GUI.Label(new Rect(280, 407, 221, 260),
+                    "SKILL: " + kit.skillName + "\n" +
+                    kit.skillDescription + "\n\nULTIMATE: " +
+                    kit.ultimateName + "\n" + kit.ultimateDescription +
+                    "\n\nPASSIVE: " + kit.passiveName + "\n" +
+                    kit.passiveDescription, tiny);
             }
-            else GUI.Label(new Rect(52, 409, 438, 144),
-                card == null ? hero.story : card.title + "\n" + card.scene +
-                    "\nEntrance: " + card.introCue, subtitle);
-
-            if (owned == null)
-                GUI.Label(new Rect(32, 569, 476, 67),
-                    hero.rarity == Rarity.UR ?
-                        "UR champion • limited Light/Dark banner is not active yet." :
-                        "Not yet summoned. Use earned tickets or gems.", subtitle);
             else
             {
-                GUI.Label(new Rect(32, 566, 472, 74),
-                    "Level " + owned.level + "  •  Stars " + owned.stars +
-                    "\nWeapon +" + owned.weaponLevel + "  •  Armor +" + owned.armorLevel +
-                    "  •  Fragments " + owned.fragments, subtitle);
-                if (GUI.Button(new Rect(40, 650, 460, 59), "UPGRADE HERO", bigButton))
-                    notice = progress.UpgradeHero(hero.id) ? "Level increased and saved." :
-                        "Upgrade unavailable: gold or level cap.";
-                if (GUI.Button(new Rect(40, 718, 219, 60), "EQUIPMENT"))
-                    { page = Page.Gear; notice = ""; }
-                if (GUI.Button(new Rect(278, 718, 222, 60), "SKILL TRAINING"))
-                    { page = Page.Training; notice = ""; }
-                if (GUI.Button(new Rect(40, 787, 460, 51),
-                    "ASCEND (" + (owned.stars * 20) + " FRAGMENTS)"))
-                    notice = progress.AscendHero(hero.id) ? "Star rank increased!" :
-                        "Not enough fragments/gold or max stars.";
+                PortraitIdentity illustration = HeroPortraitIdentityCatalog.For(hero.id);
+                string text = premium != null ?
+                    premium.title + "\n" + premium.scene +
+                    "\n\nENTRANCE: " + premium.introCue :
+                    hero.story + "\n\nLOOK: " +
+                    (illustration == null ? "" : illustration.visualNote);
+                GUI.Label(new Rect(279, 407, 221, 253), text, tiny);
             }
-            if (GUI.Button(new Rect(40, 849, 220, 46), "HERO SKINS"))
-            { page = Page.Skins; notice = ""; }
-            if (GUI.Button(new Rect(270, 849, 230, 46), "HERO COLLECTION"))
+
+            if (owned == null)
+            {
+                GUI.Label(new Rect(30, 680, 478, 61),
+                    hero.rarity == Rarity.UR ?
+                        "UR limited acquisition is coming later." :
+                        "Not owned. Find this hero via summoning.", subtitle);
+            }
+            else
+            {
+                GUI.Label(new Rect(27, 674, 488, 53),
+                    "LV " + owned.level + " • STARS " + owned.stars +
+                    " • GEAR +" + owned.weaponLevel + "/+" + owned.armorLevel +
+                    " • FRAGMENTS " + owned.fragments, subtitle);
+            }
+            GUI.enabled = owned != null;
+            if (GUI.Button(new Rect(31, 735, 478, 49), "UPGRADE HERO", bigButton))
+                notice = progress.UpgradeHero(hero.id) ?
+                    "Hero upgraded and saved." : "Gold or level cap reached.";
+            if (GUI.Button(new Rect(31, 789, 232, 49), "EQUIPMENT"))
+                page = Page.Gear;
+            if (GUI.Button(new Rect(275, 789, 234, 49), "SKILL TRAINING"))
+                page = Page.Training;
+            if (GUI.Button(new Rect(31, 843, 232, 46), "ASCEND"))
+                notice = progress.AscendHero(hero.id) ?
+                    "Star rank increased!" : "Not enough fragments.";
+            GUI.enabled = true;
+            if (GUI.Button(new Rect(275, 843, 234, 46), "SKINS"))
+                page = Page.Skins;
+            if (GUI.Button(new Rect(31, 897, 478, 39), "BACK TO COLLECTION"))
                 page = Page.Heroes;
         }
 
@@ -674,20 +715,32 @@ namespace MythicChronicles
 
         private void Summon()
         {
-            GUI.Label(new Rect(25, 250, 490, 65), "SUMMONING CHAMBER", heading);
-            GUI.Box(new Rect(40, 347, 460, 135), "Bring a hero from another age into your collection.");
-            GUI.Label(new Rect(28, 503, 488, 86),
-                "Cost: 1 earned ticket or 120 earned gems\n" +
-                "R 20% • SR 65% • SSR 15%\nUR Light/Dark: limited banner (not active yet). Duplicates give fragments.", subtitle);
-            if (GUI.Button(new Rect(40, 621, 460, 80), "SUMMON ONE HERO", bigButton))
+            GUI.Label(new Rect(25, 242, 490, 60), "SUMMONING CHAMBER", heading);
+            GUI.Label(new Rect(27, 310, 482, 78),
+                "Standard banner: R 20% • SR 65% • SSR 15%" +
+                "\nUR light/dark banner is not active yet.", subtitle);
+            if (!string.IsNullOrEmpty(lastSummoned))
+            {
+                HeroDefinition summoned = WorldsCatalog.FindHero(lastSummoned);
+                if (summoned != null)
+                {
+                    ChroniclesHeroPortrait.Draw(summoned.id,
+                        new Rect(141, 390, 258, 343), true);
+                    GUI.Label(new Rect(70, 735, 400, 50),
+                        summoned.name + " • " + summoned.rarity +
+                        " • " + summoned.element, heading);
+                }
+            }
+            else GUI.Box(new Rect(118, 394, 304, 332),
+                "Summon a hero to reveal\nan animated portrait.");
+            if (GUI.Button(new Rect(40, 803, 460, 70),
+                "SUMMON ONE HERO • 1 TICKET / 120 GEMS", bigButton))
             {
                 string chosen = progress.SummonHero();
                 lastSummoned = chosen ?? "";
-                notice = chosen == null ? "Not enough tickets or gems." :
+                notice = chosen == null ? "Not enough earned tickets or gems." :
                     "Summoned: " + WorldsCatalog.FindHero(chosen).name;
             }
-            if (!string.IsNullOrEmpty(lastSummoned))
-                GUI.Label(new Rect(40, 730, 460, 66), "LATEST: " + WorldsCatalog.FindHero(lastSummoned).name, heading);
         }
 
         private void Quests(bool weekly)
