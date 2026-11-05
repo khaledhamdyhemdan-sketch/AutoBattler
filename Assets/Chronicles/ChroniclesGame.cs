@@ -668,7 +668,7 @@ namespace MythicChronicles
             GUI.Label(new Rect(35, 235, 466, 66),
                 "Select five owned heroes. Order is used to place your team in front and back rows.", subtitle);
             formationScroll = GUI.BeginScrollView(new Rect(20, 317, 500, 413), formationScroll,
-                new Rect(0, 0, 473, progress.Data.heroes.Count * 57));
+                new Rect(0, 0, 473, progress.Data.heroes.Count * 66));
             for (int i = 0; i < progress.Data.heroes.Count; i++)
             {
                 OwnedHero owned = progress.Data.heroes[i];
@@ -677,7 +677,11 @@ namespace MythicChronicles
                 int picked = progress.Data.selectedTeam.IndexOf(owned.id);
                 string label = (picked >= 0 ? "[SLOT " + (picked + 1) + "] " : "[ + ] ") +
                     hero.name + "   Level " + owned.level + "   " + hero.role;
-                if (GUI.Button(new Rect(5, i * 57, 457, 52), label))
+                float y = i * 66f;
+                ChroniclesHeroPortrait.Draw(hero.id, new Rect(5, y, 48, 61), false);
+                GUI.Box(new Rect(54, y, 404, 61), "");
+                GUI.Label(new Rect(64, y + 7, 377, 46), label, tiny);
+                if (GUI.Button(new Rect(5, y, 457, 61), "", GUIStyle.none))
                 {
                     List<string> temp = new List<string>(progress.Data.selectedTeam);
                     if (picked >= 0) temp.Remove(owned.id);
