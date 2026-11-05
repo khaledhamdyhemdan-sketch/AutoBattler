@@ -8,10 +8,12 @@ namespace MythicChronicles
     // to be replaced by production UI Toolkit art without changing progression logic.
     public sealed class ChroniclesGame : MonoBehaviour
     {
-        private enum Page { Home, Chapters, StageStory, Heroes, HeroDetails, Formation, Skins, Summon, Quests, WeeklyQuests, Idle, Battle, Results }
+        private enum Page { Home, Chapters, StageStory, Heroes, HeroDetails, Formation, Skins, Summon, Quests, WeeklyQuests, Idle, Settings, Battle, Results }
         private Page page = Page.Home;
         private PlayerProgressService progress;
+        private ChroniclesAudioDirector audio;
         private ChroniclesBattle battle;
+        private float draftMusic = .8f, draftEffects = .9f;
         private Camera menuCamera;
         private AudioListener menuAudio;
         private int stageId = 1;
@@ -47,6 +49,11 @@ namespace MythicChronicles
             cameraObject.transform.position = new Vector3(0f, 0f, -10f);
             menuAudio = cameraObject.AddComponent<AudioListener>();
             progress = new PlayerProgressService();
+            audio = gameObject.AddComponent<ChroniclesAudioDirector>();
+            draftMusic = progress.Data.musicVolume;
+            draftEffects = progress.Data.effectsVolume;
+            audio.SetVolumes(draftMusic, draftEffects);
+            audio.SetState(AudioScene.Menu);
             stageId = Mathf.Clamp(progress.Data.lastClearedStage + 1, 1, 60);
         }
 
@@ -110,6 +117,7 @@ namespace MythicChronicles
                 case Page.Quests: Quests(false); break;
                 case Page.WeeklyQuests: Quests(true); break;
                 case Page.Idle: Idle(); break;
+                case Page.Settings: Settings(); break;
                 case Page.Battle: BattleHud(scale); break;
                 case Page.Results: Results(); break;
             }
@@ -144,7 +152,9 @@ namespace MythicChronicles
                 page = Page.WeeklyQuests;
             if (GUI.Button(new Rect(274, 645, 226, 64), "AFK REWARDS", bigButton))
                 page = Page.Idle;
-            GUI.Label(new Rect(40, 748, 460, 125),
+            if (GUI.Button(new Rect(40, 722, 460, 56), "SETTINGS", bigButton))
+                page = Page.Settings;
+            GUI.Label(new Rect(40, 798, 460, 80),
                 "Six connected chapters • 30 collectible heroes\n" +
                 "Different myths, one original storyline.", subtitle);
         }
@@ -174,6 +184,7 @@ namespace MythicChronicles
                         stageId = id;
                         storyStartedAt = Time.unscaledTime;
                         page = Page.StageStory;
+                        if (audio != null) audio.SetState(AudioScene.Story, chapter.number);
                         notice = "";
                     }
                     GUI.enabled = true;
@@ -437,6 +448,28 @@ namespace MythicChronicles
             }
         }
 
+        private void Settings()
+        {
+            GUI.Label(new Rect(25, 254, 490, 67), "GAME SETTINGS", heading);
+            GUI.Box(new Rect(35, 359, 470, 384), "");
+            GUI.Label(new Rect(53, 388, 440, 57),
+                "MUSIC: " + Mathf.RoundToInt(draftMusic * 100f) + "%", subtitle);
+            draftMusic = GUI.HorizontalSlider(new Rect(70, 466, 398, 26), draftMusic, 0f, 1f);
+            GUI.Label(new Rect(53, 540, 440, 57),
+                "SOUND EFFECTS: " + Mathf.RoundToInt(draftEffects * 100f) + "%", subtitle);
+            draftEffects = GUI.HorizontalSlider(new Rect(70, 610, 398, 26), draftEffects, 0f, 1f);
+            if (GUI.Button(new Rect(58, 662, 425, 59), "SAVE AUDIO SETTINGS", bigButton))
+            {
+                bool saved = progress.SetAudioLevels(draftMusic, draftEffects);
+                if (audio != null) audio.SetVolumes(draftMusic, draftEffects);
+                notice = saved ? "Audio preferences saved." : "Could not save settings.";
+            }
+            GUI.Label(new Rect(37, 758, 466, 57),
+                "Original game soundtrack and effects are loaded from licensed Unity audio assets.", subtitle);
+            if (GUI.Button(new Rect(40, 836, 460, 55), "RETURN HOME", bigButton))
+                GoHome();
+        }
+
         private void BeginBattle()
         {
             if (progress.Data.selectedTeam.Count != 5)
@@ -459,12 +492,14 @@ namespace MythicChronicles
             if (menuCamera != null) menuCamera.enabled = false;
             if (menuAudio != null) menuAudio.enabled = false;
             page = Page.Battle; notice = "";
+            if (audio != null) audio.SetState(AudioScene.Battle, stage.chapter);
         }
 
         private void OnBattleFinished(bool victory)
         {
             lastVictory = victory;
             if (victory) progress.CompleteStage(stageId);
+            if (audio != null) audio.SetState(victory ? AudioScene.Victory : AudioScene.Defeat);
             page = Page.Results;
         }
 
@@ -527,6 +562,7 @@ namespace MythicChronicles
             CleanupBattle();
             notice = "";
             page = Page.Home;
+            if (audio != null) audio.SetState(AudioScene.Menu);
         }
     }
 }
