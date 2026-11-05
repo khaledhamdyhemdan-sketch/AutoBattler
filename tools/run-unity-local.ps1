@@ -17,7 +17,14 @@ $scene = Join-Path $project 'Assets/Chronicles/Chronicles_Main.unity'
 if (-not (Test-Path $versionFile) -or -not (Test-Path $scene)) {
     throw "This directory is not a complete Chronicles Unity project."
 }
-$version = (Select-String -Path $versionFile -Pattern '^m_EditorVersion: (.+)$').Matches.Groups[1].Value.Trim()
+$versionMatch = [regex]::Match(
+    (Get-Content -Raw -Path $versionFile),
+    '(?m)^m_EditorVersion:\s*(\S+)'
+)
+if (-not $versionMatch.Success) {
+    throw "Unity version is missing from ProjectSettings/ProjectVersion.txt."
+}
+$version = $versionMatch.Groups[1].Value
 if ($version -ne '6000.3.0f1') {
     throw "Expected Unity 6000.3.0f1; project requests $version. Do not silently upgrade the project."
 }
@@ -44,13 +51,13 @@ function Invoke-UnityStep {
     param([string]$Title, [string]$Method, [string]$LogName)
     $log = Join-Path $reportDirectory $LogName
     Write-Host "Running $Title..." -ForegroundColor Cyan
-    $args = @(
+    $unityArguments = @(
         '-batchmode', '-nographics', '-quit',
         '-projectPath', $project,
         '-executeMethod', $Method,
         '-logFile', $log
     )
-    & $UnityEditor @args
+    & $UnityEditor @unityArguments
     $result = $LASTEXITCODE
     if ($result -ne 0) {
         Write-Host "FAILED: $Title (exit $result). Check $log" -ForegroundColor Red
