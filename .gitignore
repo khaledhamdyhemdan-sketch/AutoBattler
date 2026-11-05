@@ -33,3 +33,13 @@ sysinfo.txt
 .DS_Store
 [Tt]humbs.db
 desktop.ini
+
+*.aab
+*.jks
+*.keystore
+*.p12
+*.pem
+*.p8
+.env
+.env.*
+!*.example
