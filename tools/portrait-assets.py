@@ -6,11 +6,34 @@ import argparse
 import csv
 import hashlib
 import json
+import re
+import shutil
+import uuid
 from pathlib import Path
 from PIL import Image, ImageChops, ImageStat
 
 ROOT = Path(__file__).resolve().parents[1]
 ART = ROOT / 'Assets/Resources/Chronicles/Portraits'
+
+
+def metadata():
+    template = (ROOT / 'Assets/Models/Enemies/Flying/Atlas_Monsters_Flying.png.meta').read_text()
+    for old, new in [('enableMipMap: 1', 'enableMipMap: 0'),
+                     ('maxTextureSize: 2048', 'maxTextureSize: 1024'),
+                     ('nPOTScale: 1', 'nPOTScale: 0'), ('wrapU: 0', 'wrapU: 1'),
+                     ('wrapV: 0', 'wrapV: 1'), ('wrapW: 0', 'wrapW: 1')]:
+        template = template.replace(old, new)
+    for path in [ART, *ART.rglob('*')]:
+        if not path.is_dir() and path.suffix != '.png':
+            continue
+        meta = Path(str(path) + '.meta')
+        if meta.exists():
+            continue
+        guid = uuid.uuid5(uuid.NAMESPACE_URL, 'autobattler:' + path.relative_to(ROOT).as_posix()).hex
+        content = (f'fileFormatVersion: 2\nguid: {guid}\nfolderAsset: yes\nDefaultImporter:\n'
+                   '  externalObjects: {}\n  userData:\n  assetBundleName:\n  assetBundleVariant:\n'
+                   if path.is_dir() else re.sub(r'^guid: [a-f0-9]+', f'guid: {guid}', template, flags=re.M))
+        meta.write_text(content, encoding='utf-8')
 
 
 def audit():
@@ -79,6 +102,7 @@ def split(hero, source, sheet):
             frame.save(folder / f'frame_{i:03}.png')
         preview = ROOT / 'art-source' / hero
         preview.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(sheet, preview / 'idle-sheet.png')
         # Preview only, outside Resources; PNGs are the runtime assets.
         frames[0].save(preview / 'idle-preview.gif', save_all=True,
                        append_images=frames[1:], duration=125, loop=0)
@@ -88,6 +112,7 @@ def split(hero, source, sheet):
             cell_size=[cw, ch], adjacent_mean_absolute_rgb_difference=metrics,
             note='Includes final-to-first seam. Visual review remains required.'), indent=2)+'\n')
         print(f'{hero}: {original.size} static; 8 frames {cw}x{ch}; preview {preview}')
+    metadata()
 
 
 if __name__ == '__main__':
