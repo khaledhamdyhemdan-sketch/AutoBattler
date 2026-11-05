@@ -153,11 +153,11 @@ namespace MythicChronicles
             unit.model.name = hero.name + (boss ? " - Chapter Boss" : "");
             unit.model.transform.SetParent(transform);
             unit.model.transform.position = unit.arrivalPosition;
-            unit.model.transform.localScale = Vector3.zero;
+            unit.model.transform.localScale = Vector3.one * .001f;
             unit.model.GetComponent<Renderer>().sharedMaterial = side == 0 ? OriginMaterial(hero.origin) : redMaterial;
             Collider collider = unit.model.GetComponent<Collider>();
             if (collider != null) Destroy(collider);
-            MakePrimitive("Emblem", PrimitiveType.Sphere, destination + Vector3.up, new Vector3(.45f, .20f, .45f),
+            MakePrimitive("Emblem", PrimitiveType.Sphere, unit.model.transform.position + Vector3.up * .92f, new Vector3(.45f, .20f, .45f),
                 goldMaterial, unit.model.transform);
             units.Add(unit);
         }
