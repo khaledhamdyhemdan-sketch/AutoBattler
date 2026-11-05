@@ -8,7 +8,7 @@ namespace MythicChronicles
     // to be replaced by production UI Toolkit art without changing progression logic.
     public sealed class ChroniclesGame : MonoBehaviour
     {
-        private enum Page { Home, Chapters, Trials, StageStory, Heroes, HeroDetails, Formation, Skins, Gear, Forge, Training, Runes, SignatureWeapon, RelicVault, Summon, Quests, WeeklyQuests, Idle, Login, Settings, Battle, Results }
+        private enum Page { Home, Chapters, Trials, Towers, StageStory, Heroes, HeroDetails, Formation, Skins, Gear, Forge, Training, Runes, SignatureWeapon, RelicVault, Summon, Quests, WeeklyQuests, Idle, Login, Settings, Battle, Results }
         private Page page = Page.Home;
         private PlayerProgressService progress;
         private ChroniclesAudioDirector audio;
@@ -18,6 +18,9 @@ namespace MythicChronicles
         private AudioListener menuAudio;
         private int stageId = 1;
         private TrialMode activeTrialMode = TrialMode.Normal;
+        private bool inTower;
+        private Origin selectedTowerOrigin = Origin.Egypt;
+        private int selectedTowerFloor = 1;
         private string selectedHero = "horus";
         private bool showHeroSkills;
         private bool showHeroMotion = true;
@@ -116,6 +119,7 @@ namespace MythicChronicles
                 case Page.Home: Home(); break;
                 case Page.Chapters: Chapters(); break;
                 case Page.Trials: Trials(); break;
+                case Page.Towers: Towers(); break;
                 case Page.StageStory: StageStory(); break;
                 case Page.Heroes: Heroes(); break;
                 case Page.HeroDetails: HeroDetails(); break;
@@ -159,9 +163,9 @@ namespace MythicChronicles
                 "CAMPAIGN PROGRESS\n" + progress.Data.lastClearedStage + " / 60 stages cleared\n" +
                 "Current chapter: " + WorldsCatalog.Chapters[Mathf.Min(5, progress.Data.lastClearedStage / 10)].title);
             if (GUI.Button(new Rect(40, 421, 221, 64), "CAMPAIGN", bigButton))
-            { activeTrialMode = TrialMode.Normal; chapterScroll = Vector2.zero; page = Page.Chapters; }
+            { inTower = false; activeTrialMode = TrialMode.Normal; chapterScroll = Vector2.zero; page = Page.Chapters; }
             if (GUI.Button(new Rect(275, 421, 225, 64), "ELITE / DARK", bigButton))
-            { chapterScroll = Vector2.zero; page = Page.Trials; }
+            { inTower = false; chapterScroll = Vector2.zero; page = Page.Trials; }
             if (GUI.Button(new Rect(40, 497, 222, 62), "HEROES (" + progress.Data.heroes.Count + ")", bigButton)) page = Page.Heroes;
             if (GUI.Button(new Rect(274, 497, 226, 62), "FORMATION", bigButton)) page = Page.Formation;
             if (GUI.Button(new Rect(40, 570, 222, 62), "SUMMON", bigButton)) page = Page.Summon;
@@ -170,12 +174,14 @@ namespace MythicChronicles
                 page = Page.WeeklyQuests;
             if (GUI.Button(new Rect(274, 645, 226, 64), "AFK REWARDS", bigButton))
                 page = Page.Idle;
-            if (GUI.Button(new Rect(40, 722, 222, 56), "RELIC VAULT", bigButton))
-                page = Page.RelicVault;
+            if (GUI.Button(new Rect(40, 722, 222, 56), "FACTION TOWERS", bigButton))
+            { inTower = false; chapterScroll = Vector2.zero; page = Page.Towers; }
             if (GUI.Button(new Rect(274, 722, 226, 56),
                 progress.CanClaimDailyLogin() ? "DAILY GIFT!" : "LOGIN REWARDS", bigButton))
                 page = Page.Login;
-            if (GUI.Button(new Rect(40, 796, 460, 49), "SETTINGS"))
+            if (GUI.Button(new Rect(40, 796, 222, 49), "RELIC VAULT"))
+                page = Page.RelicVault;
+            if (GUI.Button(new Rect(274, 796, 226, 49), "SETTINGS"))
                 page = Page.Settings;
             GUI.Label(new Rect(40, 854, 460, 36),
                 "Six chapters • 41 heroes • One original world.", subtitle);
@@ -229,11 +235,57 @@ namespace MythicChronicles
         {
             if (id < 1 || !progress.CanPlayTrial(id, mode)) return;
             stageId = id;
+            inTower = false;
             activeTrialMode = mode;
             storyStartedAt = Time.unscaledTime;
             page = Page.StageStory;
             notice = "";
             if (audio != null) audio.SetState(AudioScene.Story, chapter);
+        }
+
+        private void Towers()
+        {
+            GUI.Label(new Rect(28, 189, 488, 62), "FACTION TOWERS", heading);
+            GUI.Label(new Rect(24, 248, 495, 55),
+                "Seven mythological towers • 100 floors each\n" +
+                "A team needs two heroes from the tower's own origin.", subtitle);
+            chapterScroll = GUI.BeginScrollView(
+                new Rect(19, 314, 503, 573), chapterScroll,
+                new Rect(0, 0, 474, ChroniclesTowers.TowerOrigins.Length * 143));
+            for (int i = 0; i < ChroniclesTowers.TowerOrigins.Length; i++)
+            {
+                Origin tower = ChroniclesTowers.TowerOrigins[i];
+                int highest = ChroniclesTowers.Highest(progress.Data, tower);
+                int next = highest + 1;
+                float y = i * 143f;
+                GUI.Box(new Rect(5, y, 465, 132), "");
+                GUI.Label(new Rect(15, y + 6, 445, 37),
+                    ChroniclesTowers.DisplayName(tower), subtitle);
+                GUI.Label(new Rect(20, y + 46, 440, 34),
+                    "Floor " + highest + "/100 • " + ChroniclesTowers.Rank(highest), tiny);
+                GUI.enabled = progress.Data.lastClearedStage >= 10 &&
+                    next <= ChroniclesTowers.MaxFloor;
+                if (GUI.Button(new Rect(28, y + 82, 420, 41),
+                    highest >= ChroniclesTowers.MaxFloor ? "TOWER COMPLETED" :
+                    progress.Data.lastClearedStage < 10 ? "CLEAR STORY CHAPTER 1 TO UNLOCK" :
+                    "CHALLENGE FLOOR " + next))
+                    SelectTower(tower, next);
+                GUI.enabled = true;
+            }
+            GUI.EndScrollView();
+        }
+
+        private void SelectTower(Origin origin, int floor)
+        {
+            StageDefinition stage = ChroniclesTowers.StageFor(origin, floor);
+            if (stage == null || progress.Data.lastClearedStage < 10) return;
+            selectedTowerOrigin = origin;
+            selectedTowerFloor = floor;
+            inTower = true;
+            activeTrialMode = TrialMode.Normal;
+            stageId = stage.id;
+            notice = "Select five heroes, including two from " + origin + ".";
+            page = Page.Formation;
         }
 
         private void Chapters()
