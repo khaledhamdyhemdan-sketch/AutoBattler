@@ -1,3 +1,5 @@
+> **Roster now 41, including 16 UR.** Latest art and intro requirements: [UR expansion v3](../../docs/UR_EXPANSION_16_AND_ODIN_V3.md), with detailed source-defined UR scenes/auras in `URCardCatalog.cs`. Earlier 30/40 production counts below are superseded.
+
 > **Roster expansion:** This art brief originally covered 30 heroes. Production now requires **40** launch heroes, including 10 premium UR Light/Dark rigs and entrance cinematics. **EX remains locked** with no model. See [UR/EX roster v2](../../docs/UR_EX_MYTHOLOGY_ROSTER_V2.md). Older 30 counts below are historical.
 
 # Original artwork / animations / audio: integration contract
