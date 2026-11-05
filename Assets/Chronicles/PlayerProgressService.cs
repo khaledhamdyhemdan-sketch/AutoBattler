@@ -148,6 +148,10 @@ namespace MythicChronicles
                 ChroniclesRaids.AttemptsPerDay);
             Data.raidBestDamage = Math.Max(0, Data.raidBestDamage);
             Data.raidRewardTier = Mathf.Clamp(Data.raidRewardTier, 0, 5);
+            // The app was closed during a raid. The attempt was already spent
+            // when it began; discard its stale token so other attempts stay usable.
+            if (!string.IsNullOrEmpty(Data.raidPendingRunId))
+                Data.raidPendingRunId = "";
             var seenTowers = new HashSet<string>(StringComparer.Ordinal);
             Data.towerProgress.RemoveAll(t => t == null ||
                 string.IsNullOrEmpty(t.origin) ||
