@@ -1,0 +1,83 @@
+name: Build Chronicles Android Alpha APK (manual)
+
+# This workflow deliberately NEVER runs on push: no repeated build emails.
+# It never uploads to Google Play. Only a GitHub Actions artifact is created.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: chronicles-alpha-android
+  cancel-in-progress: false
+
+jobs:
+  android-alpha-apk:
+    name: Unity 6.3 Android test APK
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - name: Checkout the game branch
+        uses: actions/checkout@v4
+        with:
+          lfs: true
+
+      - name: Confirm Unity licensing is configured
+        shell: bash
+        env:
+          UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
+          UNITY_EMAIL: ${{ secrets.UNITY_EMAIL }}
+          UNITY_PASSWORD: ${{ secrets.UNITY_PASSWORD }}
+          UNITY_SERIAL: ${{ secrets.UNITY_SERIAL }}
+        run: |
+          set -euo pipefail
+          if [[ -z "$UNITY_EMAIL" || -z "$UNITY_PASSWORD" ]]; then
+            echo "::error::Configure UNITY_EMAIL and UNITY_PASSWORD in repository Actions Secrets. Never post these in chat or commit them."
+            exit 1
+          fi
+          if [[ -z "$UNITY_LICENSE" && -z "$UNITY_SERIAL" ]]; then
+            echo "::error::Configure UNITY_LICENSE (Personal) or UNITY_SERIAL (Pro) in repository Actions Secrets."
+            exit 1
+          fi
+          echo "Unity credentials and license are configured (values hidden)."
+
+      - name: Build offline Unity Android APK
+        uses: game-ci/unity-builder@v4
+        env:
+          UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
+          UNITY_EMAIL: ${{ secrets.UNITY_EMAIL }}
+          UNITY_PASSWORD: ${{ secrets.UNITY_PASSWORD }}
+          UNITY_SERIAL: ${{ secrets.UNITY_SERIAL }}
+        with:
+          targetPlatform: Android
+          unityVersion: auto
+          androidExportType: androidPackage
+          buildMethod: MythicChronicles.Editor.ChroniclesAndroidBuild.BuildApk
+          versioning: None
+
+      - name: Verify installable package was generated
+        shell: bash
+        run: |
+          set -euo pipefail
+          apk="Builds/Chronicles/Chronicles_Android.apk"
+          if [[ ! -s "$apk" ]]; then
+            echo "::error::Unity completed without the expected Android APK: $apk."
+            exit 1
+          fi
+          unzip -t "$apk" >/dev/null
+          unzip -l "$apk" | grep -q 'AndroidManifest.xml'
+          sha256sum "$apk" | tee "$apk.sha256"
+          echo "An actual APK was produced, but still requires installation and Android playtesting." >> "$GITHUB_STEP_SUMMARY"
+          echo "No Google Play upload or public release was performed." >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Store Android APK for direct tester download
+        uses: actions/upload-artifact@v4
+        with:
+          name: Chronicles-Alpha-Android-${{ github.run_number }}
+          path: |
+            Builds/Chronicles/Chronicles_Android.apk
+            Builds/Chronicles/Chronicles_Android.apk.sha256
+          if-no-files-found: error
+          retention-days: 30
+          compression-level: 0
