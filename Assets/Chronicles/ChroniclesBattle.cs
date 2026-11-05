@@ -122,16 +122,22 @@ namespace MythicChronicles
                 foreach (Combatant fighter in units)
                     if (fighter.side == team) heroes.Add(fighter.hero);
                 TeamSynergyBonus bonus = TeamSynergy.Calculate(heroes);
+                ElementalTeamBonus element = HeroElements.Calculate(heroes);
                 bool diplomat = heroes.Exists(h => h.id == "cleopatra");
                 foreach (Combatant fighter in units)
                 {
                     if (fighter.side != team) continue;
-                    fighter.attack *= bonus.attackMultiplier;
-                    fighter.maxHp *= bonus.hpMultiplier;
+                    // Combined pantheon + element buffs are capped to protect early R/SR heroes.
+                    fighter.attack *= Mathf.Min(1.36f,
+                        bonus.attackMultiplier * element.attackMultiplier);
+                    fighter.maxHp *= Mathf.Min(1.36f,
+                        bonus.hpMultiplier * element.healthMultiplier);
                     fighter.hp = fighter.maxHp;
-                    fighter.energy = bonus.startingEnergy + (diplomat ? 14f : 0f);
+                    fighter.energy = Mathf.Min(100f,
+                        bonus.startingEnergy + element.startingEnergy + (diplomat ? 14f : 0f));
                 }
-                Debug.Log("[Chronicles] Team " + team + " synergy: " + bonus.description);
+                Debug.Log("[Chronicles] Team " + team + " synergy: " + bonus.description +
+                    "; elemental: " + element.description);
             }
         }
 
@@ -527,6 +533,9 @@ namespace MythicChronicles
                 if (attacker.rallied > 0f) raw *= 1.22f;
             }
 
+            if (attacker != null)
+                raw *= HeroElements.DamageMultiplier(attacker.hero.element,
+                    defender.hero.element);
             defender.visual.Play(HeroAnimation.Hit);
             float damage = raw * 100f / (100f + defender.armor);
             if (defender.hero.role == CombatRole.Tank) damage *= .84f;
