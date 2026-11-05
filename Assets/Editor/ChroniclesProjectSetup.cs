@@ -83,6 +83,39 @@ namespace MythicChronicles.Editor
                     Debug.LogError("[Chronicles] Hero has no skill kit: " + hero.id);
                     errors++;
                 }
+            int rCount = 0, srCount = 0, ssrCount = 0, special = 0;
+            foreach (HeroDefinition hero in WorldsCatalog.Heroes)
+            {
+                if (hero.element != HeroElements.For(hero.id))
+                {
+                    Debug.LogError("[Chronicles] Hero element is not initialized: " + hero.id);
+                    errors++;
+                }
+                if (HeroElements.IsSpecial(hero))
+                {
+                    special++;
+                    if (hero.rarity != Rarity.SSR)
+                    {
+                        Debug.LogError("[Chronicles] Special hero must be SSR: " + hero.id);
+                        errors++;
+                    }
+                }
+                if (hero.rarity == Rarity.R) rCount++;
+                else if (hero.rarity == Rarity.SR) srCount++;
+                else if (hero.rarity == Rarity.SSR) ssrCount++;
+                else { Debug.LogError("[Chronicles] Future ranks must stay locked."); errors++; }
+            }
+            if (rCount != 2 || srCount != 8 || ssrCount != 20 || special != 4)
+            {
+                Debug.LogError("[Chronicles] R/SR/SSR or special element roster allocation invalid.");
+                errors++;
+            }
+            if (ChroniclesEquipment.Templates.Length != 18 ||
+                ChroniclesRelics.All.Length != 6)
+            {
+                Debug.LogError("[Chronicles] Gear and relic catalogs are incomplete.");
+                errors++;
+            }
             for (int stageId = 1; stageId <= 60; stageId++)
             {
                 StoryMoment dialogue = WorldsStory.Get(stageId);
