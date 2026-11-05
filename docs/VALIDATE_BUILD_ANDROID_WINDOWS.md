@@ -1,3 +1,62 @@
+## No Google Play required — first Alpha APK
+
+**The first Android test build is a directly installable APK.** Google Play,
+Play Console registration and an AAB are **not** required to test it.
+There are two independent build paths. Both produce real Unity builds, not
+a website, PWA or simulated APK.
+
+### Option A: build on your Windows PC (free local approach)
+
+Install Unity Hub and **Unity Editor 6000.3.0f1**, with Android Build Support,
+SDK/NDK and OpenJDK. Clone or download the
+`feature/egyptian-heroes-5v5` branch, open the Unity project once and wait
+for packages to finish importing. In PowerShell from its root, run:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File tools/run-unity-local.ps1 -BuildApk
+```
+
+If compilation or automated checks fail, inspect
+`Builds/Chronicles/Validation/chronicles-editor-tests.log` and correct
+the issues before trying again. After a successful build, use:
+`Builds/Chronicles/Chronicles_Android.apk`.
+
+### Option B: manual GitHub Actions build (no PC Unity installation)
+
+Open [Build Chronicles Alpha APK (manual)](../.github/workflows/chronicles-alpha-apk.yml)
+in the repository's GitHub **Actions** tab, and choose **Run workflow** for
+`feature/egyptian-heroes-5v5`. This workflow never runs automatically on
+code commits, so it does not generate a new email for each commit.
+
+The workflow needs a valid Unity license activation configured by the
+repository owner as GitHub Actions **secrets**: `UNITY_LICENSE`,
+`UNITY_EMAIL`, `UNITY_PASSWORD`. GitHub does not automatically provide
+a Unity license. For Unity Personal, activating the license on a
+local computer through Unity Hub may be the simplest route. Keep license
+files and passwords out of the chat, code and issue comments. See
+[GameCI licensing documentation](https://game.ci/docs/github/activation/).
+
+After a **successful** job, download the
+`Chronicles-Alpha-Android-APK` workflow artifact, unzip it and locate
+`Chronicles_Android.apk`. It must be *actually built* by Unity; a green
+source audit alone is not a downloadable APK.
+
+### Install on Android, without Google Play
+
+Transfer the APK to the phone and open it from the Files/Downloads app.
+If Android requests permission to install from that app, enable it only
+for the trusted file manager and turn it off again after installation.
+Do not disable Play Protect. The Alpha uses a temporary testing package ID,
+so it is not a Play Store app and cannot be treated as a final store release.
+
+**Limitations:** production hero art, fully rigged models, online accounts,
+ranked Arena, guilds, release signing and complete device QA are still
+outstanding. Offline fallback art is enough for an initial mechanics test;
+it is **not** the final graphics promised for the game. Building an APK
+does not certify playability until it is installed and tested.
+
+---
+
 # Windows Unity 6.3 validation and first Android smoke build
 
 **Unity Editor version:** 6000.3.0f1. **Game language:** English. **Device orientation:** portrait (9:16).
