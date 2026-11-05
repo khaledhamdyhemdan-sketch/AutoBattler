@@ -6,6 +6,9 @@ EditorBuildSettings:
   serializedVersion: 2
   m_Scenes:
   - enabled: 1
+    path: Assets/Chronicles/Chronicles_Main.unity
+    guid: c8b1f395ba2a487787a0eefaf880c316
+  - enabled: 1
     path: Assets/Scenes/PersistentManagers.unity/PersistentManagers.unity
     guid: 359c9d64b45b99340b1efbd7e128ba5b
   - enabled: 1
