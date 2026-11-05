@@ -1,0 +1,24 @@
+name: Chronicles source audit
+
+on:
+  push:
+    branches: [feature/egyptian-heroes-5v5]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  audit:
+    name: Roster / Unity metadata / English source
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Run lightweight checks
+        run: node tools/chronicles-source-audit.mjs
+      - name: Explain build boundary
+        run: echo "Source checks only; actual Unity Editor and Android APK/AAB validation still required."
