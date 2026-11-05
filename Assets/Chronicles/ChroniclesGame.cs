@@ -8,7 +8,7 @@ namespace MythicChronicles
     // to be replaced by production UI Toolkit art without changing progression logic.
     public sealed class ChroniclesGame : MonoBehaviour
     {
-        private enum Page { Home, Chapters, StageStory, Heroes, HeroDetails, Formation, Summon, Quests, WeeklyQuests, Idle, Battle, Results }
+        private enum Page { Home, Chapters, StageStory, Heroes, HeroDetails, Formation, Skins, Summon, Quests, WeeklyQuests, Idle, Battle, Results }
         private Page page = Page.Home;
         private PlayerProgressService progress;
         private ChroniclesBattle battle;
@@ -105,6 +105,7 @@ namespace MythicChronicles
                 case Page.Heroes: Heroes(); break;
                 case Page.HeroDetails: HeroDetails(); break;
                 case Page.Formation: Formation(); break;
+                case Page.Skins: Skins(); break;
                 case Page.Summon: Summon(); break;
                 case Page.Quests: Quests(false); break;
                 case Page.WeeklyQuests: Quests(true); break;
@@ -287,7 +288,47 @@ namespace MythicChronicles
                     notice = progress.AscendHero(hero.id) ? "Star rank increased!" :
                         "Not enough fragments/gold or max stars.";
             }
-            if (GUI.Button(new Rect(40, 849, 460, 46), "HERO COLLECTION")) page = Page.Heroes;
+            if (GUI.Button(new Rect(40, 849, 220, 46), "HERO SKINS"))
+            { page = Page.Skins; notice = ""; }
+            if (GUI.Button(new Rect(270, 849, 230, 46), "HERO COLLECTION"))
+                page = Page.Heroes;
+        }
+
+        private void Skins()
+        {
+            HeroDefinition hero = WorldsCatalog.FindHero(selectedHero);
+            if (hero == null) { page = Page.Heroes; return; }
+            OwnedHero owned = progress.FindOwnedHero(hero.id);
+            GUI.Label(new Rect(30, 245, 480, 72), hero.name.ToUpperInvariant() + " SKINS", heading);
+            GUI.Label(new Rect(30, 315, 480, 53),
+                "Costumes must be unlocked before equipping. Real artwork is loaded from Unity Resources.", subtitle);
+            IList<HeroSkin> skins = HeroSkinCatalog.For(hero.id);
+            for (int i = 0; i < skins.Count; i++)
+            {
+                HeroSkin skin = skins[i];
+                bool unlocked = progress.OwnsSkin(hero.id, skin.id);
+                bool equipped = owned != null && owned.skin == skin.id;
+                float y = 391 + i * 205;
+                GUI.Box(new Rect(30, y, 480, 194), "");
+                GUI.Label(new Rect(41, y + 12, 458, 48), skin.displayName, heading);
+                GUI.Label(new Rect(42, y + 62, 456, 52), skin.visualTheme, tiny);
+                GUI.Label(new Rect(42, y + 111, 455, 27),
+                    equipped ? "EQUIPPED" : unlocked ? "OWNED" :
+                        skin.gemCost + " earned gems", subtitle);
+                GUI.enabled = owned != null && !equipped &&
+                    (unlocked || (skin.gemCost > 0 && progress.Data.gems >= skin.gemCost));
+                if (GUI.Button(new Rect(43, y + 147, 450, 38),
+                    equipped ? "EQUIPPED" : unlocked ? "EQUIP SKIN" : "UNLOCK SKIN"))
+                {
+                    bool success = unlocked ? progress.EquipSkin(hero.id, skin.id) :
+                        progress.UnlockSkin(hero.id, skin.id);
+                    notice = success ? (unlocked ? "Skin equipped." : "Skin unlocked. Tap EQUIP to wear it.") :
+                        "Skin action unavailable.";
+                }
+                GUI.enabled = true;
+            }
+            if (GUI.Button(new Rect(40, 817, 460, 58), "BACK TO HERO", bigButton))
+                page = Page.HeroDetails;
         }
 
         private void Formation()
