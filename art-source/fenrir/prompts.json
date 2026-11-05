@@ -1,0 +1,21 @@
+{
+  "hero": {
+    "id": "fenrir",
+    "name": "Fenrir",
+    "origin": "Norse",
+    "role": "Warrior",
+    "rarity": "UR",
+    "element": "Darkness",
+    "silhouette": "Titanic scarred black wolf with broken silver bindings",
+    "weapon": "Giant jaws, claws and trailing shattered chains",
+    "setting": "Blood-red eclipse over ruined northern cliffs",
+    "idle": "Fur bristles and chains rattle with predatory breathing",
+    "ultimateVfx": "A colossal fanged shadow ruptures the enemy defenses",
+    "staticPath": "Assets/Resources/Chronicles/Portraits/Static/fenrir.png",
+    "framesFolder": "Assets/Resources/Chronicles/Portraits/Animated/fenrir",
+    "prefab": "Assets/Resources/Chronicles/Heroes/fenrir/default.prefab",
+    "productionStatus": "NOT_PRODUCED"
+  },
+  "static": "Use case: stylized-concept. ONE individual original luxury painterly ANIME mythology game portrait of Fenrir from Norse, UR Darkness Warrior. A gigantic four-legged WOLF, black fur with silver-blue highlights, not humanoid; powerful jaws, paws and broken chains clearly visible. No hands, clothes, sword or human face. Exact design brief: Titanic scarred black wolf with broken silver bindings. Distinctive weapon/props: Giant jaws, claws and trailing shattered chains. Setting: Blood-red eclipse over ruined northern cliffs. Actual game abilities: Fatebreaker Fangs; Ragnarok Bite; The Unbound; Tear through a single opponent three times.; Pursue the weakest target with an execution blow.; Finish weakened targets more effectively.. Express role and divine/heroic presence through a restrained scene motif inspired by: A colossal fanged shadow ruptures the enemy defenses. Imposing cinematic low-angle three-quarter composition, readable face/silhouette at thumbnail, ornate convincing materials, powerful dignified character-specific presence. Show complete defining creature anatomy clearly. Preserve specified gender/species/culture; fully covered appropriate ceremonial outfit or armor for humanoids. Premium polished original anime finish, not copied from any game, distinct from other roster heroes. Full-bleed vertical2:3 target1024x1536. No writing, runic letters, hieroglyph text, numbers, logos, watermark, card frame, UI, panel borders, collage, extra people or extra limbs.",
+  "animation": "Edit target: supplied Fenrir portrait. EXACTLY8 sequential subtle idle frames in a STRICT regular4-column x2-row grid, zero gaps or margins, requested2048x1536 sheet; every equal cell repeats COMPLETE2:3 portrait with identical framing. Preserve same A gigantic four-legged WOLF, black fur with silver-blue highlights, not humanoid; powerful jaws, paws and broken chains clearly visible. No hands, clothes, sword or human face. Lock identity, face/anatomy, gender/species, costume patterns, colors, named props (Giant jaws, claws and trailing shattered chains), both hands/limbs and their grips. Fixed camera and identical background (Blood-red eclipse over ruined northern cliffs). Subtle character idle inspired by Fur bristles and chains rattle with predatory breathing, reduced to tiny organic motion returning to start, no changing pose or spinning weapon. Eyes if present: open1-2, halfclosed3, closed4, halfopen5, open6-8. Only small hair/fur/cloth/feather movement and gentle character-specific glow pulse; no camera zoom, large particles or attack scene. First/last nearly identical for looping. Preserve both hands and all props fully visible in every frame; for nonhumanoid creatures no added human hands. No labels, typography, UI, numbers, borders, dividers, watermark, new objects or extra limbs. Consistent original premium anime details."
+}

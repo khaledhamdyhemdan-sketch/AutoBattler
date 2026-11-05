@@ -621,7 +621,7 @@
       "staticPath": "Assets/Resources/Chronicles/Portraits/Static/fenrir.png",
       "framesFolder": "Assets/Resources/Chronicles/Portraits/Animated/fenrir",
       "prefab": "Assets/Resources/Chronicles/Heroes/fenrir/default.prefab",
-      "productionStatus": "NOT_PRODUCED"
+      "productionStatus": "CANDIDATE_STATIC_AND_8_FRAMES_UNITY_REVIEW_PENDING"
     },
     {
       "id": "izanagi",
