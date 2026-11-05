@@ -164,7 +164,11 @@ namespace MythicChronicles
                 "Restore allied vitality.", "Repair the entire formation with divine light.", "Healing grants protective shields.", 5.8f),
             new HeroKit("hundun", "Formless Maw", AbilityEffect.TauntGuard, 2.8f,
                 "Untamed Beginning", AbilityEffect.Eclipse, 3.1f, "Chaos Before Form", HeroPassive.Ironhide,
-                "Absorb attacks and disrupt enemy targeting.", "Distort the battlefield in chaotic darkness.", "Resist incoming damage.", 6.7f)
+                "Absorb attacks and disrupt enemy targeting.", "Distort the battlefield in chaotic darkness.", "Resist incoming damage.", 6.7f),
+            new HeroKit("apollo", "Sunlit Arrow", AbilityEffect.HuntWeakest, 2.45f,
+                "Delphic Radiance", AbilityEffect.AreaBlast, 3.65f, "Prophetic Dawn", HeroPassive.Dawnborn,
+                "Pierce the enemy with a precise shaft of light.", "Illuminate and strike every enemy with prophetic radiance.",
+                "The oracle's light increases healing received by allies.", 5.8f)
         };
         private static readonly Dictionary<string, HeroKit> Index = Build();
 
