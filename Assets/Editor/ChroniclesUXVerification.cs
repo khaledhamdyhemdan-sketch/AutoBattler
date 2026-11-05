@@ -33,6 +33,21 @@ namespace MythicChronicles.Editor
             Check(invalid.width > 0 && invalid.height > 0,
                 "Invalid OS safe areas must fall back to the full screen.");
 
+            Uri catalogUri;
+            Check(ChroniclesCatalogClient.TryPublicApiRoot(
+                "https://game.example", out catalogUri) &&
+                catalogUri.Scheme == Uri.UriSchemeHttps,
+                "Public API requires a legitimate HTTPS host.");
+            Check(!ChroniclesCatalogClient.TryPublicApiRoot(
+                "http://game.example", out catalogUri),
+                "Insecure remote API hosts must be rejected.");
+            Check(!ChroniclesCatalogClient.TryPublicApiRoot(
+                "https://name:password@game.example", out catalogUri),
+                "Do not accept credentials embedded in an API address.");
+            Check(ChroniclesCatalogClient.TryPublicApiRoot(
+                "http://127.0.0.1:8080", out catalogUri),
+                "Unity Editor should allow loopback-only local API testing.");
+
             string folder = Path.Combine(Path.GetTempPath(),
                 "chronicles_onboarding_" + Guid.NewGuid().ToString("N"));
             try
