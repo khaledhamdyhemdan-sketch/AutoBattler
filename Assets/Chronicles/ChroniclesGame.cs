@@ -8,7 +8,7 @@ namespace MythicChronicles
     // to be replaced by production UI Toolkit art without changing progression logic.
     public sealed class ChroniclesGame : MonoBehaviour
     {
-        private enum Page { Home, Chapters, Trials, Towers, Raid, Labyrinth, ArenaTraining, StageStory, Heroes, HeroDetails, Formation, Skins, Gear, Forge, Training, Runes, SignatureWeapon, RelicVault, Summon, Quests, WeeklyQuests, Achievements, Idle, Login, Settings, Battle, Results }
+        private enum Page { Home, More, Chapters, Trials, Towers, Raid, Labyrinth, ArenaTraining, StageStory, Heroes, HeroDetails, Formation, Skins, Gear, Forge, Training, Runes, SignatureWeapon, RelicVault, Summon, Quests, WeeklyQuests, Achievements, Idle, Login, Settings, Battle, Results }
         private Page page = Page.Home;
         private PlayerProgressService progress;
         private ChroniclesAudioDirector audio;
@@ -120,6 +120,7 @@ namespace MythicChronicles
             switch (page)
             {
                 case Page.Home: Home(); break;
+                case Page.More: More(); break;
                 case Page.Chapters: Chapters(); break;
                 case Page.Trials: Trials(); break;
                 case Page.Towers: Towers(); break;
@@ -165,48 +166,124 @@ namespace MythicChronicles
 
         private void Home()
         {
-            GUI.Label(new Rect(30, 200, 480, 85), "The Loom of Ages is fractured.\nReunite heroes from every story.", subtitle);
-            GUI.Box(new Rect(35, 290, 470, 107),
-                "CAMPAIGN PROGRESS\n" + progress.Data.lastClearedStage + " / 60 stages cleared\n" +
-                "Current chapter: " + WorldsCatalog.Chapters[Mathf.Min(5, progress.Data.lastClearedStage / 10)].title);
-            if (GUI.Button(new Rect(40, 421, 221, 64), "CAMPAIGN", bigButton))
-            { inTower = false; activeTrialMode = TrialMode.Normal; chapterScroll = Vector2.zero; page = Page.Chapters; }
-            if (GUI.Button(new Rect(275, 421, 225, 64), "ELITE / DARK", bigButton))
-            { inTower = false; chapterScroll = Vector2.zero; page = Page.Trials; }
-            if (GUI.Button(new Rect(40, 497, 222, 62), "HEROES (" + progress.Data.heroes.Count + ")", bigButton)) page = Page.Heroes;
-            if (GUI.Button(new Rect(274, 497, 226, 62), "FORMATION", bigButton)) page = Page.Formation;
-            if (GUI.Button(new Rect(40, 570, 222, 62), "SUMMON", bigButton)) page = Page.Summon;
-            if (GUI.Button(new Rect(274, 570, 226, 62), "DAILY QUESTS", bigButton)) page = Page.Quests;
-            if (GUI.Button(new Rect(40, 645, 222, 64), "WEEKLY QUESTS", bigButton))
-                page = Page.WeeklyQuests;
-            if (GUI.Button(new Rect(274, 645, 226, 64), "AFK REWARDS", bigButton))
-                page = Page.Idle;
-            if (GUI.Button(new Rect(40, 722, 222, 56), "FACTION TOWERS", bigButton))
-            { inTower = false; chapterScroll = Vector2.zero; page = Page.Towers; }
-            if (GUI.Button(new Rect(274, 722, 226, 56),
-                progress.CanClaimDailyLogin() ? "DAILY GIFT!" : "LOGIN REWARDS", bigButton))
-                page = Page.Login;
-            if (GUI.Button(new Rect(40, 796, 147, 49), "WORLD BOSS"))
-            { inTower = false; inRaid = false; page = Page.Raid; }
-            if (GUI.Button(new Rect(195, 796, 149, 49), "RELICS"))
-                page = Page.RelicVault;
-            if (GUI.Button(new Rect(352, 796, 148, 49), "SETTINGS"))
-                page = Page.Settings;
-            if (GUI.Button(new Rect(40, 851, 220, 40), "LABYRINTH"))
+            // Vertical, low-clutter character-first lobby; authored original
+            // background/rig assets override the current placeholder portrait.
+            string featuredId = progress.Data.selectedTeam.Count > 0 ?
+                progress.Data.selectedTeam[0] : WorldsCatalog.StartingHeroes[0];
+            HeroDefinition featured = WorldsCatalog.FindHero(featuredId);
+            if (featured == null) featured = WorldsCatalog.Heroes[0];
+            Texture2D background = ChroniclesStageArt.Background(featured.origin);
+            if (background != null)
+                GUI.DrawTexture(new Rect(20, 200, 500, 428), background,
+                    ScaleMode.ScaleAndCrop);
+            else
+                GUI.Box(new Rect(28, 201, 484, 416), "");
+
+            ChroniclesHeroPortrait.Draw(featured.id,
+                new Rect(138, 214, 265, 356),
+                !progress.Data.reducePortraitMotion);
+            GUI.Box(new Rect(118, 563, 305, 51), "");
+            GUI.Label(new Rect(126, 569, 287, 41),
+                featured.name.ToUpperInvariant() + " • " + featured.rarity +
+                " • " + featured.element, subtitle);
+
+            // A few contextual side doors, not a wall of oversized offer banners.
+            if (GUI.Button(new Rect(29, 249, 108, 60), "ELITE\nDARK"))
             {
-                inTower = false;
-                inRaid = false;
-                inLabyrinth = false;
-                inArenaTraining = false;
-                page = Page.Labyrinth;
+                inTower = false; activeTrialMode = TrialMode.Normal;
+                chapterScroll = Vector2.zero; page = Page.Trials;
             }
-            if (GUI.Button(new Rect(272, 851, 229, 40), "ARENA TRAINING"))
+            if (GUI.Button(new Rect(29, 337, 108, 58), "TOWERS"))
             {
-                inArenaTraining = false;
+                inTower = false; chapterScroll = Vector2.zero;
+                page = Page.Towers;
+            }
+            if (GUI.Button(new Rect(29, 425, 108, 58), "LABYRINTH"))
+            {
+                inLabyrinth = false; page = Page.Labyrinth;
+            }
+            if (GUI.Button(new Rect(404, 249, 108, 60), "ARENA"))
+            {
+                inArenaTraining = false; page = Page.ArenaTraining;
+            }
+            if (GUI.Button(new Rect(404, 337, 108, 58), "WORLD\nBOSS"))
+            {
+                inRaid = false; page = Page.Raid;
+            }
+            if (GUI.Button(new Rect(404, 425, 108, 58),
+                progress.CanClaimDailyLogin() ? "FREE GIFT!" : "DAILY GIFT"))
+                page = Page.Login;
+
+            ChapterDefinition chapter = WorldsCatalog.Chapters[
+                Mathf.Clamp(progress.Data.lastClearedStage / 10, 0,
+                    WorldsCatalog.Chapters.Length - 1)];
+            GUI.Label(new Rect(34, 634, 470, 45),
+                "STORY " + progress.Data.lastClearedStage +
+                "/60  •  " + chapter.title, subtitle);
+            if (GUI.Button(new Rect(49, 687, 443, 76),
+                "CONTINUE ADVENTURE", bigButton))
+            {
                 inTower = false;
                 inRaid = false;
                 inLabyrinth = false;
-                page = Page.ArenaTraining;
+                inArenaTraining = false;
+                activeTrialMode = TrialMode.Normal;
+                chapterScroll = Vector2.zero;
+                page = Page.Chapters;
+            }
+
+            // Bottom navigation follows common mobile hero-RPG conventions.
+            GUI.Box(new Rect(12, 802, 516, 85), "");
+            if (GUI.Button(new Rect(18, 813, 96, 61), "HOME"))
+                page = Page.Home;
+            if (GUI.Button(new Rect(118, 813, 96, 61), "HEROES"))
+                page = Page.Heroes;
+            if (GUI.Button(new Rect(218, 813, 101, 61), "ADVENTURE"))
+            {
+                inTower = false; activeTrialMode = TrialMode.Normal;
+                page = Page.Chapters;
+            }
+            if (GUI.Button(new Rect(323, 813, 96, 61), "SUMMON"))
+                page = Page.Summon;
+            if (GUI.Button(new Rect(423, 813, 96, 61), "MORE"))
+                page = Page.More;
+        }
+
+        private void More()
+        {
+            GUI.Label(new Rect(30, 215, 478, 61), "MORE ACTIVITIES", heading);
+            GUI.Label(new Rect(34, 278, 468, 58),
+                "Your training, rewards and progression in one place.", subtitle);
+            string[] names =
+            {
+                "FORMATION", "DAILY MISSIONS",
+                "WEEKLY MISSIONS", "ACHIEVEMENTS",
+                "AFK REWARDS", "LOGIN REWARDS",
+                "RELIC VAULT", "FACTION TOWERS",
+                "WORLD BOSS", "LABYRINTH",
+                "ARENA TRAINING", "SETTINGS"
+            };
+            for (int i = 0; i < names.Length; i++)
+            {
+                int row = i / 2, col = i % 2;
+                float x = 34 + col * 244f, y = 348 + row * 83f;
+                if (!GUI.Button(new Rect(x, y, 231, 72), names[i], bigButton))
+                    continue;
+                switch (i)
+                {
+                    case 0: page = Page.Formation; break;
+                    case 1: page = Page.Quests; break;
+                    case 2: page = Page.WeeklyQuests; break;
+                    case 3: page = Page.Achievements; break;
+                    case 4: page = Page.Idle; break;
+                    case 5: page = Page.Login; break;
+                    case 6: page = Page.RelicVault; break;
+                    case 7: page = Page.Towers; break;
+                    case 8: inRaid = false; page = Page.Raid; break;
+                    case 9: inLabyrinth = false; page = Page.Labyrinth; break;
+                    case 10: inArenaTraining = false; page = Page.ArenaTraining; break;
+                    case 11: page = Page.Settings; break;
+                }
             }
         }
 
