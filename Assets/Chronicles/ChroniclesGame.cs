@@ -343,10 +343,13 @@ namespace MythicChronicles
 
             // Both static and animated portraits are available for EVERY hero.
             ChroniclesHeroPortrait.Draw(hero.id,
-                new Rect(30, 350, 228, 280), showHeroMotion);
+                new Rect(30, 350, 228, 280),
+                showHeroMotion && !progress.Data.reducePortraitMotion);
+            GUI.enabled = !progress.Data.reducePortraitMotion;
             if (GUI.Button(new Rect(30, 636, 109, 37),
                 showHeroMotion ? "● MOTION" : "MOTION"))
                 showHeroMotion = true;
+            GUI.enabled = true;
             if (GUI.Button(new Rect(146, 636, 112, 37),
                 !showHeroMotion ? "● STATIC" : "STATIC"))
                 showHeroMotion = false;
@@ -729,7 +732,8 @@ namespace MythicChronicles
                 if (summoned != null)
                 {
                     ChroniclesHeroPortrait.Draw(summoned.id,
-                        new Rect(141, 390, 258, 343), true);
+                        new Rect(141, 390, 258, 343),
+                        !progress.Data.reducePortraitMotion);
                     GUI.Label(new Rect(70, 735, 400, 50),
                         summoned.name + " • " + summoned.rarity +
                         " • " + summoned.element, heading);
@@ -789,22 +793,30 @@ namespace MythicChronicles
         private void Settings()
         {
             GUI.Label(new Rect(25, 254, 490, 67), "GAME SETTINGS", heading);
-            GUI.Box(new Rect(35, 359, 470, 384), "");
-            GUI.Label(new Rect(53, 388, 440, 57),
+            GUI.Box(new Rect(35, 350, 470, 428), "");
+            GUI.Label(new Rect(53, 375, 440, 48),
                 "MUSIC: " + Mathf.RoundToInt(draftMusic * 100f) + "%", subtitle);
-            draftMusic = GUI.HorizontalSlider(new Rect(70, 466, 398, 26), draftMusic, 0f, 1f);
-            GUI.Label(new Rect(53, 540, 440, 57),
+            draftMusic = GUI.HorizontalSlider(new Rect(70, 436, 398, 25),
+                draftMusic, 0f, 1f);
+            GUI.Label(new Rect(53, 508, 440, 47),
                 "SOUND EFFECTS: " + Mathf.RoundToInt(draftEffects * 100f) + "%", subtitle);
-            draftEffects = GUI.HorizontalSlider(new Rect(70, 610, 398, 26), draftEffects, 0f, 1f);
-            if (GUI.Button(new Rect(58, 662, 425, 59), "SAVE AUDIO SETTINGS", bigButton))
+            draftEffects = GUI.HorizontalSlider(new Rect(70, 569, 398, 26),
+                draftEffects, 0f, 1f);
+            bool oldReduce = progress.Data.reducePortraitMotion;
+            bool newReduce = GUI.Toggle(new Rect(66, 616, 413, 48),
+                oldReduce, "REDUCE PORTRAIT MOTION");
+            if (newReduce != oldReduce)
+                notice = progress.SetReducedPortraitMotion(newReduce) ?
+                    "Motion preference saved." : "Could not save motion preference.";
+            if (GUI.Button(new Rect(58, 682, 425, 64), "SAVE AUDIO SETTINGS", bigButton))
             {
                 bool saved = progress.SetAudioLevels(draftMusic, draftEffects);
                 if (audio != null) audio.SetVolumes(draftMusic, draftEffects);
                 notice = saved ? "Audio preferences saved." : "Could not save settings.";
             }
-            GUI.Label(new Rect(37, 758, 466, 57),
-                "Original game soundtrack and effects are loaded from licensed Unity audio assets.", subtitle);
-            if (GUI.Button(new Rect(40, 836, 460, 55), "RETURN HOME", bigButton))
+            GUI.Label(new Rect(37, 794, 466, 48),
+                "Portrait animations and sounds use original character assets when installed.", subtitle);
+            if (GUI.Button(new Rect(40, 845, 460, 54), "RETURN HOME", bigButton))
                 GoHome();
         }
 
