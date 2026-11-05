@@ -151,8 +151,44 @@ namespace MythicChronicles
                 case Page.Battle: BattleHud(scale); break;
                 case Page.Results: Results(); break;
             }
+            if (page != Page.Battle && page != Page.Results)
+                TutorialOverlay();
             GUI.color = oldColor;
             GUI.matrix = matrix;
+        }
+
+        private void TutorialOverlay()
+        {
+            if (progress == null || progress.Data.tutorialCompleted) return;
+            int step = Mathf.Clamp(progress.Data.tutorialStep, 0,
+                ChroniclesTutorial.StepCount - 1);
+            GUI.Box(new Rect(125, 170, 395, 103), "");
+            GUI.Label(new Rect(132, 175, 379, 50),
+                "GUIDE " + (step + 1) + "/" + ChroniclesTutorial.StepCount +
+                "  •  " + ChroniclesTutorial.Description(step), tiny);
+            if (GUI.Button(new Rect(137, 231, 171, 33), "SKIP"))
+            {
+                if (progress.SkipTutorial()) { page = Page.Home; notice = ""; }
+                else notice = "Could not save tutorial choice.";
+            }
+            if (GUI.Button(new Rect(315, 231, 195, 33),
+                step == ChroniclesTutorial.StepCount - 1 ? "FINISH" : "NEXT"))
+            {
+                if (!progress.AdvanceTutorial())
+                {
+                    notice = "Could not save tutorial progress.";
+                    return;
+                }
+                switch (step)
+                {
+                    case 0: page = Page.Heroes; break;
+                    case 1: page = Page.Formation; break;
+                    case 2: page = Page.Chapters; break;
+                    case 3: page = Page.Summon; break;
+                    default: page = Page.Home; break;
+                }
+                notice = "";
+            }
         }
 
         private void Header()
@@ -1475,6 +1511,12 @@ namespace MythicChronicles
                 bool saved = progress.SetAudioLevels(draftMusic, draftEffects);
                 if (audio != null) audio.SetVolumes(draftMusic, draftEffects);
                 notice = saved ? "Audio preferences saved." : "Could not save settings.";
+            }
+            if (GUI.Button(new Rect(58, 743, 425, 40), "RESTART FIRST-TIME GUIDE"))
+            {
+                notice = progress.RestartTutorial() ?
+                    "First-time guide restarted." : "Could not restart guide.";
+                if (progress.Data.tutorialCompleted == false) page = Page.Home;
             }
             GUI.Label(new Rect(37, 794, 466, 48),
                 "Portrait animations and sounds use original character assets when installed.", subtitle);
