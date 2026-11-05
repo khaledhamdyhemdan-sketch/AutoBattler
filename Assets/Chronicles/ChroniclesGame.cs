@@ -245,30 +245,49 @@ namespace MythicChronicles
 
         private void Heroes()
         {
-            GUI.Label(new Rect(130, 181, 300, 50), "HERO COLLECTION", heading);
-            GUI.Label(new Rect(30, 222, 475, 48), "Collected " + progress.Data.heroes.Count + " of " + WorldsCatalog.Heroes.Length + " characters", subtitle);
-            rosterScroll = GUI.BeginScrollView(new Rect(20, 283, 505, 586), rosterScroll,
+            GUI.Label(new Rect(130, 181, 300, 50), "HERO GALLERY", heading);
+            GUI.Label(new Rect(30, 222, 475, 40),
+                "Collected " + progress.Data.heroes.Count + " / " +
+                WorldsCatalog.Heroes.Length + " • Origin + Element + Rarity", subtitle);
+            string[] tiers = { "R", "SR", "SSR", "???", "???" };
+            for (int tier = 0; tier < tiers.Length; tier++)
+            {
+                float x = 25f + tier * 101f;
+                if (tier >= 3)
+                {
+                    GUI.DrawTexture(new Rect(x, 267f, 95f, 61f), Texture2D.blackTexture);
+                    GUI.Label(new Rect(x + 4f, 277f, 87f, 42f),
+                        "LOCKED\n" + tiers[tier], subtitle);
+                }
+                else GUI.Box(new Rect(x, 267f, 95f, 61f),
+                    tiers[tier] + "\nAVAILABLE");
+            }
+            rosterScroll = GUI.BeginScrollView(new Rect(20, 336, 505, 541), rosterScroll,
                 new Rect(0, 0, 474, WorldsCatalog.Heroes.Length * 76));
             for (int i = 0; i < WorldsCatalog.Heroes.Length; i++)
             {
                 HeroDefinition hero = WorldsCatalog.Heroes[i];
                 OwnedHero owned = progress.FindOwnedHero(hero.id);
-                string text = hero.name + "   [" + hero.origin + "]  " + hero.role + "\n" +
-                    (owned == null ? "LOCKED • " + hero.rarity : "LV " + owned.level + "   " + hero.rarity);
+                string element = hero.element.ToString().ToUpperInvariant();
+                string scarcity = HeroElements.IsSpecial(hero) ? " • RARE ELEMENT" : "";
+                string title = hero.name + " | " + hero.rarity + " | " + element +
+                    " | " + hero.origin + scarcity;
+                string text = title + "\n" + hero.role +
+                    (owned == null ? " — NOT OWNED" : " — LEVEL " + owned.level);
                 if (GUI.Button(new Rect(4, i * 76, 461, 69), text))
                 { selectedHero = hero.id; notice = ""; page = Page.HeroDetails; }
             }
             GUI.EndScrollView();
         }
 
-        private void HeroDetails()
+                private void HeroDetails()
         {
             HeroDefinition hero = WorldsCatalog.FindHero(selectedHero);
             if (hero == null) { page = Page.Heroes; return; }
             OwnedHero owned = progress.FindOwnedHero(hero.id);
             HeroKit kit = HeroAbilityCatalog.For(hero.id);
             GUI.Label(new Rect(25, 243, 490, 62), hero.name.ToUpperInvariant(), heading);
-            GUI.Label(new Rect(28, 309, 484, 39), hero.origin + "  •  " + hero.role + "  •  " + hero.rarity, subtitle);
+            GUI.Label(new Rect(28, 309, 484, 39), hero.origin + "  •  " + hero.element + "  •  " + hero.role + "  •  " + hero.rarity, subtitle);
             GUI.Box(new Rect(36, 358, 465, 197), "");
             if (GUI.Button(new Rect(49, 367, 216, 37), "STORY")) showHeroSkills = false;
             if (GUI.Button(new Rect(275, 367, 216, 37), "ABILITIES")) showHeroSkills = true;
@@ -541,11 +560,13 @@ namespace MythicChronicles
                 if (hero != null) synergyHeroes.Add(hero);
             }
             TeamSynergyBonus bonus = TeamSynergy.Calculate(synergyHeroes);
-            GUI.Label(new Rect(30, 737, 480, 63),
-                "Selected: " + progress.Data.selectedTeam.Count + "/5  |  " + bonus.description +
-                "\nHP +" + Mathf.RoundToInt((bonus.hpMultiplier - 1f) * 100f) +
-                "% • ATK +" + Mathf.RoundToInt((bonus.attackMultiplier - 1f) * 100f) +
-                "% • Start energy +" + bonus.startingEnergy, subtitle);
+            ElementalTeamBonus elemental = HeroElements.Calculate(synergyHeroes);
+            GUI.Label(new Rect(30, 728, 480, 76),
+                "Selected " + progress.Data.selectedTeam.Count + "/5  |  " +
+                elemental.description + "\nOrigin: " + bonus.description +
+                "\nElement ATK/HP +" +
+                Mathf.RoundToInt((elemental.attackMultiplier - 1f) * 100f) +
+                "%  •  START ENERGY +" + elemental.startingEnergy, subtitle);
             GUI.enabled = progress.Data.selectedTeam.Count == 5;
             if (GUI.Button(new Rect(40, 803, 460, 70), "START STAGE " + stageId, bigButton))
                 BeginBattle();
@@ -558,7 +579,7 @@ namespace MythicChronicles
             GUI.Box(new Rect(40, 347, 460, 135), "Bring a hero from another age into your collection.");
             GUI.Label(new Rect(28, 503, 488, 86),
                 "Cost: 1 earned ticket or 120 earned gems\n" +
-                "Epic pool 75% • Legendary pool 25%\nDuplicates become 10 hero fragments.", subtitle);
+                "R 20% • SR 65% • SSR 15%\nLight/Dark SSR: limited banners only. Duplicates give fragments.", subtitle);
             if (GUI.Button(new Rect(40, 621, 460, 80), "SUMMON ONE HERO", bigButton))
             {
                 string chosen = progress.SummonHero();
