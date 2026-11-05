@@ -36,6 +36,7 @@ const required = [
   'Assets/Chronicles/URCardCatalog.cs',
   'Assets/Chronicles/ChroniclesLabyrinth.cs',
   'Assets/Chronicles/ChroniclesArenaTraining.cs',
+  'Assets/Chronicles/ChroniclesShop.cs',
   'Assets/Chronicles/ChroniclesGame.cs',
   'Assets/Chronicles/ChroniclesBattle.cs',
   'Assets/Chronicles/PlayerProgressService.cs',
@@ -164,14 +165,14 @@ for(const p of metadataFiles){
   guidSet.add(m[1]);
 }
 const game=read('Assets/Chronicles/ChroniclesGame.cs');
-for(const page of ['Labyrinth','ArenaTraining','Heroes','Summon','More','Chapters'])
+for(const page of ['Labyrinth','ArenaTraining','Heroes','Summon','More','Chapters','Shop','Mailbox'])
   assert.ok(game.includes('case Page.'+page+':'), 'Missing UI route '+page);
 assert.ok(game.includes('ScreenOrientation.Portrait'),
   'Mobile orientation must remain portrait');
 const player=read('Assets/Chronicles/PlayerProgressService.cs');
 for(const method of ['BeginLabyrinthBattle','CompleteLabyrinthBattle',
   'BeginArenaTraining','CompleteArenaTraining','DrawHeroes',
-  'ClaimAchievement','ClaimDailyLogin'])
+  'ClaimAchievement','ClaimDailyLogin','BuyShopOffer','ClaimMailReward'])
   assert.ok(player.includes(method+'('), 'Missing gameplay method '+method);
 console.log('[Chronicles Source Audit] PASS: 41 heroes, 16 UR, English game UI source, '+
   runtimeFiles.length+' runtime C# files, '+editorFiles.length+
