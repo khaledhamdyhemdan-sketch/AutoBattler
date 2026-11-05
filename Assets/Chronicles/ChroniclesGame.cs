@@ -12,6 +12,8 @@ namespace MythicChronicles
         private Page page = Page.Home;
         private PlayerProgressService progress;
         private ChroniclesBattle battle;
+        private Camera menuCamera;
+        private AudioListener menuAudio;
         private int stageId = 1;
         private string selectedHero = "horus";
         private bool showHeroSkills;
@@ -34,6 +36,16 @@ namespace MythicChronicles
 
         private void Start()
         {
+            GameObject cameraObject = new GameObject("Chronicles Menu Camera");
+            cameraObject.transform.SetParent(transform, false);
+            cameraObject.tag = "MainCamera";
+            menuCamera = cameraObject.AddComponent<Camera>();
+            menuCamera.clearFlags = CameraClearFlags.SolidColor;
+            menuCamera.backgroundColor = new Color(.06f, .045f, .11f);
+            menuCamera.orthographic = true;
+            menuCamera.orthographicSize = 6f;
+            cameraObject.transform.position = new Vector3(0f, 0f, -10f);
+            menuAudio = cameraObject.AddComponent<AudioListener>();
             progress = new PlayerProgressService();
             stageId = Mathf.Clamp(progress.Data.lastClearedStage + 1, 1, 60);
         }
@@ -403,6 +415,8 @@ namespace MythicChronicles
             if (battle != null) Destroy(battle.gameObject);
             battle = new GameObject("Chronicles - Campaign Battle").AddComponent<ChroniclesBattle>();
             battle.Initialize(stage, chosen, OnBattleFinished);
+            if (menuCamera != null) menuCamera.enabled = false;
+            if (menuAudio != null) menuAudio.enabled = false;
             page = Page.Battle; notice = "";
         }
 
@@ -426,7 +440,7 @@ namespace MythicChronicles
                 battle.Speed = battle.Speed >= 2f ? 1f : 2f;
             if (GUI.Button(new Rect(354, 837, 160, 65), "RETREAT"))
             {
-                Destroy(battle.gameObject); battle = null;
+                CleanupBattle();
                 page = Page.Formation;
             }
         }
@@ -453,6 +467,8 @@ namespace MythicChronicles
         {
             if (battle != null) Destroy(battle.gameObject);
             battle = null;
+            if (menuCamera != null) menuCamera.enabled = true;
+            if (menuAudio != null) menuAudio.enabled = true;
         }
 
         private void GoHome()
