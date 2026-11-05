@@ -46,7 +46,9 @@ namespace MythicChronicles
         public float SecondsLeft { get { return Mathf.Max(0f, 90f - elapsed); } }
         public float Speed { get; set; } = 1f;
 
-        public void Initialize(StageDefinition chosen, IList<OwnedHero> squad, PlayerSave savedProgress, Action<bool> onFinished)
+        public void Initialize(StageDefinition chosen, IList<OwnedHero> squad,
+            PlayerSave savedProgress, Action<bool> onFinished,
+            TrialMode mode = TrialMode.Normal)
         {
             if (chosen == null || squad == null || squad.Count != 5) throw new ArgumentException("Battle requires stage and five heroes.");
             stage = chosen; finished = onFinished;
@@ -95,6 +97,20 @@ namespace MythicChronicles
                 }
                 else enemy = opponents[(stage.id * 3 + i) % opponents.Count];
                 Spawn(enemy, 1, i, 1 + stage.id / 3, stage.boss && i == 0);
+            }
+            if (mode != TrialMode.Normal)
+            {
+                // Difficulties reuse the story enemies while keeping battle victory
+                // and first-clear reward records independent.
+                foreach (Combatant opponent in units)
+                {
+                    if (opponent.side != 1) continue;
+                    opponent.maxHp *= ChroniclesTrials.EnemyHealthMultiplier(mode);
+                    opponent.hp = opponent.maxHp;
+                    opponent.attack *= ChroniclesTrials.EnemyAttackMultiplier(mode);
+                    opponent.armor *= mode == TrialMode.Dark ? 1.5f : 1.25f;
+                    opponent.skillCd *= mode == TrialMode.Dark ? .80f : .90f;
+                }
             }
             ApplySynergy();
             ApplyRelic(savedProgress);
