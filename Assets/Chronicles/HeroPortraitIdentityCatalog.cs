@@ -46,7 +46,7 @@ namespace MythicChronicles
         public static readonly PortraitIdentity[] All =
         {
             // Egypt: ten original heroes, plus the rare Amun and Apep.
-            new PortraitIdentity("horus", PortraitSpecies.Falcon, PortraitProp.Spear, PortraitCrown.Pharaoh, false, "BD916B", "142953", "D5B46B", "203B83", "76D9F7", "Sky falcon with lapis wings and a golden protective spear"),
+            new PortraitIdentity("horus", PortraitSpecies.Human, PortraitProp.Sword, PortraitCrown.Pharaoh, false, "BD916B", "142953", "D5B46B", "203B83", "76D9F7", "Male sky prince with falcon crown, khopesh, winged buckler and turquoise wind falcon"),
             new PortraitIdentity("anubis", PortraitSpecies.Jackal, PortraitProp.Staff, PortraitCrown.Pharaoh, false, "262736", "171B34", "B89C6E", "231B42", "7D75F2", "Jackal-headed guardian with spectral weighing staff"),
             new PortraitIdentity("ra", PortraitSpecies.Human, PortraitProp.Scepter, PortraitCrown.Sun, false, "BD805D", "11254D", "F8C04F", "2B4294", "FFC45D", "Solar sovereign bearing the Nile barque and falcon-feather mantle"),
             new PortraitIdentity("sobek", PortraitSpecies.Crocodile, PortraitProp.Trident, PortraitCrown.Pharaoh, false, "587E62", "213D3F", "BBAB6D", "285B69", "7CCED8", "River crocodile guardian, bronze armor and Nile spear"),

@@ -126,8 +126,18 @@ for (const hero of artBible.heroes) {
       'Character lacks individual ' + field + ' art direction: ' + hero.id);
   assert.ok(hero.staticPath.endsWith('/' + hero.id + '.png'),
     'Portrait source path must match hero ID');
-  assert.equal(hero.productionStatus, 'NOT_PRODUCED',
-    'Concept specs cannot claim final art exists until validated');
+  assert.ok(['NOT_PRODUCED', 'CANDIDATE_STATIC_AND_8_FRAMES_UNITY_REVIEW_PENDING']
+    .includes(hero.productionStatus), 'Art status must not claim final approval: ' + hero.id);
+  if (hero.productionStatus === 'CANDIDATE_STATIC_AND_8_FRAMES_UNITY_REVIEW_PENDING') {
+    assert.ok(fs.existsSync(path.join(root, hero.staticPath)),
+      'Candidate art requires a static source: ' + hero.id);
+    const folder = path.join(root, hero.framesFolder);
+    assert.ok(fs.existsSync(folder), 'Candidate frame folder missing: ' + hero.id);
+    const frames = fs.readdirSync(folder).filter(f => /^frame_.*\.png$/.test(f)).sort();
+    assert.equal(frames.length, 8, 'Eight-frame candidate requires exactly eight PNGs: ' + hero.id);
+    assert.deepEqual(frames, Array.from({length:8}, (_, i) =>
+      `frame_${String(i).padStart(3, '0')}.png`), 'Candidate frame order invalid: ' + hero.id);
+  }
 }
 
 const tiers = Object.fromEntries(['R','SR','SSR','UR','EX'].map(t =>

@@ -18,7 +18,7 @@
       "role": "Assassin",
       "rarity": "SSR",
       "element": "Wind",
-      "silhouette": "Falcon-crowned Egyptian sky prince in lapis-bronze lamellar armor",
+      "silhouette": "Adult male human Egyptian sky prince with falcon-shaped crown in lapis-bronze lamellar armor; owner confirmed human face on 2026-11-05",
       "weapon": "Double-edged khopesh and winged buckler",
       "setting": "Temple rooftops under a windy turquoise dawn",
       "idle": "Wind stirs feathers and cape; focused hunter stance",
@@ -26,7 +26,7 @@
       "staticPath": "Assets/Resources/Chronicles/Portraits/Static/horus.png",
       "framesFolder": "Assets/Resources/Chronicles/Portraits/Animated/horus",
       "prefab": "Assets/Resources/Chronicles/Heroes/horus/default.prefab",
-      "productionStatus": "NOT_PRODUCED"
+      "productionStatus": "CANDIDATE_STATIC_AND_8_FRAMES_UNITY_REVIEW_PENDING"
     },
     {
       "id": "anubis",
