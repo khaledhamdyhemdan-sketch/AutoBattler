@@ -68,6 +68,30 @@ namespace MythicChronicles.Editor
             {
                 Debug.LogError("[Chronicles] Expected 30 named heroes."); errors++;
             }
+            var kitIds = new HashSet<string>(StringComparer.Ordinal);
+            foreach (HeroKit kit in HeroAbilityCatalog.All)
+            {
+                if (WorldsCatalog.FindHero(kit.heroId) == null || !kitIds.Add(kit.heroId))
+                {
+                    Debug.LogError("[Chronicles] Unknown/duplicate ability kit: " + kit.heroId);
+                    errors++;
+                }
+            }
+            foreach (HeroDefinition hero in WorldsCatalog.Heroes)
+                if (HeroAbilityCatalog.For(hero.id) == null)
+                {
+                    Debug.LogError("[Chronicles] Hero has no skill kit: " + hero.id);
+                    errors++;
+                }
+            for (int stageId = 1; stageId <= 60; stageId++)
+            {
+                StoryMoment dialogue = WorldsStory.Get(stageId);
+                if (dialogue == null || string.IsNullOrWhiteSpace(dialogue.line))
+                {
+                    Debug.LogError("[Chronicles] Missing stage narrative: " + stageId);
+                    errors++;
+                }
+            }
             for (int i = 1; i <= 60; i++)
             {
                 StageDefinition stage = WorldsCatalog.GetStage(i);
@@ -82,7 +106,7 @@ namespace MythicChronicles.Editor
                 }
             }
             if (errors == 0)
-                Debug.Log("[Chronicles] Catalog validation passed: 30 identities, 6 worlds, 60 stage definitions. This is NOT a Unity/Android playtest.");
+                Debug.Log("[Chronicles] Catalog validation passed: 30 hero kits, 6 worlds, 60 stages and narrative beats. This is NOT a Unity/Android playtest.");
             else Debug.LogError("[Chronicles] Catalog validation failed with " + errors + " issues.");
         }
     }
