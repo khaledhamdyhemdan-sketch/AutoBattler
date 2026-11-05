@@ -1,0 +1,21 @@
+{
+  "hero": {
+    "id": "odin",
+    "name": "Odin",
+    "origin": "Norse",
+    "role": "Support",
+    "rarity": "UR",
+    "element": "Light",
+    "silhouette": "One-eyed silver-bearded Allfather with a fur-lined dark cloak",
+    "weapon": "Gungnir spear and two ravens",
+    "setting": "Yggdrasil roots beneath the northern lights",
+    "idle": "Ravens circle at separate speeds; distant runes awaken",
+    "ultimateVfx": "An ancient rune circle empowers every ally at once",
+    "staticPath": "Assets/Resources/Chronicles/Portraits/Static/odin.png",
+    "framesFolder": "Assets/Resources/Chronicles/Portraits/Animated/odin",
+    "prefab": "Assets/Resources/Chronicles/Heroes/odin/default.prefab",
+    "productionStatus": "NOT_PRODUCED"
+  },
+  "static": "Use case: stylized-concept. ONE individual original luxury painterly ANIME mythology game portrait of Odin from Norse, UR Light Support. Adult MALE elder with long silver beard, exactly ONE functional eye and an eye patch, Gungnir spear and exactly TWO ravens. Exact design brief: One-eyed silver-bearded Allfather with a fur-lined dark cloak. Distinctive weapon/props: Gungnir spear and two ravens. Setting: Yggdrasil roots beneath the northern lights. Actual game abilities: Raven's Counsel; Allfather's Decree; Wisdom; Charge allied ultimates.; Empower the formation for a decisive push.; Gain faster skill recharge.. Express role and divine/heroic presence through a restrained scene motif inspired by: An ancient rune circle empowers every ally at once. Imposing cinematic low-angle three-quarter composition, readable face/silhouette at thumbnail, ornate convincing materials, powerful dignified character-specific presence. BOTH forearms, wrists and hands fully inside canvas and readable, anatomically natural fingers gripping the named props; no hidden/missing hand. Place large named props within composition. Preserve specified gender/species/culture; fully covered appropriate ceremonial outfit or armor for humanoids. Premium polished original anime finish, not copied from any game, distinct from other roster heroes. Full-bleed vertical2:3 target1024x1536. No writing, runic letters, hieroglyph text, numbers, logos, watermark, card frame, UI, panel borders, collage, extra people or extra limbs.",
+  "animation": "Edit target: supplied Odin portrait. EXACTLY8 sequential subtle idle frames in a STRICT regular4-column x2-row grid, zero gaps or margins, requested2048x1536 sheet; every equal cell repeats COMPLETE2:3 portrait with identical framing. Preserve same Adult MALE elder with long silver beard, exactly ONE functional eye and an eye patch, Gungnir spear and exactly TWO ravens. Lock identity, face/anatomy, gender/species, costume patterns, colors, named props (Gungnir spear and two ravens), both hands/limbs and their grips. Fixed camera and identical background (Yggdrasil roots beneath the northern lights). Subtle character idle inspired by Ravens circle at separate speeds; distant runes awaken, reduced to tiny organic motion returning to start, no changing pose or spinning weapon. Eyes if present: open1-2, halfclosed3, closed4, halfopen5, open6-8. Only small hair/fur/cloth/feather movement and gentle character-specific glow pulse; no camera zoom, large particles or attack scene. First/last nearly identical for looping. Preserve both hands and all props fully visible in every frame; for nonhumanoid creatures no added human hands. No labels, typography, UI, numbers, borders, dividers, watermark, new objects or extra limbs. Consistent original premium anime details."
+}

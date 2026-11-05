@@ -315,7 +315,7 @@
       "staticPath": "Assets/Resources/Chronicles/Portraits/Static/odin.png",
       "framesFolder": "Assets/Resources/Chronicles/Portraits/Animated/odin",
       "prefab": "Assets/Resources/Chronicles/Heroes/odin/default.prefab",
-      "productionStatus": "NOT_PRODUCED"
+      "productionStatus": "CANDIDATE_STATIC_AND_8_FRAMES_UNITY_REVIEW_PENDING"
     },
     {
       "id": "hel",
