@@ -23,6 +23,14 @@ jobs:
         with:
           lfs: true
 
+      - name: Confirm correct development branch is selected
+        shell: bash
+        run: |
+          if [[ "$GITHUB_REF_NAME" != "feature/egyptian-heroes-5v5" ]]; then
+            echo "::error::Select branch feature/egyptian-heroes-5v5 to build the real game. The default branch is only for registering the manual workflow."
+            exit 1
+          fi
+
       - name: Confirm Unity licensing is configured
         shell: bash
         env:
