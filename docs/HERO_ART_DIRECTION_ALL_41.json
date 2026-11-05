@@ -298,7 +298,7 @@
       "staticPath": "Assets/Resources/Chronicles/Portraits/Static/thor.png",
       "framesFolder": "Assets/Resources/Chronicles/Portraits/Animated/thor",
       "prefab": "Assets/Resources/Chronicles/Heroes/thor/default.prefab",
-      "productionStatus": "NOT_PRODUCED"
+      "productionStatus": "CANDIDATE_STATIC_AND_8_FRAMES_UNITY_REVIEW_PENDING"
     },
     {
       "id": "odin",

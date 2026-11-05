@@ -1,0 +1,21 @@
+{
+  "hero": {
+    "id": "thor",
+    "name": "Thor",
+    "origin": "Norse",
+    "role": "Warrior",
+    "rarity": "SSR",
+    "element": "Wind",
+    "silhouette": "Powerful red-bearded thunder warrior in weathered iron and blue cloak",
+    "weapon": "Mjolnir hammer with etched runes",
+    "setting": "Storm clouds and distant Norse cliffs",
+    "idle": "Cloak ripples, sparks crawl over Mjolnir",
+    "ultimateVfx": "A thunderbolt chains through the opposing frontline",
+    "staticPath": "Assets/Resources/Chronicles/Portraits/Static/thor.png",
+    "framesFolder": "Assets/Resources/Chronicles/Portraits/Animated/thor",
+    "prefab": "Assets/Resources/Chronicles/Heroes/thor/default.prefab",
+    "productionStatus": "NOT_PRODUCED"
+  },
+  "static": "Use case: stylized-concept. ONE individual original luxury painterly ANIME mythology game portrait of Thor from Norse, SSR Wind Warrior. Adult MALE powerful RED-BEARDED Norse warrior, weathered iron, runic hammer; no blond clean-shaven superhero likeness. Exact design brief: Powerful red-bearded thunder warrior in weathered iron and blue cloak. Distinctive weapon/props: Mjolnir hammer with etched runes. Setting: Storm clouds and distant Norse cliffs. Actual game abilities: Hammerbolt; Stormbreaker; Lightning Heart; Stun the enemy struck by thunder.; Electrify the whole field.; Occasionally stun on normal attacks.. Express role and divine/heroic presence through a restrained scene motif inspired by: A thunderbolt chains through the opposing frontline. Imposing cinematic low-angle three-quarter composition, readable face/silhouette at thumbnail, ornate convincing materials, powerful dignified character-specific presence. BOTH forearms, wrists and hands fully inside canvas and readable, anatomically natural fingers gripping the named props; no hidden/missing hand. Place large named props within composition. Preserve specified gender/species/culture; fully covered appropriate ceremonial outfit or armor for humanoids. Premium polished original anime finish, not copied from any game, distinct from other roster heroes. Full-bleed vertical2:3 target1024x1536. No writing, runic letters, hieroglyph text, numbers, logos, watermark, card frame, UI, panel borders, collage, extra people or extra limbs.",
+  "animation": "Edit target: supplied Thor portrait. EXACTLY8 sequential subtle idle frames in a STRICT regular4-column x2-row grid, zero gaps or margins, requested2048x1536 sheet; every equal cell repeats COMPLETE2:3 portrait with identical framing. Preserve same Adult MALE powerful RED-BEARDED Norse warrior, weathered iron, runic hammer; no blond clean-shaven superhero likeness. Lock identity, face/anatomy, gender/species, costume patterns, colors, named props (Mjolnir hammer with etched runes), both hands/limbs and their grips. Fixed camera and identical background (Storm clouds and distant Norse cliffs). Subtle character idle inspired by Cloak ripples, sparks crawl over Mjolnir, reduced to tiny organic motion returning to start, no changing pose or spinning weapon. Eyes if present: open1-2, halfclosed3, closed4, halfopen5, open6-8. Only small hair/fur/cloth/feather movement and gentle character-specific glow pulse; no camera zoom, large particles or attack scene. First/last nearly identical for looping. Preserve both hands and all props fully visible in every frame; for nonhumanoid creatures no added human hands. No labels, typography, UI, numbers, borders, dividers, watermark, new objects or extra limbs. Consistent original premium anime details."
+}
