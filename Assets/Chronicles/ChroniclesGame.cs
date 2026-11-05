@@ -1163,7 +1163,8 @@ namespace MythicChronicles
             StageDefinition stage = WorldsCatalog.GetStage(stageId);
             bool unlocked = stage != null &&
                 (inRaid ? progress.Data.lastClearedStage >= 10 &&
-                    progress.RaidAttemptsRemaining() > 0 :
+                    progress.RaidAttemptsRemaining() > 0 &&
+                    stageId == ChroniclesRaids.StageForDay(DateTime.UtcNow).id :
                 inTower ?
                     progress.CanEnterTower(selectedTowerOrigin, selectedTowerFloor,
                         progress.Data.selectedTeam) :
