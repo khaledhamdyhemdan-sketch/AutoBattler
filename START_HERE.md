@@ -1,208 +1,88 @@
-# 🎮 AutoBattler - Quick Start
+# Chronicles of the Loom: Start Here
 
-## 🚀 Getting Started
+> Working title. The final published name is not approved yet.
 
-### First Time Setup
+A Unity 6.3 (6000.3.0f1) **portrait (9:16) Android** mythology auto-battler:
+5v5 automatic battles, hero collection and summoning, idle progression.
+All player-facing text is English (en-US).
 
-1. **Open Unity 6.3** and load this project
+The current game lives in `Assets/Chronicles/`. `Assets/EgyptianArena/`,
+`Assets/Scripts/` and the old "AutoBattler" scenes are an **earlier prototype**.
+Do not delete them without a dependency audit. The prototype's original guide is
+kept in `docs/LEGACY_AUTOBATTLER_PROTOTYPE_START_HERE.md`. The root `README.md`
+still describes that prototype.
 
-2. **Run Automated Setup**
-   ```
-   Menu → Auto Battler → Setup All Scenes
-   ```
-   This creates all scenes, managers, and configures build settings.
+## Open and run in Unity
 
-3. **Open the Bootstrap Scene**
-   ```
-   Assets/Scenes/PersistentManagers.unity/PersistentManagers.unity
-   ```
+1. Install **Unity 6000.3.0f1** with Android Build Support (SDK, NDK, OpenJDK).
+2. Open the repository root in Unity Hub and let packages import.
+3. Open the main scene `Assets/Chronicles/Chronicles_Main.unity` and press Play.
+   If the scene is missing, run **Tools → Chronicles → Create Main Game Scene**.
+4. Run **Tools → Chronicles → Run All Offline Checks** (catalog, progression,
+   economy and English checks). Individual tests are under the same menu.
 
-4. **Press Play** ▶️
+## Build an Android APK (direct install, not Google Play)
 
-### Expected Behavior
-```
-PersistentManagers loads persistent singletons
-    ↓
-MainMenu scene loads additively
-    ↓
-Click "PLAY" → Gameplay scene loads
-    ↓
-GameHUD overlay appears
-    ↓
-Click "FIGHT" → Combat begins
+From the repository root in Windows PowerShell:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File tools/run-unity-local.ps1 -BuildApk
 ```
 
-## 📐 Architecture Overview
+The script runs the Unity checks first and then builds a development APK at
+`Builds/Chronicles/Chronicles_Android.apk`. Logs are written to
+`Builds/Chronicles/Validation/`. Full details, including the manual GitHub
+Actions route (needs Unity license secrets), are in
+`docs/CHRONICLES_ALPHA_APK_DIRECT_INSTALL.md` and
+`docs/VALIDATE_BUILD_ANDROID_WINDOWS.md`.
 
-### Scene Structure (Additive Loading)
-- **PersistentManagers**: Holds `GameManager`, `SceneLoader`, singletons (never unloads)
-- **MainMenu**: UI-only scene for main menu
-- **Gameplay**: Contains battlefield, grid, units
-- **GameHUD**: UI overlay for shop, resources, combat controls
+A file existing is not a tested release: install it on a phone and test.
 
-### Core UI Systems
-- **GameHUDUI**: Main game interface (shop, battle controls, inventory, character sidebar)
-- **ShopUIController**: Shop logic and unit purchasing
-- **MainMenuUI**: Main menu screen
-- **HealthBarUI**: Unit health bar displays (world-space UI)
+## Heroes: one source of truth
 
-> **Note**: Previous duplicate UI controllers (ShopUI, BattleHUDController, CombatUIController) have been removed. See [conductor/ui-cleanup-summary.md](conductor/ui-cleanup-summary.md)
+All hero data (identity, rarity, element, story, kit, alternate skin,
+fallback portrait) is edited **only** in `shared/heroes/hero-roster.json`.
+After editing, run:
 
-### Core Systems
-- **GameManager** (`Assets/Scripts/Core/GameManager_Unity6.cs`): Phase orchestration, resource management
-- **CombatManager** (`Assets/Scripts/Core/CombatManager.cs`): Battle logic, unit targeting
-- **ShopManager** (`Assets/Scripts/Core/ShopManager.cs`): Unit purchasing, tier progression
-- **SceneLoader** (`Assets/Scripts/Core/SceneManagement/SceneLoader.cs`): Additive scene flow
+```bash
+node tools/generate-hero-data.mjs
+```
 
-### VoidGame Integration
-The project includes a separate subsystem:
-- `Assets/Scripts/Core/VoidGame/`: VoidGame-specific systems
-- `Assets/Scripts/AI/`: AI behavior trees
-- `Assets/Scripts/Core/Integration/VoidGameUnitBridge.cs`: Integration bridge
+It validates the roster and regenerates `Assets/Chronicles/HeroRosterData.g.cs`
+and `shared/hero-catalog.json`. Released hero IDs are frozen in
+`shared/heroes/legacy-hero-ids.json` to protect player saves. See
+`docs/HERO_DATA_PIPELINE.md`.
 
-## 🛠️ Editor Tools
+## Source checks (no Unity needed)
 
-### Available Menu Items
-- **Auto Battler/Setup All Scenes**: Creates and configures all scenes
-- **Auto Battler/Validate All Scene References**: Checks for missing references
-- **Auto Battler/Fix All Scene References**: Auto-assigns missing references
+```bash
+node tools/generate-hero-data.mjs --check     # generated hero files up to date
+node tools/chronicles-source-audit.mjs        # roster, UR cards, banners, English UI, .meta GUIDs
+node tools/chronicles-readiness-report.mjs    # art/VFX production coverage
+python tools/portrait-assets.py audit         # portrait files and frame order
+cd server && npm install && npm test          # backend baseline tests
+```
 
-### Testing
-- `Assets/Scripts/Testing/GameSetupTest.cs`: Runtime validation of singleton setup
+These are **source** checks. Passing them does not mean Unity compiled the
+project or that the game was playtested.
 
-## 🎯 Project Conventions
+## Where things are
 
-### Design Patterns
-- **Singletons**: `Instance` + `DontDestroyOnLoad` for managers
-- **Events**: `GameManager.OnPhaseChanged`, `CombatManager.OnCombatEnded`
-- **ScriptableObjects**: Data-driven design for units, equipment, shops
+| Area | Location |
+|---|---|
+| Game code (runtime) | `Assets/Chronicles/` |
+| Editor tools, tests, Android build | `Assets/Editor/Chronicles*.cs` |
+| Hero roster (canonical) | `shared/heroes/hero-roster.json` |
+| UR premium card direction | `Assets/Chronicles/URCardCatalog.cs` |
+| Portraits | `Assets/Resources/Chronicles/Portraits/Static/<id>.png`, `Animated/<id>/frame_000.png`… |
+| Art direction per hero | `docs/HERO_ART_DIRECTION_ALL_41.json` (covers the whole roster despite its name) |
+| Art asset rules | `Assets/Chronicles/ART_ASSET_CONTRACT.md` |
+| Backend baseline (dev only, not deployed) | `server/` |
 
-### Resources Loading
-- **ScriptableObjects**: `Resources/ScriptableObjects/`
-  - `DefaultShopPool.asset` - Shop unit pool
-  - `GoblinStats.asset`, `WarriorStats.asset` - Unit stats
-- **UI PanelSettings**: `Resources/Settings/`
-  - `GameHUDPanelSettings.asset` - Main game HUD
-  - `MainMenuPanelSettings.asset` - Main menu
-  - `UnitSelectionPanelSettings.asset` - Unit selection
-- **UI Stylesheets**: `Resources/UI/Styles/`
-  - `Theme.uss` - Medieval theme colors
-  - `HealthBar.uss` - Health bar styling
-- **UI Templates**: `Resources/UI/Templates/`
+## Ground rules
 
-> **Note**: All ScriptableObjects consolidated to `Resources/ScriptableObjects/`. Duplicates removed. See [conductor/duplicate-cleanup-summary.md](conductor/duplicate-cleanup-summary.md)
-
-### Unity 6.3 Specific
-- Use `Physics.SyncTransforms()` instead of deprecated `autoSyncTransforms`
-- Burst jobs for movement math, apply to transforms on main thread
-- UI Toolkit for all UI (no legacy uGUI)
-
-## 📦 Conductor Plan
-
-This project follows a structured development workflow in the `conductor/` folder:
-- **product.md**: Vision, features, target audience
-- **workflow.md**: TDD workflow, task lifecycle
-- **tech-stack.md**: Technical decisions and architecture
-- **tracks/**: Feature implementation tracks
-
-Current state: Initial setup complete. See `conductor/setup_state.json` for progress.
-
-## 🐛 Troubleshooting
-
-### Common Issues
-1. **Null reference errors on play**: Run "Auto Battler/Fix All Scene References"
-2. **Scenes not loading**: Check Build Settings includes all 4 scenes
-3. **UI not appearing**: Verify PanelSettings in `Resources/Settings/`
-
-### Debug Workflow
-1. Check Unity console for errors
-2. Run validation tools from Auto Battler menu
-3. Ensure PersistentManagers is the active scene
-4. Verify singletons are instantiated (check GameSetupTest logs)
-
-## 📚 Additional Resources
-
-- **Conductor Plan**: See `conductor/product.md` for full vision
-- **Copilot Instructions**: `.github/copilot-instructions.md` for AI agent context
-- **Unity Docs**: [Unity 6 Documentation](https://docs.unity3d.com/)
-
-- `/Assets/Scripts/Core/SceneManagement/SceneLoader.cs` - Scene manager
-- `/Assets/Scripts/UI/MainMenuUI.cs` - Main menu (UI Toolkit)
-- `/Assets/Scripts/UI/GameHUDUI.cs` - Game HUD (UI Toolkit)
-
-**Combat System:**
-- `/Assets/Scripts/Core/UnitSpawner.cs` - Spawns units
-- `/Assets/Scripts/Core/CombatManager_Unity6.cs` - Combat logic
-
-### 🔧 Auto-Assignment Details
-
-**All these references auto-assign on startup:**
-
-- GameManager → shopManager, combatManager, battlefieldGrid
-- MainMenuUI → uiDocument
-- GameHUDUI → uiDocument
-- All UI components → GetComponent<UIDocument>() in OnEnable()
-
-### 📋 Next Steps (Optional)
-
-**To spawn actual units:**
-
-1. Create Unit Prefab
-   - Add Rigidbody + UnitController
-   - Save to `/Assets/Prefabs/`
-
-2. Create Unit Stats (ScriptableObject)
-   - Right-click → Create → Auto Battler → Unit Stats
-   - Save to `/Assets/Resources/Units/`
-
-3. Assign to UnitSpawner
-   - Open Gameplay scene
-   - Select UnitSpawner GameObject
-   - Drag prefab and stats into Inspector
-
-### 🐛 Troubleshooting
-
-**"Scene not found" error:**
-- Run `Auto Battler → Setup All Scenes` again
-
-**Black screen:**
-- Make sure you pressed Play in PersistentManagers scene
-
-**No UI visible:**
-- Check Console for errors
-- Verify PanelSettings assets exist in `/Assets/Settings/`
-
-**Combat doesn't work:**
-- Create and assign unit prefabs/stats to UnitSpawner
-
-### 📚 Documentation
-
-- `SETUP_COMPLETE.md` - Detailed setup info
-- `MULTI_SCENE_GUIDE.md` - Architecture details
-- `QUICK_SETUP.md` - Fast start guide
-- `QUICK_REFERENCE.md` - This file
-
-### ✨ What Works Right Now
-
-- ✅ Multi-scene architecture
-- ✅ Main menu UI
-- ✅ Scene transitions
-- ✅ Game HUD display
-- ✅ Phase management
-- ✅ Input handling (New Input System)
-- ✅ Auto-assignment of all references
-
-### 🎯 Current State
-
-**Ready to run! Just press Play in Unity.**
-
-The game will:
-1. Load main menu
-2. Show "AUTO BATTLER" title with PLAY button
-3. Transition to gameplay on click
-4. Display HUD overlay
-5. Wait for unit spawning (configure UnitSpawner next)
-
----
-
-**Quick Command:** Menu → Auto Battler → Setup All Scenes → Play ▶️
+- Never rename or remove a released hero ID, and never lower a released hero's rarity.
+- EX rarity stays locked until the owner approves an EX release.
+- Never commit secrets, Unity licenses, keystores or tokens.
+- Visual assets are shown to the owner for approval before they are committed.
+- Never report a build, test or art approval that did not actually happen.

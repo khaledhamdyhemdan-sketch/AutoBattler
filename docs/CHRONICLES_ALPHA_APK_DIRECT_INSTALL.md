@@ -56,7 +56,7 @@ powershell -ExecutionPolicy Bypass -File tools/run-unity-local.ps1 -BuildApk
 - All visible buttons and hero names are English.
 - Tutorial: Next, Skip and Replay work.
 - Team of five forms and enters a stage. Defeat/victory produces the proper results and save.
-- Hero Collection includes 41 unique IDs and 16 UR with distinct Light/Dark visual treatments.
+- Hero Collection shows every catalog hero ID once, and every UR hero with its Light/Dark visual treatment.
 - Summon ×1 and ×10 never duplicate reward charges or UR pity claims.
 - Camp progress, gear, gold and chests survive a force-close and reopening.
 - Labyrinth and NPC Arena limits, daily gifts, raid attempts respect local save rules.

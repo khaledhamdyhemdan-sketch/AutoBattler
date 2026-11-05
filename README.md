@@ -1,11 +1,13 @@
 # AutoBattler - Dark Fantasy Auto-Battler
 
+> **Current main game: Chronicles of the Loom (working title) in `Assets/Chronicles/`. Start with [START_HERE.md](START_HERE.md).** The rest of this README describes the earlier AutoBattler prototype.
+
 A strategic auto-battler built in Unity 6.3, blending deep tactical combat with dual-progression systems. Features a dark fantasy aesthetic with planned evolution into Void/Cyberpunk corruption themes.
 
 ![Unity Version](https://img.shields.io/badge/Unity-6.3%20LTS-blue)
 ![License](https://img.shields.io/badge/license-MIT-green)
 
-> **📖 For detailed setup:** See [START_HERE.md](START_HERE.md)  
+> **📖 Prototype setup:** See [docs/LEGACY_AUTOBATTLER_PROTOTYPE_START_HERE.md](docs/LEGACY_AUTOBATTLER_PROTOTYPE_START_HERE.md)  
 > **🎯 Project Plan:** See [conductor/](conductor/) folder
 
 ## ✨ Core Features
