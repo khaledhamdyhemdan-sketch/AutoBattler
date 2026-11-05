@@ -630,6 +630,8 @@ namespace MythicChronicles
             if (kit.passive == HeroPassive.Stormborn)
                 actor.rallied = Mathf.Max(actor.rallied, 3.2f);
             actor.visual.Play(HeroAnimation.Skill);
+            FirstFiveURVisualEffects.Play(actor.hero.id, false,
+                actor.model.transform, target == null ? null : target.model.transform);
             CastEffect(actor, target, kit.skill, kit.skillPower * actor.skillFactor, false);
             Floating(kit.skillName, actor, Color.yellow);
         }
@@ -639,6 +641,8 @@ namespace MythicChronicles
             HeroKit kit = HeroAbilityCatalog.For(actor.hero.id);
             if (kit == null) { Hit(actor, target, actor.attack * 3f); return; }
             actor.visual.Play(HeroAnimation.Ultimate);
+            FirstFiveURVisualEffects.Play(actor.hero.id, true,
+                actor.model.transform, target == null ? null : target.model.transform);
             if (ChroniclesAudioDirector.Instance != null)
                 ChroniclesAudioDirector.Instance.HeroUltimate(actor.hero.id);
             CastEffect(actor, target, kit.ultimate, kit.ultimatePower * actor.ultimateFactor, true);
