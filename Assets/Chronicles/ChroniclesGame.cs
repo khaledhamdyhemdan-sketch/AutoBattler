@@ -8,7 +8,7 @@ namespace MythicChronicles
     // to be replaced by production UI Toolkit art without changing progression logic.
     public sealed class ChroniclesGame : MonoBehaviour
     {
-        private enum Page { Home, Chapters, Trials, Towers, Raid, StageStory, Heroes, HeroDetails, Formation, Skins, Gear, Forge, Training, Runes, SignatureWeapon, RelicVault, Summon, Quests, WeeklyQuests, Achievements, Idle, Login, Settings, Battle, Results }
+        private enum Page { Home, Chapters, Trials, Towers, Raid, Labyrinth, StageStory, Heroes, HeroDetails, Formation, Skins, Gear, Forge, Training, Runes, SignatureWeapon, RelicVault, Summon, Quests, WeeklyQuests, Achievements, Idle, Login, Settings, Battle, Results }
         private Page page = Page.Home;
         private PlayerProgressService progress;
         private ChroniclesAudioDirector audio;
@@ -18,8 +18,9 @@ namespace MythicChronicles
         private AudioListener menuAudio;
         private int stageId = 1;
         private TrialMode activeTrialMode = TrialMode.Normal;
-        private bool inTower, inRaid;
-        private string raidRunId = "";
+        private bool inTower, inRaid, inLabyrinth;
+        private string raidRunId = "", labyrinthRunId = "";
+        private int selectedLabyrinthChoice;
         private int lastRaidDamage;
         private Origin selectedTowerOrigin = Origin.Egypt;
         private int selectedTowerFloor = 1;
@@ -123,6 +124,7 @@ namespace MythicChronicles
                 case Page.Trials: Trials(); break;
                 case Page.Towers: Towers(); break;
                 case Page.Raid: Raid(); break;
+                case Page.Labyrinth: Labyrinth(); break;
                 case Page.StageStory: StageStory(); break;
                 case Page.Heroes: Heroes(); break;
                 case Page.HeroDetails: HeroDetails(); break;
@@ -189,8 +191,87 @@ namespace MythicChronicles
                 page = Page.RelicVault;
             if (GUI.Button(new Rect(352, 796, 148, 49), "SETTINGS"))
                 page = Page.Settings;
-            GUI.Label(new Rect(40, 854, 460, 36),
-                "Six chapters • 41 heroes • One original world.", subtitle);
+            if (GUI.Button(new Rect(40, 851, 460, 40), "WEEKLY LABYRINTH"))
+            {
+                inTower = false;
+                inRaid = false;
+                inLabyrinth = false;
+                page = Page.Labyrinth;
+            }
+        }
+
+        private void Labyrinth()
+        {
+            LabyrinthProgress run = progress.LabyrinthState();
+            GUI.Label(new Rect(27, 213, 485, 55), "WEEKLY LABYRINTH", heading);
+            GUI.Label(new Rect(29, 270, 475, 75),
+                "12 CHAMBERS • THREE GUARDIANS • BRANCHING PATHS" +
+                "\nA new layout begins each Monday (UTC). Local PvE only.", subtitle);
+            GUI.Box(new Rect(30, 358, 478, 125), "");
+            GUI.Label(new Rect(43, 367, 451, 108),
+                "WEEK OF " + run.weekKey +
+                "\nROOM " + Mathf.Min(run.nextRoom, ChroniclesLabyrinth.Rooms) +
+                "/" + ChroniclesLabyrinth.Rooms +
+                "  •  LIVES " + run.lives + "/3" +
+                "\nBLESSINGS " + run.blessingStacks +
+                "  •  SCORE " + run.score, subtitle);
+            if (progress.Data.lastClearedStage < 10)
+            {
+                GUI.Box(new Rect(40, 515, 461, 199),
+                    "LOCKED\nClear Chapter 1 to enter the Labyrinth.");
+                return;
+            }
+            if (run.completed || run.lives == 0)
+            {
+                GUI.Box(new Rect(40, 515, 460, 200),
+                    run.completed ?
+                        "LABYRINTH COMPLETED\nWeekly completion bonus received!" :
+                        "YOUR EXPEDITION HAS ENDED\nTry again after the weekly reset.");
+                return;
+            }
+            if (!string.IsNullOrEmpty(run.pendingBattleToken))
+            {
+                GUI.Box(new Rect(42, 526, 459, 171),
+                    "An encounter is already in progress.");
+                return;
+            }
+            List<LabyrinthOption> options = ChroniclesLabyrinth.Options(
+                run.weekKey, run.nextRoom);
+            GUI.Label(new Rect(42, 500, 451, 45),
+                options.Count == 1 ? "GUARDIAN ENCOUNTER" : "CHOOSE YOUR PATH", subtitle);
+            for (int i = 0; i < options.Count; i++)
+            {
+                LabyrinthOption option = options[i];
+                float y = 558 + i * 129;
+                GUI.Box(new Rect(32, y, 478, 114), "");
+                GUI.Label(new Rect(43, y + 8, 454, 51), option.title, subtitle);
+                GUI.Label(new Rect(44, y + 58, 459, 47),
+                    option.description, tiny);
+                if (GUI.Button(new Rect(371, y + 75, 122, 34),
+                    option.RequiresBattle ? "FIGHT" : "CHOOSE"))
+                {
+                    if (option.RequiresBattle)
+                    {
+                        selectedLabyrinthChoice = option.choice;
+                        inLabyrinth = true;
+                        inRaid = false;
+                        inTower = false;
+                        stageId = option.stageId;
+                        activeTrialMode = TrialMode.Normal;
+                        page = Page.Formation;
+                        notice = "Select five heroes for this chamber.";
+                    }
+                    else
+                    {
+                        notice = progress.ChooseLabyrinthEvent(option.choice) ?
+                            "Room complete. Your reward was saved." :
+                            "Could not complete this room.";
+                    }
+                }
+            }
+            GUI.Label(new Rect(32, 842, 477, 42),
+                "Guardian rooms: 4, 8, 12 • Finish all rooms for bonus rewards.",
+                tiny);
         }
 
         private void Raid()
@@ -875,6 +956,9 @@ namespace MythicChronicles
         {
             GUI.Label(new Rect(125, 182, 360, 50), "TEAM FORMATION", heading);
             GUI.Label(new Rect(35, 235, 466, 66),
+                inLabyrinth ? "WEEKLY LABYRINTH - ROOM " +
+                    progress.LabyrinthState().nextRoom +
+                    "\nChoose five heroes and carry your blessings into battle." :
                 inTower ? "TOWER: " + ChroniclesTowers.DisplayName(selectedTowerOrigin) +
                     "\nPick 5 heroes, including at least 2 from this mythology." :
                     "Select five owned heroes. Order is used to place your team in front and back rows.", subtitle);
@@ -1217,8 +1301,13 @@ namespace MythicChronicles
                 chosen.Add(unit);
             }
             StageDefinition stage = WorldsCatalog.GetStage(stageId);
+            LabyrinthOption labyrinthOption =
+                inLabyrinth ? progress.LabyrinthChoice(selectedLabyrinthChoice) : null;
             bool unlocked = stage != null &&
-                (inRaid ? progress.Data.lastClearedStage >= 10 &&
+                (inLabyrinth ? labyrinthOption != null &&
+                    labyrinthOption.RequiresBattle &&
+                    labyrinthOption.stageId == stageId :
+                inRaid ? progress.Data.lastClearedStage >= 10 &&
                     progress.RaidAttemptsRemaining() > 0 &&
                     stageId == ChroniclesRaids.StageForDay(DateTime.UtcNow).id :
                 inTower ?
@@ -1235,19 +1324,30 @@ namespace MythicChronicles
                 if (string.IsNullOrEmpty(raidRunId))
                 { notice = "Unable to start a World Boss attempt."; return; }
             }
+            if (inLabyrinth)
+            {
+                labyrinthRunId = progress.BeginLabyrinthBattle(selectedLabyrinthChoice);
+                if (string.IsNullOrEmpty(labyrinthRunId))
+                { notice = "Unable to begin this Labyrinth encounter."; return; }
+            }
             if (battle != null) Destroy(battle.gameObject);
             battle = new GameObject("Chronicles - Battle").AddComponent<ChroniclesBattle>();
             try
             {
                 battle.Initialize(stage, chosen, progress.Data, OnBattleFinished,
                     activeTrialMode, inTower ? (Origin?)selectedTowerOrigin : null,
-                    inTower ? selectedTowerFloor : 0, inRaid);
+                    inTower ? selectedTowerFloor : 0, inRaid,
+                    labyrinthOption, inLabyrinth ?
+                        progress.LabyrinthState().blessingStacks : 0);
             }
             catch (Exception ex)
             {
                 if (inRaid && !string.IsNullOrEmpty(raidRunId))
                     progress.AbandonRaid(raidRunId);
                 raidRunId = "";
+                if (inLabyrinth && !string.IsNullOrEmpty(labyrinthRunId))
+                    progress.CancelLabyrinthStart(labyrinthRunId);
+                labyrinthRunId = "";
                 CleanupBattle();
                 notice = "Failed to create battle: " + ex.Message;
                 return;
@@ -1261,7 +1361,15 @@ namespace MythicChronicles
         private void OnBattleFinished(bool victory)
         {
             lastVictory = victory;
-            if (inRaid)
+            if (inLabyrinth)
+            {
+                bool saved = progress.CompleteLabyrinthBattle(labyrinthRunId, victory);
+                labyrinthRunId = "";
+                if (!saved) notice = "Labyrinth result could not be saved.";
+                else notice = victory ? "Labyrinth room cleared!" :
+                    "Defeat! One Labyrinth life lost.";
+            }
+            else if (inRaid)
             {
                 lastRaidDamage = battle == null ? 0 : battle.RaidDamageScore;
                 bool savedRaid = progress.CompleteRaid(raidRunId, lastRaidDamage);
@@ -1290,6 +1398,8 @@ namespace MythicChronicles
             battle.DrawWorldLabels(scale);
             GUI.Box(new Rect(12, 22, 516, 106), "");
             GUI.Label(new Rect(20, 29, 500, 45),
+                inLabyrinth ? "WEEKLY LABYRINTH • ROOM " +
+                    progress.LabyrinthState().nextRoom :
                 inRaid ? "DAILY WORLD BOSS" :
                 inTower ? ChroniclesTowers.DisplayName(selectedTowerOrigin) +
                     " • FLOOR " + selectedTowerFloor :
@@ -1313,6 +1423,31 @@ namespace MythicChronicles
         private void Results()
         {
             GUI.DrawTexture(new Rect(0, 0, 540, 960), panelTex);
+            if (inLabyrinth)
+            {
+                LabyrinthProgress run = progress.LabyrinthState();
+                GUI.Label(new Rect(20, 250, 500, 96),
+                    lastVictory ? "LABYRINTH CLEARED" : "LABYRINTH DEFEAT", heading);
+                GUI.Label(new Rect(40, 376, 460, 150),
+                    "NEXT ROOM: " + Mathf.Min(ChroniclesLabyrinth.Rooms, run.nextRoom) +
+                    "\nLIVES: " + run.lives + "/" + ChroniclesLabyrinth.StartingLives +
+                    "\nBLESSINGS: " + run.blessingStacks +
+                    "\nRUN SCORE: " + run.score, subtitle);
+                GUI.Box(new Rect(40, 548, 460, 119),
+                    run.completed ? "WEEKLY LABYRINTH FINISHED!\nFinal rewards claimed." :
+                    run.lives == 0 ? "NO LIVES REMAINING THIS WEEK." :
+                    lastVictory ? "Choose your next path to keep exploring." :
+                    "You may try this room again if you have lives left.");
+                if (GUI.Button(new Rect(40, 728, 460, 76), "RETURN TO LABYRINTH", bigButton))
+                {
+                    CleanupBattle();
+                    inLabyrinth = false;
+                    page = Page.Labyrinth;
+                }
+                if (GUI.Button(new Rect(40, 823, 460, 60), "RETURN HOME"))
+                    GoHome();
+                return;
+            }
             if (inRaid)
             {
                 GUI.Label(new Rect(25, 255, 490, 90), "WORLD BOSS COMPLETE", heading);
@@ -1395,6 +1530,11 @@ namespace MythicChronicles
                 progress.AbandonRaid(raidRunId);
                 raidRunId = "";
             }
+            if (inLabyrinth && !string.IsNullOrEmpty(labyrinthRunId))
+            {
+                progress.AbandonLabyrinthBattle(labyrinthRunId);
+                labyrinthRunId = "";
+            }
             if (menuCamera != null) menuCamera.enabled = true;
             if (menuAudio != null) menuAudio.enabled = true;
         }
@@ -1416,7 +1556,9 @@ namespace MythicChronicles
             activeTrialMode = TrialMode.Normal;
             inTower = false;
             inRaid = false;
+            inLabyrinth = false;
             raidRunId = "";
+            labyrinthRunId = "";
             page = Page.Home;
             if (audio != null) audio.SetState(AudioScene.Menu);
         }
