@@ -14,6 +14,7 @@ namespace MythicChronicles
         private ChroniclesBattle battle;
         private int stageId = 1;
         private string selectedHero = "horus";
+        private bool showHeroSkills;
         private string notice = "";
         private string lastSummoned = "";
         private bool lastVictory;
@@ -211,33 +212,44 @@ namespace MythicChronicles
             HeroDefinition hero = WorldsCatalog.FindHero(selectedHero);
             if (hero == null) { page = Page.Heroes; return; }
             OwnedHero owned = progress.FindOwnedHero(hero.id);
-            GUI.Label(new Rect(25, 245, 490, 62), hero.name.ToUpperInvariant(), heading);
-            GUI.Label(new Rect(28, 317, 484, 39), hero.origin + "  •  " + hero.role + "  •  " + hero.rarity, subtitle);
-            GUI.Box(new Rect(36, 368, 465, 149), hero.story);
-            if (owned == null)
+            HeroKit kit = HeroAbilityCatalog.For(hero.id);
+            GUI.Label(new Rect(25, 243, 490, 62), hero.name.ToUpperInvariant(), heading);
+            GUI.Label(new Rect(28, 309, 484, 39), hero.origin + "  •  " + hero.role + "  •  " + hero.rarity, subtitle);
+            GUI.Box(new Rect(36, 358, 465, 197), "");
+            if (GUI.Button(new Rect(49, 367, 216, 37), "STORY")) showHeroSkills = false;
+            if (GUI.Button(new Rect(275, 367, 216, 37), "ABILITIES")) showHeroSkills = true;
+            if (showHeroSkills && kit != null)
             {
-                GUI.Label(new Rect(32, 561, 476, 79), "Not yet summoned. Use earned tickets or gems.", subtitle);
+                GUI.Label(new Rect(52, 410, 438, 138),
+                    "Skill: " + kit.skillName + " — " + kit.skillDescription +
+                    "\nUltimate: " + kit.ultimateName + " — " + kit.ultimateDescription +
+                    "\nPassive: " + kit.passiveName + " — " + kit.passiveDescription, tiny);
             }
+            else GUI.Label(new Rect(52, 421, 438, 120), hero.story, subtitle);
+
+            if (owned == null)
+                GUI.Label(new Rect(32, 569, 476, 67), "Not yet summoned. Use earned tickets or gems.", subtitle);
             else
             {
-                GUI.Label(new Rect(32, 524, 472, 95),
+                GUI.Label(new Rect(32, 566, 472, 74),
                     "Level " + owned.level + "  •  Stars " + owned.stars +
                     "\nWeapon +" + owned.weaponLevel + "  •  Armor +" + owned.armorLevel +
-                    "\nFragments " + owned.fragments + "   •   Skin: " + owned.skin, subtitle);
-                if (GUI.Button(new Rect(40, 640, 460, 64), "UPGRADE HERO", bigButton))
+                    "  •  Fragments " + owned.fragments, subtitle);
+                if (GUI.Button(new Rect(40, 650, 460, 59), "UPGRADE HERO", bigButton))
                     notice = progress.UpgradeHero(hero.id) ? "Level increased and saved." :
                         "Upgrade unavailable: gold or level cap.";
-                if (GUI.Button(new Rect(40, 719, 219, 62), "UPGRADE WEAPON"))
+                if (GUI.Button(new Rect(40, 718, 219, 60), "UPGRADE WEAPON"))
                     notice = progress.UpgradeEquipment(hero.id, true) ? "Weapon improved!" :
                         "Weapon upgrade unavailable.";
-                if (GUI.Button(new Rect(278, 719, 222, 62), "UPGRADE ARMOR"))
+                if (GUI.Button(new Rect(278, 718, 222, 60), "UPGRADE ARMOR"))
                     notice = progress.UpgradeEquipment(hero.id, false) ? "Armor improved!" :
                         "Armor upgrade unavailable.";
-                if (GUI.Button(new Rect(40, 795, 460, 50), "ASCEND (" + (owned.stars * 20) + " FRAGMENTS)"))
+                if (GUI.Button(new Rect(40, 787, 460, 51),
+                    "ASCEND (" + (owned.stars * 20) + " FRAGMENTS)"))
                     notice = progress.AscendHero(hero.id) ? "Star rank increased!" :
-                        "Not enough hero fragments/gold or max stars.";
+                        "Not enough fragments/gold or max stars.";
             }
-            if (GUI.Button(new Rect(40, 857, 460, 42), "HERO COLLECTION")) page = Page.Heroes;
+            if (GUI.Button(new Rect(40, 849, 460, 46), "HERO COLLECTION")) page = Page.Heroes;
         }
 
         private void Formation()
