@@ -26,6 +26,14 @@ namespace MythicChronicles
             return Load("Chronicles/Backgrounds/" + origin.ToString().ToLowerInvariant());
         }
 
+        public static Texture2D HeroCard(string heroId)
+        {
+            if (string.IsNullOrEmpty(heroId) ||
+                heroId.Contains("/") || heroId.Contains("\\") || heroId.Contains(".."))
+                return null;
+            return Load("Chronicles/Cards/" + heroId);
+        }
+
         public static Texture2D Portrait(string speaker)
         {
             if (string.IsNullOrWhiteSpace(speaker) || speaker == "Narrator") return null;
