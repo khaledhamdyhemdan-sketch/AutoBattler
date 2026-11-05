@@ -1,0 +1,367 @@
+{
+  "schemaVersion": 1,
+  "gameLanguage": "en-US",
+  "source": "Assets/Chronicles/WorldsCatalog.cs + HeroElements.cs",
+  "heroCount": 41,
+  "heroes": [
+    {
+      "id": "horus",
+      "name": "Horus",
+      "origin": "Egypt",
+      "role": "Assassin",
+      "rarity": "SSR",
+      "element": "Wind"
+    },
+    {
+      "id": "anubis",
+      "name": "Anubis",
+      "origin": "Egypt",
+      "role": "Tank",
+      "rarity": "SSR",
+      "element": "Wind"
+    },
+    {
+      "id": "ra",
+      "name": "Ra",
+      "origin": "Egypt",
+      "role": "Mage",
+      "rarity": "UR",
+      "element": "Light"
+    },
+    {
+      "id": "sobek",
+      "name": "Sobek",
+      "origin": "Egypt",
+      "role": "Tank",
+      "rarity": "R",
+      "element": "Water"
+    },
+    {
+      "id": "set",
+      "name": "Set",
+      "origin": "Egypt",
+      "role": "Warrior",
+      "rarity": "SR",
+      "element": "Fire"
+    },
+    {
+      "id": "isis",
+      "name": "Isis",
+      "origin": "Egypt",
+      "role": "Healer",
+      "rarity": "SSR",
+      "element": "Water"
+    },
+    {
+      "id": "sekhmet",
+      "name": "Sekhmet",
+      "origin": "Egypt",
+      "role": "Warrior",
+      "rarity": "SSR",
+      "element": "Fire"
+    },
+    {
+      "id": "nephthys",
+      "name": "Nephthys",
+      "origin": "Egypt",
+      "role": "Controller",
+      "rarity": "SR",
+      "element": "Wind"
+    },
+    {
+      "id": "bastet",
+      "name": "Bastet",
+      "origin": "Egypt",
+      "role": "Assassin",
+      "rarity": "R",
+      "element": "Nature"
+    },
+    {
+      "id": "maat",
+      "name": "Maat",
+      "origin": "Egypt",
+      "role": "Support",
+      "rarity": "SSR",
+      "element": "Nature"
+    },
+    {
+      "id": "athena",
+      "name": "Athena",
+      "origin": "Greece",
+      "role": "Support",
+      "rarity": "SSR",
+      "element": "Wind"
+    },
+    {
+      "id": "artemis",
+      "name": "Artemis",
+      "origin": "Greece",
+      "role": "Assassin",
+      "rarity": "SR",
+      "element": "Nature"
+    },
+    {
+      "id": "hades",
+      "name": "Hades",
+      "origin": "Greece",
+      "role": "Controller",
+      "rarity": "UR",
+      "element": "Darkness"
+    },
+    {
+      "id": "persephone",
+      "name": "Persephone",
+      "origin": "Greece",
+      "role": "Healer",
+      "rarity": "SSR",
+      "element": "Nature"
+    },
+    {
+      "id": "heracles",
+      "name": "Heracles",
+      "origin": "Greece",
+      "role": "Warrior",
+      "rarity": "SSR",
+      "element": "Fire"
+    },
+    {
+      "id": "freyja",
+      "name": "Freyja",
+      "origin": "Norse",
+      "role": "Mage",
+      "rarity": "SSR",
+      "element": "Nature"
+    },
+    {
+      "id": "thor",
+      "name": "Thor",
+      "origin": "Norse",
+      "role": "Warrior",
+      "rarity": "SSR",
+      "element": "Wind"
+    },
+    {
+      "id": "odin",
+      "name": "Odin",
+      "origin": "Norse",
+      "role": "Support",
+      "rarity": "UR",
+      "element": "Light"
+    },
+    {
+      "id": "hel",
+      "name": "Hel",
+      "origin": "Norse",
+      "role": "Controller",
+      "rarity": "UR",
+      "element": "Darkness"
+    },
+    {
+      "id": "skadi",
+      "name": "Skadi",
+      "origin": "Norse",
+      "role": "Assassin",
+      "rarity": "SR",
+      "element": "Water"
+    },
+    {
+      "id": "amaterasu",
+      "name": "Amaterasu",
+      "origin": "Japan",
+      "role": "Mage",
+      "rarity": "UR",
+      "element": "Light"
+    },
+    {
+      "id": "susanoo",
+      "name": "Susanoo",
+      "origin": "Japan",
+      "role": "Warrior",
+      "rarity": "SR",
+      "element": "Wind"
+    },
+    {
+      "id": "sunwukong",
+      "name": "Sun Wukong",
+      "origin": "China",
+      "role": "Assassin",
+      "rarity": "SSR",
+      "element": "Fire"
+    },
+    {
+      "id": "guanyin",
+      "name": "Guanyin",
+      "origin": "China",
+      "role": "Healer",
+      "rarity": "SSR",
+      "element": "Water"
+    },
+    {
+      "id": "nezha",
+      "name": "Nezha",
+      "origin": "China",
+      "role": "Warrior",
+      "rarity": "SSR",
+      "element": "Fire"
+    },
+    {
+      "id": "morgana",
+      "name": "Morgana",
+      "origin": "Folklore",
+      "role": "Controller",
+      "rarity": "SSR",
+      "element": "Nature"
+    },
+    {
+      "id": "merlin",
+      "name": "Merlin",
+      "origin": "Folklore",
+      "role": "Mage",
+      "rarity": "SSR",
+      "element": "Wind"
+    },
+    {
+      "id": "arthur",
+      "name": "Arthur",
+      "origin": "Folklore",
+      "role": "Tank",
+      "rarity": "SSR",
+      "element": "Water"
+    },
+    {
+      "id": "cleopatra",
+      "name": "Cleopatra",
+      "origin": "History",
+      "role": "Support",
+      "rarity": "SR",
+      "element": "Water"
+    },
+    {
+      "id": "joan",
+      "name": "Joan of Arc",
+      "origin": "History",
+      "role": "Warrior",
+      "rarity": "SR",
+      "element": "Fire"
+    },
+    {
+      "id": "amun",
+      "name": "Amun",
+      "origin": "Egypt",
+      "role": "Mage",
+      "rarity": "UR",
+      "element": "Light"
+    },
+    {
+      "id": "apep",
+      "name": "Apep",
+      "origin": "Egypt",
+      "role": "Controller",
+      "rarity": "UR",
+      "element": "Darkness"
+    },
+    {
+      "id": "zeus",
+      "name": "Zeus",
+      "origin": "Greece",
+      "role": "Mage",
+      "rarity": "UR",
+      "element": "Light"
+    },
+    {
+      "id": "nyx",
+      "name": "Nyx",
+      "origin": "Greece",
+      "role": "Controller",
+      "rarity": "UR",
+      "element": "Darkness"
+    },
+    {
+      "id": "baldr",
+      "name": "Baldr",
+      "origin": "Norse",
+      "role": "Support",
+      "rarity": "UR",
+      "element": "Light"
+    },
+    {
+      "id": "fenrir",
+      "name": "Fenrir",
+      "origin": "Norse",
+      "role": "Warrior",
+      "rarity": "UR",
+      "element": "Darkness"
+    },
+    {
+      "id": "izanagi",
+      "name": "Izanagi",
+      "origin": "Japan",
+      "role": "Tank",
+      "rarity": "UR",
+      "element": "Light"
+    },
+    {
+      "id": "izanami",
+      "name": "Izanami",
+      "origin": "Japan",
+      "role": "Mage",
+      "rarity": "UR",
+      "element": "Darkness"
+    },
+    {
+      "id": "nuwa",
+      "name": "Nüwa",
+      "origin": "China",
+      "role": "Healer",
+      "rarity": "UR",
+      "element": "Light"
+    },
+    {
+      "id": "hundun",
+      "name": "Hundun",
+      "origin": "China",
+      "role": "Tank",
+      "rarity": "UR",
+      "element": "Darkness"
+    },
+    {
+      "id": "apollo",
+      "name": "Apollo",
+      "origin": "Greece",
+      "role": "Mage",
+      "rarity": "UR",
+      "element": "Light"
+    }
+  ],
+  "banners": [
+    {
+      "id": "standard",
+      "name": "STANDARD SUMMON",
+      "currency": "summonTickets",
+      "gemCostEach": 120,
+      "pityGuaranteedTier": "SSR",
+      "pityCount": 40,
+      "rates": {
+        "R": 0.2,
+        "SR": 0.65,
+        "SSR": 0.15,
+        "UR": 0
+      }
+    },
+    {
+      "id": "astral",
+      "name": "ASTRAL COVENANT",
+      "currency": "astralSeals",
+      "gemCostEach": 300,
+      "pityGuaranteedTier": "UR",
+      "pityCount": 70,
+      "rates": {
+        "R": 0,
+        "SR": 0.7,
+        "SSR": 0.285,
+        "UR": 0.015
+      }
+    }
+  ],
+  "notes": "Information only. No live paid summon, server-authoritative currency, matchmaking or account linkage is enabled."
+}
