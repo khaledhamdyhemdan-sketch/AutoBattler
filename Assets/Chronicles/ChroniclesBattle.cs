@@ -19,6 +19,7 @@ namespace MythicChronicles
             public bool savedOnce;
             public Combatant forcedTarget;
             public bool boss;
+            public float bossSpecialTimer = 9f;
             public Vector3 formationPosition, arrivalPosition;
             public bool Alive { get { return hp > 0f; } }
         }
@@ -60,7 +61,18 @@ namespace MythicChronicles
             foreach (var hero in WorldsCatalog.Heroes) if (hero.origin == origin) opponents.Add(hero);
             if (opponents.Count == 0) throw new InvalidOperationException("Chapter needs opponents.");
             for (int i = 0; i < 5; i++)
-                Spawn(opponents[(stage.id * 3 + i) % opponents.Count], 1, i, 1 + stage.id / 3, stage.boss && i == 0);
+            {
+                HeroDefinition enemy;
+                if (stage.boss && i == 0)
+                {
+                    ChapterDefinition chapter = WorldsCatalog.Chapters[stage.chapter - 1];
+                    enemy = new HeroDefinition("boss_chapter_" + chapter.number,
+                        chapter.boss, chapter.origin, CombatRole.Warrior, Rarity.Legendary,
+                        "A corrupted guardian of the fractured Loom.");
+                }
+                else enemy = opponents[(stage.id * 3 + i) % opponents.Count];
+                Spawn(enemy, 1, i, 1 + stage.id / 3, stage.boss && i == 0);
+            }
         }
 
         private Material CreateMaterial(Color color)
@@ -200,6 +212,7 @@ namespace MythicChronicles
                 if (!f.Alive) continue;
                 TickStatuses(f, dt);
                 if (!f.Alive) continue;
+                if (f.boss) TickBossMechanics(f, dt);
                 f.attackCd -= dt;
                 f.skillCd -= dt;
                 if (f.stunned > 0f) continue;
@@ -306,6 +319,52 @@ namespace MythicChronicles
                 hero.passiveTimer = 0f;
                 Shield(LowestFriend(hero), hero.attack * 2f);
             }
+        }
+
+        private void TickBossMechanics(Combatant boss, float dt)
+        {
+            boss.bossSpecialTimer -= dt;
+            if (boss.bossSpecialTimer > 0f) return;
+            boss.bossSpecialTimer = 9f + stage.chapter * .75f;
+            Combatant target = FindTarget(boss);
+            if (target == null) return;
+            // Each chapter guardian introduces a different, visibly labeled tactical challenge.
+            switch (stage.chapter)
+            {
+                case 1:
+                    CastEffect(boss, target, AbilityEffect.WeakeningCurse, 2.2f, true);
+                    Floating("ERASED NAMES", boss, Color.magenta);
+                    break;
+                case 2:
+                    foreach (Combatant enemy in units)
+                    {
+                        if (enemy.side == boss.side || !enemy.Alive) continue;
+                        enemy.energy = Mathf.Max(0f, enemy.energy - 32f);
+                    }
+                    CastEffect(boss, target, AbilityEffect.StunStrike, 2f, true);
+                    Floating("BROKEN PROPHECY", boss, Color.magenta);
+                    break;
+                case 3:
+                    CastEffect(boss, target, AbilityEffect.ShieldTeam, 3f, true);
+                    CastEffect(boss, target, AbilityEffect.FrostStrike, 1.8f, true);
+                    Floating("ROOTS OF WINTER", boss, Color.cyan);
+                    break;
+                case 4:
+                    CastEffect(boss, target, AbilityEffect.BurningWave, 2.5f, true);
+                    Floating("MIRROR FLAME", boss, Color.yellow);
+                    break;
+                case 5:
+                    CastEffect(boss, target, AbilityEffect.TauntGuard, 2.5f, true);
+                    CastEffect(boss, target, AbilityEffect.TripleStrike, 1.6f, true);
+                    Floating("HOLLOW OATH", boss, Color.magenta);
+                    break;
+                default:
+                    CastEffect(boss, target, AbilityEffect.Eclipse, 3.0f, true);
+                    CastEffect(boss, target, AbilityEffect.EnergizeTeam, 1.5f, true);
+                    Floating("UNWRITTEN FATE", boss, Color.magenta);
+                    break;
+            }
+            boss.visual.Play(HeroAnimation.Ultimate);
         }
 
         private Combatant FindTarget(Combatant actor)
