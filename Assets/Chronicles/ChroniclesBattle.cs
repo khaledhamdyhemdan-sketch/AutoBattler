@@ -49,7 +49,7 @@ namespace MythicChronicles
             {
                 HeroDefinition hero = WorldsCatalog.FindHero(squad[i].id);
                 if (hero == null) throw new ArgumentException("Unknown hero: " + squad[i].id);
-                Spawn(hero, 0, i, squad[i].level, false);
+                Spawn(hero, 0, i, squad[i].level, false, squad[i].weaponLevel, squad[i].armorLevel, squad[i].stars);
             }
             var opponents = new List<HeroDefinition>();
             Origin origin = WorldsCatalog.Chapters[stage.chapter - 1].origin;
@@ -128,7 +128,8 @@ namespace MythicChronicles
             lightObject.transform.rotation = Quaternion.Euler(60f, -35f, 0f);
         }
 
-        private void Spawn(HeroDefinition hero, int side, int slot, int level, bool boss)
+        private void Spawn(HeroDefinition hero, int side, int slot, int level, bool boss,
+            int weaponLevel = 0, int armorLevel = 0, int stars = 1)
         {
             bool front = slot < 2;
             float x = front ? (slot == 0 ? -1.55f : 1.55f) : (slot - 3) * 2.45f;
@@ -138,12 +139,13 @@ namespace MythicChronicles
             float roleHp = hero.role == CombatRole.Tank ? 1.8f : hero.role == CombatRole.Warrior ? 1.35f : 1f;
             float roleAttack = hero.role == CombatRole.Assassin ? 1.4f : hero.role == CombatRole.Mage ? 1.35f : 1f;
             float chapterScale = side == 1 ? 1f + stage.id * .042f : 1f;
+            float ascensionScale = 1f + (stars - 1) * .075f;
             Combatant unit = new Combatant
             {
                 hero = hero, side = side, level = level, boss = boss,
-                maxHp = (230f + level * 28f) * roleHp * tier * chapterScale * (boss ? 2.3f : 1f),
-                attack = (22f + level * 4.4f) * roleAttack * tier * chapterScale * (boss ? 1.3f : 1f),
-                armor = 9f + level * 1.3f + (hero.role == CombatRole.Tank ? 18f : 0f),
+                maxHp = (230f + level * 28f + armorLevel * 14f) * roleHp * tier * chapterScale * ascensionScale * (boss ? 2.3f : 1f),
+                attack = (22f + level * 4.4f + weaponLevel * 2.8f) * roleAttack * tier * chapterScale * ascensionScale * (boss ? 1.3f : 1f),
+                armor = 9f + level * 1.3f + armorLevel * 2f + (hero.role == CombatRole.Tank ? 18f : 0f),
                 attackCd = .5f + slot * .09f, skillCd = 2.6f + slot * .4f,
                 formationPosition = destination,
                 arrivalPosition = destination + new Vector3(0f, 0f, side == 0 ? -5f : 5f)
