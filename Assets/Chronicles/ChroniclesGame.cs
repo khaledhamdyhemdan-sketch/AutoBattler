@@ -64,6 +64,12 @@ namespace MythicChronicles
             cameraObject.transform.position = new Vector3(0f, 0f, -10f);
             menuAudio = cameraObject.AddComponent<AudioListener>();
             progress = new PlayerProgressService();
+            // Portraits show the equipped skin wherever a hero is drawn.
+            ChroniclesPortraitAssets.EquippedSkinResolver = heroId =>
+            {
+                OwnedHero ownedHero = progress != null ? progress.FindOwnedHero(heroId) : null;
+                return ownedHero != null ? ownedHero.skin : null;
+            };
             catalogClient = gameObject.AddComponent<ChroniclesCatalogClient>();
             audio = gameObject.AddComponent<ChroniclesAudioDirector>();
             draftMusic = progress.Data.musicVolume;
@@ -177,6 +183,7 @@ namespace MythicChronicles
             if (buttonHoverTex != null) Destroy(buttonHoverTex);
             if (buttonPressedTex != null) Destroy(buttonPressedTex);
             ChroniclesHeroPortrait.Clear();
+            ChroniclesPortraitAssets.EquippedSkinResolver = null;
         }
 
         private void OnGUI()
@@ -1020,9 +1027,13 @@ namespace MythicChronicles
                 bool equipped = owned != null && owned.skin == skin.id;
                 float y = 391 + i * 205;
                 GUI.Box(new Rect(30, y, 480, 194), "");
-                GUI.Label(new Rect(41, y + 12, 458, 48), skin.displayName, heading);
-                GUI.Label(new Rect(42, y + 62, 456, 52), skin.visualTheme, tiny);
-                GUI.Label(new Rect(42, y + 111, 455, 27),
+                // Preview: the skin's own art when authored, otherwise the base portrait.
+                ChroniclesHeroPortrait.DrawSkin(hero.id, skin.id, new Rect(38, y + 8, 88, 132), false);
+                if (skin.id != "default" && !ChroniclesPortraitAssets.HasSkinArt(hero.id, skin.id))
+                    GUI.Label(new Rect(38, y + 112, 88, 26), "ART PENDING", tiny);
+                GUI.Label(new Rect(136, y + 12, 363, 48), skin.displayName, heading);
+                GUI.Label(new Rect(137, y + 62, 361, 52), skin.visualTheme, tiny);
+                GUI.Label(new Rect(137, y + 111, 360, 27),
                     equipped ? "EQUIPPED" : unlocked ? "OWNED" :
                         skin.gemCost + " earned gems", subtitle);
                 GUI.enabled = owned != null && !equipped &&

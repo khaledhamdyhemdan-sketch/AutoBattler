@@ -43,16 +43,31 @@ namespace MythicChronicles
         }
 
 
+        /// <summary>Draws the hero wearing its equipped skin (base art when the skin has none).</summary>
         public static void Draw(string heroId, Rect frame, bool animated, float phase = 0f)
+        {
+            DrawCore(heroId, null, frame, animated, phase);
+        }
+
+        /// <summary>Draws a specific skin, e.g. a preview in the skin shop.</summary>
+        public static void DrawSkin(string heroId, string skinId, Rect frame, bool animated, float phase = 0f)
+        {
+            DrawCore(heroId, string.IsNullOrEmpty(skinId) ? ChroniclesPortraitAssets.DefaultSkin : skinId,
+                frame, animated, phase);
+        }
+
+        private static void DrawCore(string heroId, string skinId, Rect frame, bool animated, float phase)
         {
             PortraitIdentity profile = HeroPortraitIdentityCatalog.For(heroId);
             if (profile == null) return;
 
             GUI.BeginGroup(frame);
             Rect local = new Rect(0, 0, frame.width, frame.height);
-            Texture2D authoredStill = ChroniclesPortraitAssets.Static(heroId);
-            Texture2D[] frames = animated ?
-                ChroniclesPortraitAssets.AnimatedFrames(heroId) : null;
+            Texture2D authoredStill = skinId == null ? ChroniclesPortraitAssets.Static(heroId) :
+                ChroniclesPortraitAssets.Static(heroId, skinId);
+            Texture2D[] frames = !animated ? null : skinId == null ?
+                ChroniclesPortraitAssets.AnimatedFrames(heroId) :
+                ChroniclesPortraitAssets.AnimatedFrames(heroId, skinId);
             if (frames != null && frames.Length > 0)
             {
                 int index = Mathf.FloorToInt(Time.unscaledTime * 8f + phase * 3f) % frames.Length;

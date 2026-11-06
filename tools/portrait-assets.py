@@ -70,12 +70,33 @@ def audit():
                 errors.append(f'{hid}: duplicate decoded frames')
         rows.append(dict(hero_id=hid, static=still.exists(), frames=len(frames),
                          dimensions=dimensions, visual_approval='MANUAL_REVIEW_REQUIRED'))
-    report = dict(heroes=rows, errors=errors,
+    # Skin art: Skins/<hero>/<skin>.png (+ optional SkinAnimated/<hero>/<skin>/frame_NNN.png).
+    known_heroes = {r['hero_id'] for r in rows}
+    skin_ids = {'ascendant'}  # HeroSkinCatalog: every hero has default + ascendant
+    skin_rows = []
+    for still in sorted((ART / 'Skins').glob('*/*.png')):
+        hid, sid = still.parent.name, still.stem
+        if hid not in known_heroes or sid not in skin_ids:
+            errors.append(f'{still.relative_to(ROOT)}: unknown hero or skin ID')
+        with Image.open(still) as im:
+            if im.format != 'PNG':
+                errors.append(f'{still.relative_to(ROOT)}: non-PNG payload')
+            size = im.size
+        frames = sorted((ART / 'SkinAnimated' / hid / sid).glob('frame_*.png'))
+        if frames and ([f.name for f in frames] != [f'frame_{i:03}.png' for i in range(len(frames))]
+                       or len(frames) not in (8, 12)):
+            errors.append(f'{hid}/{sid}: expected 8 or 12 consecutive skin frames')
+        skin_rows.append(dict(hero_id=hid, skin_id=sid, dimensions=list(size), frames=len(frames)))
+    for folder in sorted((ART / 'SkinAnimated').glob('*/*')):
+        if folder.is_dir() and not (ART / 'Skins' / folder.parent.name / f'{folder.name}.png').exists():
+            errors.append(f'{folder.relative_to(ROOT)}: skin frames without a skin still')
+    report = dict(heroes=rows, skins=skin_rows, errors=errors,
                   note='File validation only. Not identity approval, Unity import, or Android QA.')
     out = ROOT / 'docs/portrait-file-audit.json'
     out.write_text(json.dumps(report, indent=2) + '\n', encoding='utf-8')
     print(f'{len(rows)} heroes; {sum(r["static"] for r in rows)} stills; '
-          f'{sum(r["frames"] >= 8 for r in rows)} frame sets; {len(errors)} file errors')
+          f'{sum(r["frames"] >= 8 for r in rows)} frame sets; {len(skin_rows)} skin stills; '
+          f'{len(errors)} file errors')
     for error in errors:
         print(error)
     raise SystemExit(bool(errors))

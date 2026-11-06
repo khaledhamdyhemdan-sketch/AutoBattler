@@ -51,3 +51,16 @@ Six separate chapter boss rigs:
 5. Produce real APK/AAB builds, verify their functionality and handle signing/Google Play requirements.
 
 The source interfaces are a pipeline **for** art. They are not proof the art, audio, animations or mobile game are finished.
+
+## Skin portraits
+
+Each hero has a `default` look and one alternate skin, `ascendant` (see `HeroSkinCatalog`).
+Alternate skin art is optional and lives beside the base portraits:
+
+- Still: `Assets/Resources/Chronicles/Portraits/Skins/<hero-id>/<skin-id>.png` (1024x1536 target)
+- Frames (optional): `Assets/Resources/Chronicles/Portraits/SkinAnimated/<hero-id>/<skin-id>/frame_000.png` … (8 or 12)
+
+`ChroniclesHeroPortrait.Draw` shows the equipped skin wherever a hero appears. A skin with
+only a still uses the gentle overlay motion and never borrows the base frames. A skin with no
+art falls back to the base portrait and is marked "ART PENDING" in the skin shop.
+`python tools/portrait-assets.py audit` validates skin IDs, PNG payloads and frame order.
