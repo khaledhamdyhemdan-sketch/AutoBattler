@@ -93,7 +93,7 @@ namespace MythicChronicles
                     Busy = false;
                     yield break;
                 }
-                if (heroes == null || heroes.count != 41 ||
+                if (heroes == null || heroes.count != HeroRosterData.HeroCount ||
                     heroes.language != "en-US" || heroes.liveGameEconomy)
                 {
                     Status = "SERVER CATALOG MISMATCH - OFFLINE MODE";

@@ -152,7 +152,7 @@ namespace MythicChronicles.Editor
             string destination = "Assets/Chronicles/PortraitArtAudit.csv";
             File.WriteAllText(destination, report.ToString(), new UTF8Encoding(false));
             AssetDatabase.ImportAsset(destination, ImportAssetOptions.ForceUpdate);
-            Debug.Log("[Portrait Audit] " + completePairs + "/41 structurally valid imported pairs (visual approval separate). " +
+            Debug.Log("[Portrait Audit] " + completePairs + "/" + WorldsCatalog.Heroes.Length + " structurally valid imported pairs (visual approval separate). " +
                 "Missing static=" + missingStill + ", animations=" + missingAnimation +
                 ", identity issues=" + missingIdentity + ", English issues=" + englishIssues +
                 ". Missing production assets use the distinct procedural fallback." +

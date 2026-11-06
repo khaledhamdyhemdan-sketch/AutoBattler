@@ -249,7 +249,10 @@ namespace MythicChronicles.Editor
                 Check(WorldsCatalog.FindHero("apollo") != null &&
                     HeroAbilityCatalog.For("apollo") != null,
                     "Apollo's additional UR hero kit must exist.");
-                Check(URCardCatalog.Count == 16, "Every UR hero needs a premium visual concept.");
+                int urHeroes = 0;
+                foreach (HeroDefinition hero in WorldsCatalog.Heroes)
+                    if (hero.rarity == Rarity.UR) urHeroes++;
+                Check(URCardCatalog.Count == urHeroes, "Every UR hero needs a premium visual concept.");
                 foreach (HeroDefinition hero in WorldsCatalog.Heroes)
                 {
                     URCardIdentity card = URCardCatalog.For(hero.id);
