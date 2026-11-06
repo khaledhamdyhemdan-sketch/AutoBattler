@@ -57,13 +57,11 @@ requires exactly one UR card per UR hero.
 ## Roster target (enforced)
 
 Every faction must have 10+ heroes and at least one Light and one Darkness UR.
-The 72-hero expansion (branch `claude/roster-expansion-72`, PENDING OWNER
-APPROVAL) meets it, so `tools/chronicles-source-audit.mjs` now fails if a
+The 72-hero expansion (approved by the owner on 2026-11-06) meets it, so `tools/chronicles-source-audit.mjs` now fails if a
 faction drops below the target. The generator still prints the per-faction
 status.
 
-New heroes are NOT added to `legacy-hero-ids.json` until they are approved and
-released; until then their names, rarities and kits can still change.
+All 72 approved IDs are now protected in `legacy-hero-ids.json`.
 
 ## Verification done for this refactor (2026-11-05)
 

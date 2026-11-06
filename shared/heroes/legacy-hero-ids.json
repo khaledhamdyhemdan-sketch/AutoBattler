@@ -165,6 +165,131 @@
     {
       "id": "apollo",
       "minimumRarity": "UR"
+    },
+    {
+      "id": "poseidon",
+      "minimumRarity": "SSR"
+    },
+    {
+      "id": "medusa",
+      "minimumRarity": "SR"
+    },
+    {
+      "id": "heimdall",
+      "minimumRarity": "SSR"
+    },
+    {
+      "id": "loki",
+      "minimumRarity": "SSR"
+    },
+    {
+      "id": "eir",
+      "minimumRarity": "SR"
+    },
+    {
+      "id": "tsukuyomi",
+      "minimumRarity": "SSR"
+    },
+    {
+      "id": "raijin",
+      "minimumRarity": "SSR"
+    },
+    {
+      "id": "tamamo",
+      "minimumRarity": "SSR"
+    },
+    {
+      "id": "inari",
+      "minimumRarity": "SR"
+    },
+    {
+      "id": "benzaiten",
+      "minimumRarity": "SR"
+    },
+    {
+      "id": "hachiman",
+      "minimumRarity": "R"
+    },
+    {
+      "id": "erlangshen",
+      "minimumRarity": "SSR"
+    },
+    {
+      "id": "zhongkui",
+      "minimumRarity": "SSR"
+    },
+    {
+      "id": "change",
+      "minimumRarity": "SR"
+    },
+    {
+      "id": "fuxi",
+      "minimumRarity": "SR"
+    },
+    {
+      "id": "houyi",
+      "minimumRarity": "R"
+    },
+    {
+      "id": "ladyofthelake",
+      "minimumRarity": "UR"
+    },
+    {
+      "id": "babayaga",
+      "minimumRarity": "UR"
+    },
+    {
+      "id": "lancelot",
+      "minimumRarity": "SSR"
+    },
+    {
+      "id": "scheherazade",
+      "minimumRarity": "SSR"
+    },
+    {
+      "id": "robinhood",
+      "minimumRarity": "SR"
+    },
+    {
+      "id": "sinbad",
+      "minimumRarity": "SR"
+    },
+    {
+      "id": "guinevere",
+      "minimumRarity": "R"
+    },
+    {
+      "id": "alexander",
+      "minimumRarity": "UR"
+    },
+    {
+      "id": "hannibal",
+      "minimumRarity": "UR"
+    },
+    {
+      "id": "leonidas",
+      "minimumRarity": "SSR"
+    },
+    {
+      "id": "musashi",
+      "minimumRarity": "SSR"
+    },
+    {
+      "id": "saladin",
+      "minimumRarity": "SSR"
+    },
+    {
+      "id": "boudica",
+      "minimumRarity": "SR"
+    },
+    {
+      "id": "chingshih",
+      "minimumRarity": "SR"
+    },
+    {
+      "id": "hypatia",
+      "minimumRarity": "R"
     }
-  ]
+  ],
+  "expansionApproved": "2026-11-06: owner approved the 31-hero expansion (41 -> 72)."
 }
