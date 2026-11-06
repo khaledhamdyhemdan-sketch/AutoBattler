@@ -502,7 +502,7 @@
       "staticPath": "Assets/Resources/Chronicles/Portraits/Static/cleopatra.png",
       "framesFolder": "Assets/Resources/Chronicles/Portraits/Animated/cleopatra",
       "prefab": "Assets/Resources/Chronicles/Heroes/cleopatra/default.prefab",
-      "productionStatus": "NOT_PRODUCED"
+      "productionStatus": "CANDIDATE_STATIC_AND_8_FRAMES_UNITY_REVIEW_PENDING"
     },
     {
       "id": "joan",
