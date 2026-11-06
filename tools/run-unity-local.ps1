@@ -58,8 +58,11 @@ function Invoke-UnityStep {
         '-executeMethod', $Method,
         '-logFile', $log
     )
-    & $UnityEditor @unityArguments
-    $result = $LASTEXITCODE
+    # Unity.exe is a GUI-subsystem program: '&' does not wait for it and leaves
+    # $LASTEXITCODE unset. Start-Process -Wait blocks until Unity exits.
+    $quoted = $unityArguments | ForEach-Object { if ($_ -match '\s') { '"' + $_ + '"' } else { $_ } }
+    $process = Start-Process -FilePath $UnityEditor -ArgumentList $quoted -Wait -PassThru -NoNewWindow
+    $result = $process.ExitCode
     if ($result -ne 0) {
         Write-Host "FAILED: $Title (exit $result). Check $log" -ForegroundColor Red
         if (Test-Path $log) {

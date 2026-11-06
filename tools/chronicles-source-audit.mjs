@@ -199,7 +199,10 @@ for (const absolute of [...runtimeFiles, ...editorFiles]) {
 const metadataFiles=listFiles(path.join(root,'Assets')).filter(p=>p.endsWith('.meta'));
 const guidSet=new Set();
 for(const p of metadataFiles){
-  const m=fs.readFileSync(p,'utf8').match(/^guid:\s*([a-f\d]{32})/m);
+  const text=fs.readFileSync(p,'utf8');
+  const m=text.match(/^guid:\s*([a-f\d]{32})\s*$/m);
+  // Unity ignores an asset whose .meta GUID is not exactly 32 hex characters.
+  assert.ok(m || !/^guid:/m.test(text), 'Invalid Unity GUID (must be 32 hex chars) in '+p);
   if(!m)continue;
   assert.ok(!guidSet.has(m[1]), 'Duplicate Unity asset GUID in '+p);
   guidSet.add(m[1]);
