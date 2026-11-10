@@ -19,6 +19,7 @@ namespace MythicChronicles.Editor
 
         private static void Build(bool bundle)
         {
+            ChroniclesUXVerification.ValidateInputConfiguration();
             if (!File.Exists(MainScene))
                 throw new InvalidOperationException("Main game scene is missing. Run Tools/Chronicles/Create Main Game Scene.");
             if (!BuildPipeline.IsBuildTargetSupported(BuildTargetGroup.Android, BuildTarget.Android))

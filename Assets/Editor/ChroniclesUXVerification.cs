@@ -11,6 +11,7 @@ namespace MythicChronicles.Editor
         [MenuItem("Tools/Chronicles/Test Portrait Layout And Onboarding")]
         public static void Run()
         {
+            ValidateInputConfiguration();
             Check(ChroniclesTutorial.Prompts.Length == ChroniclesTutorial.StepCount,
                 "Onboarding step copy is missing.");
             Rect tall = ChroniclesViewport.ContentRect(new Rect(0, 0, 1080, 2400),
@@ -82,6 +83,21 @@ namespace MythicChronicles.Editor
                 catch (Exception e) { Debug.LogWarning(e.Message); }
             }
             Debug.Log("[Chronicles] UI safe-area and five-step tutorial source tests passed.");
+        }
+
+        public static void ValidateInputConfiguration()
+        {
+            // The current game uses OnGUI for every button. New Input System
+            // alone renders IMGUI but does not deliver its runtime input events.
+#if !ENABLE_LEGACY_INPUT_MANAGER
+            throw new InvalidOperationException(
+                "Chronicles uses IMGUI. Set Player > Other Settings > Active Input Handling " +
+                "to Input Manager (Old), then restart Unity before testing or building.");
+#elif UNITY_ANDROID && ENABLE_INPUT_SYSTEM
+            throw new InvalidOperationException(
+                "Chronicles Android builds require Input Manager (Old) only. " +
+                "Set Active Input Handling to Input Manager (Old), then restart Unity.");
+#endif
         }
 
         private static void Check(bool condition, string description)
