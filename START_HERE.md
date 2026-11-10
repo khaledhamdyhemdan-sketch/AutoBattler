@@ -21,6 +21,13 @@ still describes that prototype.
 4. Run **Tools → Chronicles → Run All Offline Checks** (catalog, progression,
    economy and English checks). Individual tests are under the same menu.
 
+The current `OnGUI` interface requires **Player → Other Settings → Active
+Input Handling → Input Manager (Old)**. The project stores this setting.
+If Unity requests a restart after pulling it, restart before Play or a build.
+Input System Package (New) alone renders the interface but cannot send input
+to its buttons. Keep Input Manager (Old) for this Android Alpha; the older
+prototype has separate Input System controls and is not the Alpha entry scene.
+
 ## Build an Android APK (direct install, not Google Play)
 
 From the repository root in Windows PowerShell:

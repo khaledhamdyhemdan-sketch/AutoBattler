@@ -77,6 +77,22 @@ Unity Package Manager to resolve the project dependencies. UniTask uses the
 Git dependency in `Packages/manifest.json`; the former orphaned
 `Packages/com.cysharp.unitask` gitlink has been removed.
 
+### Input for the current IMGUI interface
+
+Use **Edit → Project Settings → Player → Other Settings → Active Input
+Handling → Input Manager (Old)** and restart Unity if requested. This is the
+committed `activeInputHandler: 0` setting. Input System Package (New) alone
+does not deliver input events to runtime `OnGUI` controls, so a successful
+compile would still leave the lobby buttons unresponsive. See
+[Unity Input System 1.16 UI support](https://docs.unity3d.com/Packages/com.unity.inputsystem@1.16/manual/UISupport.html#immediate-mode-gui).
+
+The source audit checks this setting, and the offline UX checks and direct
+APK/AAB build menu validate the active compilation symbols. After pulling
+the fix, test clicks in Play mode and touch input on the phone. No Unity or
+device input test is implied by the source audit. The Input System package
+and legacy prototype files remain installed; the Alpha builds only the
+Chronicles scene.
+
 ## 2. Run all available offline checks
 
 From Windows PowerShell at the repository root:
@@ -109,7 +125,8 @@ Output (when Unity really succeeds):
 `Builds/Chronicles/Chronicles_Android.apk`.
 
 This is a **development smoke build**, not a signed store-ready release.
-Install it on an Android phone and verify onboarding, 41 hero roster,
+Install it on an Android phone and verify onboarding, the full hero roster
+(currently 72 heroes),
 static/motion portraits, summon (1x and 10x), gear/runes, formations, 5v5
 combat, 60 normal stages, Elite/Dark variants, 7 faction towers, world
 boss, labyrinth, arena NPC training, achievements and daily gifts. Verify
@@ -125,15 +142,17 @@ credentials or `Builds/` outputs to GitHub.
 
 Every branch push now generates a
 `chronicles-readiness` GitHub Actions artifact and a job summary with
-counts of authored art, animation frame sequences, cards and rigs for all
-41 heroes. The initial audit showed **0/41** production assets in each
-required category, despite working procedural placeholder code.
+counts of authored art, animation frame sequences, cards and rigs for the
+canonical roster. The 2026-11-10 source inventory at `55a57b3` found **40/72**
+static portraits and frame sets, with 32 heroes still using fallback art.
+Card images, rigged battle prefabs and hero-specific VFX prefabs were **0/72**.
+These counts describe file presence, not visual approval or device testing.
 
 Hero-production requirements:
-- 41 original, text-free **static portraits**
-- 41 approved **animated portrait** sets (8+ numbered frames or better rigs)
-- 41 original collectible-card illustrations
-- 41 battle character prefabs and character-specific VFX
+- Original, text-free **static portraits** for every catalog hero
+- Approved **animated portrait** sets (8+ numbered frames or better rigs)
+- Original collectible-card illustrations
+- Battle character prefabs and character-specific VFX for every hero
 - English user interface and verified portrait 9:16 navigation
 
 Other launch blockers: actual playtested and signed Android release, proper
@@ -146,7 +165,7 @@ authoritative results, original sound, game balance and QA.
   source, Unity metadata, no orphaned gitlinks, original art inventory.
 - **Chronicles backend unit tests:** mocked Node API authorization,
   account/session behavior and schema-level validations; no deployed DB.
-- **Unity validation (local script):** Unity compilation and 12 offline test
+- **Unity validation (local script):** Unity compilation and 14 offline test
   modules; not executed by GitHub's lightweight runners.
 - **Device QA:** manual device installation and testing, not executed yet.
 

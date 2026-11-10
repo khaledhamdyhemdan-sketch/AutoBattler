@@ -219,6 +219,11 @@ assert.ok(read('Assets/Chronicles/Chronicles_Main.unity')
   .includes('guid: ' + gameGuid),
   'Main Unity scene must actually contain the ChroniclesGame component');
 const projectSettings = read('ProjectSettings/ProjectSettings.asset');
+// Runtime OnGUI controls do not receive events with Input System Package only.
+// Keep one Android input backend while Chronicles uses its IMGUI interface.
+const inputHandler = projectSettings.match(/^\s*activeInputHandler:\s*(\d+)\s*$/m)?.[1];
+assert.equal(inputHandler, '0',
+  'Chronicles IMGUI requires Input Manager (Old): set activeInputHandler to 0 and restart Unity');
 assert.ok(projectSettings.includes('Android: com.mythicchronicles.alpha'),
   'First Android Alpha must not use the Unity template application ID');
 const buildScript = read('tools/run-unity-local.ps1');
