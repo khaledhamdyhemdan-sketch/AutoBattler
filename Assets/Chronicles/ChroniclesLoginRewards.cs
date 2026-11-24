@@ -20,6 +20,26 @@ namespace MythicChronicles
                 return gold + " GOLD";
             }
         }
+        public string IconName
+        {
+            get
+            {
+                if (astralSeals > 0) return "icon_astral_gems";
+                if (tickets > 0) return "icon_ticket_gold";
+                if (gems > 0) return "icon_gems";
+                return "icon_gold_gems";
+            }
+        }
+        public string ShortLabel
+        {
+            get
+            {
+                if (astralSeals > 0 || tickets > 0)
+                    return "x" + (astralSeals > 0 ? astralSeals : tickets);
+                if (gems > 0) return gems.ToString();
+                return gold.ToString();
+            }
+        }
     }
 
     public static class ChroniclesLoginRewards

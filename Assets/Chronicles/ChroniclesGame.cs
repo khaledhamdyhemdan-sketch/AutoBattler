@@ -332,10 +332,11 @@ namespace MythicChronicles
             GUI.Label(new Rect(25, 85, 490, 34), "An original crossover of myths, legends and histories", subtitle);
             OrnateGuiSkin.Bar(new Rect(15, 112, 510, 55));
             GUIStyle currency = new GUIStyle(tiny) {
-                alignment = TextAnchor.MiddleCenter, fontSize = 15 };
+                alignment = TextAnchor.MiddleLeft, fontSize = 17 };
             currency.normal.textColor = OrnateGuiSkin.GoldBright;
-            GUI.Label(new Rect(28, 124, 485, 30), "GOLD " + progress.Data.gold + "   |   GEMS " +
-                progress.Data.gems + "   |   TICKETS " + progress.Data.summonTickets, currency);
+            DrawCurrency(40, 118, "icon_gold_gems", progress.Data.gold, currency);
+            DrawCurrency(205, 118, "icon_gems", progress.Data.gems, currency);
+            DrawCurrency(350, 118, "icon_ticket_gold", progress.Data.summonTickets, currency);
             if (page != Page.Home && GUI.Button(new Rect(20, 64, 105, 42), "HOME")) GoHome();
             if (!string.IsNullOrEmpty(notice))
             {
@@ -2249,6 +2250,14 @@ namespace MythicChronicles
             GUI.enabled = true;
         }
 
+        private void DrawCurrency(float x, float y, string icon, int amount, GUIStyle style)
+        {
+            Texture2D art = OrnateGuiSkin.Art(icon);
+            if (art != null)
+                GUI.DrawTexture(new Rect(x, y, 40, 40), art, ScaleMode.ScaleToFit, true);
+            GUI.Label(new Rect(x + 46, y + 5, 110, 30), amount.ToString(), style);
+        }
+
         private void Login()
         {
             OrnateGuiSkin.TitlePlate(new Rect(30, 228, 480, 54), "28-DAY LOGIN REWARDS", 24);
@@ -2268,10 +2277,22 @@ namespace MythicChronicles
                 else if (received)
                     GUI.backgroundColor = new Color(.49f, .61f, .60f);
                 GUI.Box(new Rect(x, y, 67, 89), "", OrnateGuiSkin.CellBox());
-                GUI.Label(new Rect(x + 2, y + 6, 63, 20),
-                    "DAY " + (i + 1), cellText);
-                GUI.Label(new Rect(x + 2, y + 26, 63, 58),
-                    received ? "CLAIMED" : gift.Label, cellText);
+                GUI.Label(new Rect(x + 2, y + 4, 63, 16), "DAY " + (i + 1), cellText);
+                Texture2D rewardIcon = OrnateGuiSkin.Art(gift.IconName);
+                if (rewardIcon != null)
+                {
+                    Rect iconRect = new Rect(x + 11.5f, y + 22, 44, 44);
+                    if (received)
+                    {
+                        Color tint = GUI.color;
+                        GUI.color = new Color(1f, 1f, 1f, .45f);
+                        GUI.DrawTexture(iconRect, rewardIcon, ScaleMode.ScaleToFit, true);
+                        GUI.color = tint;
+                    }
+                    else GUI.DrawTexture(iconRect, rewardIcon, ScaleMode.ScaleToFit, true);
+                }
+                GUI.Label(new Rect(x + 2, y + 67, 63, 18),
+                    received ? "CLAIMED" : gift.ShortLabel, cellText);
                 GUI.backgroundColor = previous;
             }
 
