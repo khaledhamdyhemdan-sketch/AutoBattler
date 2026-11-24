@@ -120,3 +120,24 @@ order follows part order in the array (later parts render on top).
   to the pivot. Parts with soft glows are fine when the whole glow travels with the
   part; a glow crossing the seam leaves a faint residual on the body at full swing
   (acceptable: reads as leftover energy).
+
+## Cutout tooling findings (2026-11-24)
+
+Background removal quality varies per portrait. Tested on the UR showcase set
+with `rembg` (onnxruntime, CPU):
+
+- `isnet-general`: clean shapes on ra/anubis; on amaterasu (white robes on a
+  bright painted scene) the matte collapses (max-confidence pixels < 1%, mean
+  alpha ~9/255) and is not rescuable with contrast curves.
+- `u2net`: plausible matte sizes on odin (~13% opaque), hades (~6%), apep
+  (~11%); boundaries not yet visually inspected. amaterasu keeps < 1%.
+- `isnet-anime`: keeps character AND connected background (cave/sky) as one
+  blob on amaterasu; largest-connected-component cleanup does not separate
+  them (hair/ribbons touch the background).
+- `birefnet-general`: model loads (973 MB onnx) but inference is OOM-killed
+  in the 2 GB sandbox; needs a bigger machine or a smaller input pipeline.
+
+Practical rule: run removal per hero, composite on a checkerboard, and only
+build a rig from a cutout that passes visual inspection. Heroes that fail
+removal keep the whole-portrait procedural fallback until better source art
+(transparent background) arrives from the art pipeline.
