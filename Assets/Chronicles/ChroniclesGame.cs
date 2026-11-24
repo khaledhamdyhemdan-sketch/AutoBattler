@@ -320,37 +320,32 @@ namespace MythicChronicles
                 alignment = TextAnchor.MiddleCenter };
             plateStyle.normal.textColor = OrnateGuiSkin.GoldBright;
 
-            // A few contextual side doors, not a wall of oversized offer banners.
-            if (GUI.Button(new Rect(29, 249, 108, 60), "ELITE\nDARK",
-                OrnateGuiSkin.ButtonStyle(false)))
+            // Side doors as named buildings: each door is an original building
+            // cutout that matches its name, with a small label plate beneath.
+            if (HomeDoor(83, 232, "elite_dark", "ELITE DARK"))
             {
                 inTower = false; activeTrialMode = TrialMode.Normal;
                 chapterScroll = Vector2.zero; page = Page.Trials;
             }
-            if (GUI.Button(new Rect(29, 337, 108, 58), "TOWERS",
-                OrnateGuiSkin.ButtonStyle(false)))
+            if (HomeDoor(83, 352, "towers", "TOWERS"))
             {
                 inTower = false; chapterScroll = Vector2.zero;
                 page = Page.Towers;
             }
-            if (GUI.Button(new Rect(29, 425, 108, 58), "LABYRINTH",
-                OrnateGuiSkin.ButtonStyle(false)))
+            if (HomeDoor(83, 472, "labyrinth", "LABYRINTH"))
             {
                 inLabyrinth = false; page = Page.Labyrinth;
             }
-            if (GUI.Button(new Rect(404, 249, 108, 60), "ARENA",
-                OrnateGuiSkin.ButtonStyle(false)))
+            if (HomeDoor(458, 232, "arena", "ARENA"))
             {
                 inArenaTraining = false; page = Page.ArenaTraining;
             }
-            if (GUI.Button(new Rect(404, 337, 108, 58), "WORLD\nBOSS",
-                OrnateGuiSkin.ButtonStyle(false)))
+            if (HomeDoor(458, 352, "world_boss", "WORLD BOSS"))
             {
                 inRaid = false; page = Page.Raid;
             }
-            if (GUI.Button(new Rect(404, 425, 108, 58),
-                progress.CanClaimDailyLogin() ? "FREE GIFT!" : "DAILY GIFT",
-                OrnateGuiSkin.ButtonStyle(false)))
+            if (HomeDoor(458, 472, "free_gift",
+                progress.CanClaimDailyLogin() ? "FREE GIFT!" : "DAILY GIFT"))
                 page = Page.Login;
 
             ChapterDefinition chapter = WorldsCatalog.Chapters[
@@ -395,6 +390,31 @@ namespace MythicChronicles
                 page = Page.Summon;
             if (GUI.Button(new Rect(423, 813, 96, 61), "MORE", navStyle))
                 page = Page.More;
+        }
+
+        // Draws one Home side door: a named-building cutout over the vista
+        // with a small label plate beneath. Returns true when tapped.
+        private bool HomeDoor(float centerX, float y, string icon, string label)
+        {
+            const float iconH = 92f;
+            Texture2D tex = OrnateGuiSkin.Art("door_" + icon);
+            if (tex != null)
+            {
+                float iconW = Mathf.Min(124f,
+                    iconH * tex.width / (float)tex.height);
+                GUI.DrawTexture(
+                    new Rect(centerX - iconW / 2f, y, iconW, iconH),
+                    tex, ScaleMode.ScaleToFit, true);
+            }
+            Rect labelRect = new Rect(centerX - 59f, y + iconH + 2f, 118f, 26f);
+            OrnateGuiSkin.Bar(labelRect);
+            GUIStyle labelStyle = new GUIStyle(subtitle) {
+                alignment = TextAnchor.MiddleCenter };
+            labelStyle.normal.textColor = OrnateGuiSkin.GoldBright;
+            GUI.Label(labelRect, label, labelStyle);
+            return GUI.Button(
+                new Rect(centerX - 62f, y - 4f, 124f, iconH + 34f),
+                "", GUIStyle.none);
         }
 
         private void More()
