@@ -51,6 +51,7 @@ namespace MythicChronicles
         public int passSeasonXp;
         public List<int> passLevelsClaimed = new List<int>();
         public string leaderboardWeekClaimed = "";
+        public GuildState guild = new GuildState();
         public string bountyUtcDay = "";
         public List<ActiveBounty> activeBounties = new List<ActiveBounty>();
         public List<string> claimedBountyIds = new List<string>();
@@ -1659,6 +1660,7 @@ namespace MythicChronicles
             IncrementQuest("win_3");
             IncrementWeekly("win_10");
             AddPassXp(ChroniclesBattlePass.XpPerBattleWin);
+            AddGuildContribution(10);
             if (WorldsCatalog.GetStage(stageId).boss)
                 IncrementWeekly("boss_3");
             if (!Data.stageRewardsClaimed.Contains(stageId))
@@ -1942,6 +1944,115 @@ namespace MythicChronicles
             Data.leaderboardWeekClaimed = week;
             Data.gems += gems;
             label = gems + " gems";
+            Save();
+            return true;
+        }
+
+        public GuildState GuildState()
+        {
+            return Data.guild;
+        }
+
+        public void AddGuildContribution(int amount)
+        {
+            string today = DateTime.UtcNow.ToString("yyyy-MM-dd");
+            if (Data.guild.contributionUtcDay != today)
+            {
+                Data.guild.contributionUtcDay = today;
+                Data.guild.contributionToday = 0;
+            }
+            if (Data.guild.contributionToday >= ChroniclesGuild.DailyContributionCap)
+                return;
+            int added = Math.Min(amount,
+                ChroniclesGuild.DailyContributionCap - Data.guild.contributionToday);
+            Data.guild.contributionToday += added;
+            Data.guild.contributionTotal += added;
+        }
+
+        public int GuildBossAttemptsRemaining()
+        {
+            string today = DateTime.UtcNow.ToString("yyyy-MM-dd");
+            return Data.guild.guildBossUtcDay == today ?
+                Math.Max(0, ChroniclesGuild.BossDailyAttacks -
+                    Data.guild.guildBossAttacksToday) :
+                ChroniclesGuild.BossDailyAttacks;
+        }
+
+        public string BeginGuildBoss()
+        {
+            string today = DateTime.UtcNow.ToString("yyyy-MM-dd");
+            if (GuildBossAttemptsRemaining() <= 0 ||
+                !string.IsNullOrEmpty(Data.guild.guildBossPendingRunId)) return "";
+            if (Data.guild.guildBossUtcDay != today)
+            {
+                Data.guild.guildBossUtcDay = today;
+                Data.guild.guildBossDamageToday = 0;
+                Data.guild.guildBossAttacksToday = 0;
+                Data.guild.guildBossMilestonesClaimed.Clear();
+            }
+            Data.guild.guildBossAttacksToday++;
+            Data.guild.guildBossPendingRunId = Guid.NewGuid().ToString("N");
+            Save();
+            return Data.guild.guildBossPendingRunId;
+        }
+
+        public void AbandonGuildBoss()
+        {
+            // A battle that never started refunds the attack.
+            if (Data.guild.guildBossAttacksToday > 0)
+                Data.guild.guildBossAttacksToday--;
+            Data.guild.guildBossPendingRunId = "";
+            Save();
+        }
+
+        public bool CompleteGuildBoss(string runId, int damage)
+        {
+            if (string.IsNullOrEmpty(runId) ||
+                runId != Data.guild.guildBossPendingRunId) return false;
+            Data.guild.guildBossPendingRunId = "";
+            Data.guild.guildBossDamageToday += Math.Max(0, damage);
+            AddGuildContribution(25);
+            Save();
+            return true;
+        }
+
+        public bool ClaimGuildBossMilestone(int threshold)
+        {
+            int total = Data.guild.guildBossDamageToday +
+                ChroniclesGuild.MemberBossDamageToday(DateTime.UtcNow);
+            if (total < threshold ||
+                Data.guild.guildBossMilestonesClaimed.Contains(threshold))
+                return false;
+            Data.guild.guildBossMilestonesClaimed.Add(threshold);
+            switch (threshold)
+            {
+                case 50000: Data.gold += 500; Data.gems += 20; break;
+                case 150000: Data.gold += 1200; Data.forgeDust += 40; break;
+                case 400000: Data.gems += 80; Data.relicDust += 30; break;
+                case 900000: Data.summonTickets += 2; break;
+                case 1800000: Data.gems += 300; Data.summonTickets += 3; break;
+                default: return false;
+            }
+            Save();
+            return true;
+        }
+
+        public bool ClaimGuildWeeklyChest(out string label)
+        {
+            label = "";
+            DateTime today = DateTime.UtcNow.Date;
+            int daysSinceMonday = ((int)today.DayOfWeek + 6) % 7;
+            string week = today.AddDays(-daysSinceMonday).ToString("yyyy-MM-dd");
+            if (Data.guild.weeklyChestClaimed == week) return false;
+            int weekly = ChroniclesGuild.MemberContributionWeek(DateTime.UtcNow) +
+                Data.guild.contributionTotal;
+            int tier = ChroniclesGuild.WeeklyChestTier(weekly);
+            if (tier == 0) return false;
+            Data.guild.weeklyChestClaimed = week;
+            if (tier == 3) { Data.gems += 500; Data.summonTickets += 3; }
+            else if (tier == 2) { Data.gems += 250; Data.summonTickets += 1; }
+            else { Data.gems += 100; }
+            label = ChroniclesGuild.WeeklyChestLabel(tier);
             Save();
             return true;
         }

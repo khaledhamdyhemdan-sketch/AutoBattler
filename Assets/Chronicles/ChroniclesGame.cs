@@ -8,7 +8,7 @@ namespace MythicChronicles
     // to be replaced by production UI Toolkit art without changing progression logic.
     public sealed class ChroniclesGame : MonoBehaviour
     {
-        private enum Page { Home, More, Events, Shop, Mailbox, Chapters, Trials, Towers, Raid, Labyrinth, ArenaTraining, Bounty, Legacy, ElementalGates, EventAdventure, SeasonPass, Leaderboards, StageStory, Heroes, HeroDetails, Formation, Skins, Gear, Forge, Training, Runes, SignatureWeapon, RelicVault, Summon, Quests, WeeklyQuests, Achievements, Idle, Login, Settings, Battle, Results }
+        private enum Page { Home, More, Events, Shop, Mailbox, Chapters, Trials, Towers, Raid, Labyrinth, ArenaTraining, Bounty, Legacy, ElementalGates, EventAdventure, SeasonPass, Leaderboards, Guild, StageStory, Heroes, HeroDetails, Formation, Skins, Gear, Forge, Training, Runes, SignatureWeapon, RelicVault, Summon, Quests, WeeklyQuests, Achievements, Idle, Login, Settings, Battle, Results }
         private Page page = Page.Home;
         private PlayerProgressService progress;
         private ChroniclesAudioDirector audio;
@@ -20,8 +20,8 @@ namespace MythicChronicles
         private AudioListener menuAudio;
         private int stageId = 1;
         private TrialMode activeTrialMode = TrialMode.Normal;
-        private bool inTower, inRaid, inLabyrinth, inArenaTraining, inElementalGate, inEventAdventure;
-        private string raidRunId = "", labyrinthRunId = "", arenaRunId = "", gateRunId = "", adventureRunId = "";
+        private bool inTower, inRaid, inLabyrinth, inArenaTraining, inElementalGate, inEventAdventure, inGuildBoss;
+        private string raidRunId = "", labyrinthRunId = "", arenaRunId = "", gateRunId = "", adventureRunId = "", guildBossRunId = "";
         private HeroElement selectedGateElement = HeroElement.Fire;
         private int selectedAdventureStage = 1;
         private int selectedLabyrinthChoice;
@@ -237,6 +237,7 @@ namespace MythicChronicles
                 case Page.EventAdventure: EventAdventure(); break;
                 case Page.SeasonPass: SeasonPass(); break;
                 case Page.Leaderboards: Leaderboards(); break;
+                case Page.Guild: Guild(); break;
                 case Page.Events: Events(); break;
                 case Page.Shop: Shop(); break;
                 case Page.Mailbox: Mailbox(); break;
@@ -463,7 +464,7 @@ namespace MythicChronicles
                 "BOUNTY BOARD", "CHRONICLE LEGACY",
                 "ELEMENTAL GATES", "EVENT ADVENTURE",
                 "SEASON PASS", "RANKINGS",
-                "SETTINGS"
+                "GUILD", "SETTINGS"
             };
             int rows = (names.Length + 1) / 2;
             chapterScroll = GUI.BeginScrollView(new Rect(19, 340, 505, 545),
@@ -496,7 +497,8 @@ namespace MythicChronicles
                     case 17: page = Page.EventAdventure; break;
                     case 18: page = Page.SeasonPass; break;
                     case 19: page = Page.Leaderboards; break;
-                    case 20: page = Page.Settings; break;
+                    case 20: page = Page.Guild; break;
+                    case 21: page = Page.Settings; break;
                 }
             }
             GUI.EndScrollView();
@@ -579,7 +581,7 @@ namespace MythicChronicles
                 {
                     inElementalGate = true;
                     inTower = false; inRaid = false; inLabyrinth = false;
-                    inArenaTraining = false; inEventAdventure = false;
+                    inArenaTraining = false; inEventAdventure = false; inGuildBoss = false;
                     activeTrialMode = TrialMode.Normal;
                     selectedGateElement = element;
                     stageId = ChroniclesElementalGates.StageTemplateFor(level);
@@ -746,6 +748,76 @@ namespace MythicChronicles
                     entry.score.ToString(), entry.isPlayer ? subtitle : tiny);
             }
             GUI.EndScrollView();
+        }
+
+        private void Guild()
+        {
+            var guild = progress.GuildState();
+            int weekly = ChroniclesGuild.MemberContributionWeek(System.DateTime.UtcNow) +
+                guild.contributionTotal;
+            int bossTotal = guild.guildBossDamageToday +
+                ChroniclesGuild.MemberBossDamageToday(System.DateTime.UtcNow);
+            GUI.Label(new Rect(26, 214, 488, 63), "GUILD", heading);
+            GUI.Label(new Rect(29, 270, 479, 62),
+                ChroniclesGuild.GuildName + "  •  LEVEL " +
+                ChroniclesGuild.GuildLevel(guild.contributionTotal) +
+                "  •  " + (ChroniclesGuild.MemberCount) + " MEMBERS" +
+                "\nOffline prototype - live guilds arrive with the server.", subtitle);
+            GUI.Box(new Rect(26, 348, 488, 108), "");
+            GUI.Label(new Rect(44, 358, 300, 88),
+                "WEEKLY ACTIVITY: " + weekly +
+                "\nYour contribution today: " + guild.contributionToday + "/" +
+                ChroniclesGuild.DailyContributionCap +
+                "\n" + ChroniclesGuild.WeeklyChestLabel(
+                    ChroniclesGuild.WeeklyChestTier(weekly)), tiny);
+            string chestLabel;
+            GUI.enabled = ChroniclesGuild.WeeklyChestTier(weekly) > 0;
+            if (GUI.Button(new Rect(360, 378, 136, 56), "CHEST"))
+                notice = progress.ClaimGuildWeeklyChest(out chestLabel) ?
+                    "Guild chest: " + chestLabel :
+                    "Chest already claimed this week.";
+            GUI.enabled = true;
+            GUI.Box(new Rect(26, 470, 488, 108), "");
+            GUI.Label(new Rect(44, 480, 300, 88),
+                "GUILD BOSS - DAILY" +
+                "\nGuild damage today: " + bossTotal.ToString("N0") +
+                " (yours " + guild.guildBossDamageToday.ToString("N0") + ")" +
+                "\nAttacks left: " + progress.GuildBossAttemptsRemaining() + "/" +
+                ChroniclesGuild.BossDailyAttacks, tiny);
+            GUI.enabled = progress.GuildBossAttemptsRemaining() > 0 &&
+                progress.Data.lastClearedStage >= 10 &&
+                string.IsNullOrEmpty(guild.guildBossPendingRunId);
+            if (GUI.Button(new Rect(360, 500, 136, 56), "ATTACK"))
+            {
+                inGuildBoss = true;
+                inRaid = false; inTower = false; inLabyrinth = false;
+                inArenaTraining = false; inElementalGate = false;
+                inEventAdventure = false;
+                activeTrialMode = TrialMode.Normal;
+                stageId = ChroniclesRaids.StageForDay(System.DateTime.UtcNow).id;
+                notice = "Deal as much damage as you can.";
+                page = Page.Formation;
+            }
+            GUI.enabled = true;
+            float my = 592f;
+            foreach (int threshold in ChroniclesGuild.BossMilestones)
+            {
+                bool claimed = guild.guildBossMilestonesClaimed.Contains(threshold);
+                bool ready = bossTotal >= threshold && !claimed;
+                GUI.Box(new Rect(26, my, 488, 50), "");
+                GUI.Label(new Rect(44, my + 5, 310, 40),
+                    threshold.ToString("N0") + " damage\n" +
+                    ChroniclesGuild.BossMilestoneLabel(threshold), tiny);
+                GUI.enabled = ready;
+                if (GUI.Button(new Rect(402, my + 8, 96, 34),
+                    claimed ? "TAKEN" : "CLAIM"))
+                    notice = progress.ClaimGuildBossMilestone(threshold) ?
+                        "Guild boss milestone: " +
+                        ChroniclesGuild.BossMilestoneLabel(threshold) :
+                        "Guild has not reached that damage yet.";
+                GUI.enabled = true;
+                my += 56f;
+            }
         }
 
         private void Bounty()
@@ -916,7 +988,7 @@ namespace MythicChronicles
                 inLabyrinth = false;
                 inRaid = false;
                 inTower = false;
-                inElementalGate = false; inEventAdventure = false;
+                inElementalGate = false; inEventAdventure = false; inGuildBoss = false;
                 activeTrialMode = TrialMode.Normal;
                 notice = "Choose five heroes for the NPC duel.";
                 page = Page.Formation;
@@ -983,7 +1055,7 @@ namespace MythicChronicles
                         inLabyrinth = true;
                         inRaid = false;
                         inTower = false;
-                        inElementalGate = false; inEventAdventure = false;
+                        inElementalGate = false; inEventAdventure = false; inGuildBoss = false;
                         stageId = option.stageId;
                         activeTrialMode = TrialMode.Normal;
                         page = Page.Formation;
@@ -1029,7 +1101,7 @@ namespace MythicChronicles
             {
                 inRaid = true;
                 inTower = false;
-                inElementalGate = false; inEventAdventure = false;
+                inElementalGate = false; inEventAdventure = false; inGuildBoss = false;
                 activeTrialMode = TrialMode.Normal;
                 stageId = today.id;
                 notice = "Attempt is consumed when the battle starts.";
@@ -1136,7 +1208,7 @@ namespace MythicChronicles
             selectedTowerOrigin = origin;
             selectedTowerFloor = floor;
             inTower = true;
-            inElementalGate = false; inEventAdventure = false;
+            inElementalGate = false; inEventAdventure = false; inGuildBoss = false;
             activeTrialMode = TrialMode.Normal;
             stageId = stage.id;
             notice = "Select five heroes, including two from " + origin + ".";
@@ -2202,7 +2274,7 @@ namespace MythicChronicles
             {
                 inTower = false; inRaid = false; inLabyrinth = false;
                 inArenaTraining = false;
-                inElementalGate = false; inEventAdventure = false;
+                inElementalGate = false; inEventAdventure = false; inGuildBoss = false;
                 activeTrialMode = TrialMode.Normal;
                 page = Page.Chapters;
             }
@@ -2285,6 +2357,9 @@ namespace MythicChronicles
                     selectedAdventureStage) &&
                     stageId == ChroniclesEventAdventures.StageTemplateFor(
                         selectedAdventureStage) :
+                inGuildBoss ? progress.Data.lastClearedStage >= 10 &&
+                    progress.GuildBossAttemptsRemaining() > 0 &&
+                    stageId == ChroniclesRaids.StageForDay(DateTime.UtcNow).id :
                 inTower ?
                     progress.CanEnterTower(selectedTowerOrigin, selectedTowerFloor,
                         progress.Data.selectedTeam) :
@@ -2325,13 +2400,19 @@ namespace MythicChronicles
                 if (string.IsNullOrEmpty(adventureRunId))
                 { notice = "That adventure stage is not available."; return; }
             }
+            if (inGuildBoss)
+            {
+                guildBossRunId = progress.BeginGuildBoss();
+                if (string.IsNullOrEmpty(guildBossRunId))
+                { notice = "No guild boss attacks remain."; return; }
+            }
             if (battle != null) Destroy(battle.gameObject);
             battle = new GameObject("Chronicles - Battle").AddComponent<ChroniclesBattle>();
             try
             {
                 battle.Initialize(stage, chosen, progress.Data, OnBattleFinished,
                     activeTrialMode, inTower ? (Origin?)selectedTowerOrigin : null,
-                    inTower ? selectedTowerFloor : 0, inRaid,
+                    inTower ? selectedTowerFloor : 0, inRaid || inGuildBoss,
                     labyrinthOption, inLabyrinth ?
                         progress.LabyrinthState().blessingStacks : 0,
                     inArenaTraining ? progress.ArenaTrainingState().rating : -1);
@@ -2353,6 +2434,9 @@ namespace MythicChronicles
                 if (inEventAdventure && !string.IsNullOrEmpty(adventureRunId))
                     progress.AbandonAdventure();
                 adventureRunId = "";
+                if (inGuildBoss && !string.IsNullOrEmpty(guildBossRunId))
+                    progress.AbandonGuildBoss();
+                guildBossRunId = "";
                 CleanupBattle();
                 notice = "Failed to create battle: " + ex.Message;
                 return;
@@ -2402,6 +2486,16 @@ namespace MythicChronicles
                 else notice = victory ? "Stage cleared: " + adventureReward :
                     "The adventure party falls. Power up and retry.";
             }
+            else if (inGuildBoss)
+            {
+                int bossDamage = battle == null ? 0 : battle.RaidDamageScore;
+                bool savedBoss = progress.CompleteGuildBoss(guildBossRunId, bossDamage);
+                guildBossRunId = "";
+                lastVictory = bossDamage > 0;
+                if (!savedBoss) notice = "Guild boss result could not be saved.";
+                else notice = "Guild boss hit for " +
+                    bossDamage.ToString("N0") + " damage.";
+            }
             else if (inRaid)
             {
                 lastRaidDamage = battle == null ? 0 : battle.RaidDamageScore;
@@ -2435,6 +2529,7 @@ namespace MythicChronicles
                 inLabyrinth ? "WEEKLY LABYRINTH • ROOM " +
                     progress.LabyrinthState().nextRoom :
                 inRaid ? "DAILY WORLD BOSS" :
+                inGuildBoss ? "GUILD BOSS • DAILY ASSAULT" :
                 inEventAdventure ? "EVENT ADVENTURE • STAGE " + selectedAdventureStage :
                 inElementalGate ? ChroniclesElementalGates.GateName(selectedGateElement).ToUpperInvariant() +
                     " • LEVEL " + progress.GateState(selectedGateElement).unlockedLevel :
@@ -2571,6 +2666,7 @@ namespace MythicChronicles
             }
             StageDefinition stage = WorldsCatalog.GetStage(stageId);
             GUI.Label(new Rect(35, 362, 470, 100),
+                inGuildBoss ? "GUILD BOSS\nDamage is added to the guild total" :
                 inEventAdventure ?
                     ChroniclesEventAdventures.Active(DateTime.UtcNow).title +
                     "\nEvent adventure - stage " + selectedAdventureStage :
@@ -2654,6 +2750,11 @@ namespace MythicChronicles
                 progress.AbandonAdventure();
                 adventureRunId = "";
             }
+            if (inGuildBoss && !string.IsNullOrEmpty(guildBossRunId))
+            {
+                progress.AbandonGuildBoss();
+                guildBossRunId = "";
+            }
             if (menuCamera != null) menuCamera.enabled = true;
             if (menuAudio != null) menuAudio.enabled = true;
         }
@@ -2677,12 +2778,14 @@ namespace MythicChronicles
             inRaid = false;
             inElementalGate = false;
             inEventAdventure = false;
+            inGuildBoss = false;
             inLabyrinth = false;
             inArenaTraining = false;
             raidRunId = "";
             labyrinthRunId = "";
             arenaRunId = "";
             adventureRunId = "";
+            guildBossRunId = "";
             page = Page.Home;
             if (audio != null) audio.SetState(AudioScene.Menu);
         }
