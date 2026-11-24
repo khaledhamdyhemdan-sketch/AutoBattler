@@ -38,6 +38,7 @@ namespace MythicChronicles
         private Material goldMaterial, groundMaterial, redMaterial;
         private Camera cam;
         private StageDefinition stage;
+        private Origin arenaOrigin;
         private Action<bool> finished;
         private bool ended, raidMode;
         private float raidDamage;
@@ -60,6 +61,8 @@ namespace MythicChronicles
             raidDamage = 0f;
             if (chosen == null || squad == null || squad.Count != 5) throw new ArgumentException("Battle requires stage and five heroes.");
             stage = chosen; finished = onFinished;
+            arenaOrigin = towerOrigin.HasValue ?
+                towerOrigin.Value : WorldsCatalog.Chapters[stage.chapter - 1].origin;
             BuildArena();
             for (int i = 0; i < 5; i++)
             {
@@ -295,6 +298,23 @@ namespace MythicChronicles
             AudioListener activeListener = FindFirstObjectByType<AudioListener>();
             if (activeListener == null || !activeListener.isActiveAndEnabled)
                 cameraObject.AddComponent<AudioListener>();
+            // Authored battlefield backdrop behind the 3D arena (falls back to
+            // the solid camera clear color when the art is missing).
+            Texture2D battlefield = ChroniclesStageArt.Background(arenaOrigin);
+            if (battlefield != null)
+            {
+                GameObject backdrop = GameObject.CreatePrimitive(PrimitiveType.Quad);
+                backdrop.name = "Battlefield Backdrop";
+                Collider backdropCollider = backdrop.GetComponent<Collider>();
+                if (backdropCollider != null) Destroy(backdropCollider);
+                backdrop.transform.SetParent(transform);
+                backdrop.transform.position = new Vector3(0f, -13f, 18f);
+                backdrop.transform.localScale = new Vector3(18f, 33f, 1f);
+                var backdropMaterial = new Material(Shader.Find("Unlit/Texture"));
+                backdropMaterial.mainTexture = battlefield;
+                backdrop.GetComponent<MeshRenderer>().material = backdropMaterial;
+            }
+
             GameObject lightObject = new GameObject("Chronicles Arena Light");
             lightObject.transform.SetParent(transform);
             Light light = lightObject.AddComponent<Light>();

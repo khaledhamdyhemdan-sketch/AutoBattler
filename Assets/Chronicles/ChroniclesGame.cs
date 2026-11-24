@@ -126,6 +126,24 @@ namespace MythicChronicles
             GUI.skin.box.fontSize = 14;
             GUI.skin.box.wordWrap = true;
             GUI.skin.box.normal.textColor = new Color(.90f, .87f, .98f);
+            // Authored ornate art overrides the procedural plates globally, so
+            // every page gets framed buttons and panels without per-page edits.
+            Texture2D btnArt = OrnateGuiSkin.Art("btn_primary");
+            if (btnArt != null)
+            {
+                GUI.skin.button.normal.background = btnArt;
+                GUI.skin.button.hover.background = btnArt;
+                GUI.skin.button.active.background = btnArt;
+                GUI.skin.button.focused.background = btnArt;
+                GUI.skin.button.border = new RectOffset(0, 0, 0, 0);
+                GUI.skin.button.normal.textColor = OrnateGuiSkin.GoldBright;
+            }
+            Texture2D panelArt = OrnateGuiSkin.Art("panel_frame");
+            if (panelArt != null)
+            {
+                GUI.skin.box.normal.background = panelArt;
+                GUI.skin.box.border = new RectOffset(0, 0, 0, 0);
+            }
             bigButton = new GUIStyle(GUI.skin.button) {
                 fontSize = 18, fontStyle = FontStyle.Bold,
                 alignment = TextAnchor.MiddleCenter, wordWrap = true };
@@ -1831,7 +1849,7 @@ namespace MythicChronicles
         {
             if (battle == null) return;
             battle.DrawWorldLabels(scale);
-            GUI.Box(new Rect(12, 22, 516, 106), "");
+            OrnateGuiSkin.Bar(new Rect(12, 22, 516, 106));
             GUI.Label(new Rect(20, 29, 500, 45),
                 inArenaTraining ? "ARENA TRAINING • NPC OPPONENT" :
                 inLabyrinth ? "WEEKLY LABYRINTH • ROOM " +
@@ -1845,11 +1863,14 @@ namespace MythicChronicles
                 "TIME " + Mathf.CeilToInt(battle.SecondsLeft) + " s" +
                 (inRaid ? "   •   BOSS DAMAGE " + battle.RaidDamageScore : ""),
                 subtitle);
-            if (GUI.Button(new Rect(20, 837, 153, 65), battle.Paused ? "RESUME" : "PAUSE"))
+            if (GUI.Button(new Rect(20, 837, 153, 65), battle.Paused ? "RESUME" : "PAUSE",
+                OrnateGuiSkin.ButtonStyle(false)))
                 battle.Paused = !battle.Paused;
-            if (GUI.Button(new Rect(184, 837, 159, 65), "SPEED x" + battle.Speed))
+            if (GUI.Button(new Rect(184, 837, 159, 65), "SPEED x" + battle.Speed,
+                OrnateGuiSkin.ButtonStyle(false)))
                 battle.Speed = battle.Speed >= 2f ? 1f : 2f;
-            if (GUI.Button(new Rect(354, 837, 160, 65), "RETREAT"))
+            if (GUI.Button(new Rect(354, 837, 160, 65), "RETREAT",
+                OrnateGuiSkin.ButtonStyle(false)))
             {
                 CleanupBattle();
                 page = Page.Formation;
@@ -1859,12 +1880,12 @@ namespace MythicChronicles
         private void Results()
         {
             GUI.DrawTexture(new Rect(0, 0, 540, 960), panelTex);
+            OrnateGuiSkin.ScreenBackground("bg_menu");
             if (inArenaTraining)
             {
                 ArenaTrainingProgress arena = progress.ArenaTrainingState();
-                GUI.Label(new Rect(24, 258, 490, 89),
-                    lastVictory ? "ARENA TRAINING WIN" : "ARENA TRAINING LOSS",
-                    heading);
+                OrnateGuiSkin.Title(new Rect(24, 245, 490, 70),
+                    lastVictory ? "ARENA TRAINING WIN" : "ARENA TRAINING LOSS", 34);
                 GUI.Label(new Rect(38, 394, 465, 135),
                     "LOCAL RATING: " + arena.rating +
                     "\nTIER: " + ChroniclesArenaTraining.Tier(arena.rating) +
@@ -1885,8 +1906,8 @@ namespace MythicChronicles
             if (inLabyrinth)
             {
                 LabyrinthProgress run = progress.LabyrinthState();
-                GUI.Label(new Rect(20, 250, 500, 96),
-                    lastVictory ? "LABYRINTH CLEARED" : "LABYRINTH DEFEAT", heading);
+                OrnateGuiSkin.Title(new Rect(20, 245, 500, 70),
+                    lastVictory ? "LABYRINTH CLEARED" : "LABYRINTH DEFEAT", 34);
                 GUI.Label(new Rect(40, 376, 460, 150),
                     "NEXT ROOM: " + Mathf.Min(ChroniclesLabyrinth.Rooms, run.nextRoom) +
                     "\nLIVES: " + run.lives + "/" + ChroniclesLabyrinth.StartingLives +
@@ -1909,7 +1930,8 @@ namespace MythicChronicles
             }
             if (inRaid)
             {
-                GUI.Label(new Rect(25, 255, 490, 90), "WORLD BOSS COMPLETE", heading);
+                OrnateGuiSkin.Title(new Rect(25, 245, 490, 70),
+                    "WORLD BOSS COMPLETE", 34);
                 GUI.Label(new Rect(34, 390, 472, 135),
                     "DAMAGE DEALT: " + lastRaidDamage +
                     "\nBEST TODAY: " + progress.Data.raidBestDamage +
@@ -1928,7 +1950,8 @@ namespace MythicChronicles
                     GoHome();
                 return;
             }
-            GUI.Label(new Rect(25, 248, 490, 95), lastVictory ? "VICTORY!" : "DEFEAT", heading);
+            OrnateGuiSkin.Title(new Rect(25, 235, 490, 80),
+                lastVictory ? "VICTORY!" : "DEFEAT", 44);
             StageDefinition stage = WorldsCatalog.GetStage(stageId);
             GUI.Label(new Rect(35, 362, 470, 100),
                 inTower ? ChroniclesTowers.DisplayName(selectedTowerOrigin) +
