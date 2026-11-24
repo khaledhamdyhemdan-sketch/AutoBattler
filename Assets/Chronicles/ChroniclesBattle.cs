@@ -1207,13 +1207,13 @@ namespace MythicChronicles
                 float x = point.x / uiScale - 38f;
                 float y = (Screen.height - point.y) / uiScale - 15f;
                 // Illustrated name plate instead of a flat code box.
-                Texture2D plate = OrnateGuiSkin.Art("bar_plate");
+                Texture2D unitPlate = OrnateGuiSkin.Art("bar_plate");
                 Color oldC = GUI.color;
-                if (plate != null)
+                if (unitPlate != null)
                 {
                     GUI.color = new Color(.14f, .12f, .26f, .95f);
                     GUI.DrawTexture(new Rect(x - 4f, y - 3f, 84f, 36f),
-                        plate, ScaleMode.StretchToFill);
+                        unitPlate, ScaleMode.StretchToFill);
                 }
                 else
                 {
