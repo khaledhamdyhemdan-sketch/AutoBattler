@@ -45,6 +45,7 @@ namespace MythicChronicles
         private Camera cam;
         private StageDefinition stage;
         private Origin arenaOrigin;
+        private Origin? playerPantheon;
         private Action<bool> finished;
         private bool ended, raidMode;
         private float raidDamage;
@@ -89,6 +90,29 @@ namespace MythicChronicles
             bannerT = 99f;
             arenaOrigin = towerOrigin.HasValue ?
                 towerOrigin.Value : WorldsCatalog.Chapters[stage.chapter - 1].origin;
+            // Mono-pantheon team: the battle moves to their mythology's stage and
+            // the opening banner announces the unity bonus.
+            playerPantheon = null;
+            if (squad != null && squad.Count >= 5)
+            {
+                var squadHeroes = new List<HeroDefinition>();
+                foreach (OwnedHero owned in squad)
+                {
+                    HeroDefinition def = WorldsCatalog.FindHero(owned.id);
+                    if (def != null) squadHeroes.Add(def);
+                }
+                if (squadHeroes.Count == squad.Count)
+                {
+                    TeamSynergyBonus probe = TeamSynergy.Calculate(squadHeroes);
+                    if (probe.monoPantheon)
+                    {
+                        playerPantheon = probe.pantheonOrigin;
+                        if (!towerOrigin.HasValue) arenaOrigin = probe.pantheonOrigin;
+                        bannerText = "PANTHEON UNITY • " +
+                            probe.pantheonOrigin.ToString().ToUpperInvariant();
+                    }
+                }
+            }
             BuildArena();
             for (int i = 0; i < 5; i++)
             {
@@ -207,6 +231,7 @@ namespace MythicChronicles
                 }
             }
             ApplySynergy();
+            CreatePantheonAuras();
             ApplyRelic(savedProgress);
             if (labyrinth != null && labyrinthBlessings > 0)
                 foreach (Combatant unit in units)
@@ -231,6 +256,51 @@ namespace MythicChronicles
                 combatant.hp = combatant.maxHp;
                 combatant.energy = Mathf.Min(100f,
                     combatant.energy + relic.startingEnergy * power);
+            }
+        }
+
+        private void CreatePantheonAuras()
+        {
+            if (!playerPantheon.HasValue) return;
+            Color auraColor;
+            switch (playerPantheon.Value)
+            {
+                case Origin.Egypt: auraColor = new Color(1f, .78f, .25f); break;
+                case Origin.Greece: auraColor = new Color(.55f, .75f, 1f); break;
+                case Origin.Norse: auraColor = new Color(.55f, .9f, 1f); break;
+                case Origin.Japan: auraColor = new Color(1f, .35f, .4f); break;
+                case Origin.China: auraColor = new Color(.4f, .95f, .6f); break;
+                case Origin.EastAsia: auraColor = new Color(.45f, .95f, .85f); break;
+                case Origin.Folklore: auraColor = new Color(.8f, .5f, 1f); break;
+                default: auraColor = new Color(1f, .85f, .5f); break;
+            }
+            Shader shader = ChroniclesShaders.FindAny(
+                "Legacy Shaders/Particles/Additive", "Particles/Additive",
+                "Unlit/Transparent", "Unlit/Color");
+            if (shader == null) return;
+            foreach (Combatant fighter in units)
+            {
+                if (fighter.side != 0 || fighter.visual == null) continue;
+                GameObject ring = GameObject.CreatePrimitive(PrimitiveType.Quad);
+                ring.name = "pantheon unity aura";
+                Collider ringCollider = ring.GetComponent<Collider>();
+                if (ringCollider != null) Destroy(ringCollider);
+                ring.transform.SetParent(fighter.visual.transform, false);
+                ring.transform.localPosition = new Vector3(0f, .06f, 0f);
+                ring.transform.localRotation = Quaternion.Euler(90f, 0f, 0f);
+                ring.transform.localScale = Vector3.one * 1.6f;
+                var material = new Material(shader);
+                material.color = new Color(auraColor.r, auraColor.g, auraColor.b, .55f);
+                if (material.HasProperty("_TintColor"))
+                    material.SetColor("_TintColor",
+                        new Color(auraColor.r * 1.4f, auraColor.g * 1.4f, auraColor.b * 1.4f, .5f));
+                Renderer ringRenderer = ring.GetComponent<Renderer>();
+                if (ringRenderer != null)
+                {
+                    ringRenderer.sharedMaterial = material;
+                    ringRenderer.shadowCastingMode =
+                        UnityEngine.Rendering.ShadowCastingMode.Off;
+                }
             }
         }
 
