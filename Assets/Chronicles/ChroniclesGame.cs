@@ -336,29 +336,29 @@ namespace MythicChronicles
             // The doors are the buildings inside the scene itself: invisible
             // hotspots over each named building, with a glowing label plate.
             if (SceneDoor(new Rect(100, 170, 110, 135),
-                new Rect(90, 308, 130, 28), "ARENA"))
+                new Rect(103, 288, 130, 28), "ARENA"))
             {
                 inArenaTraining = false; page = Page.ArenaTraining;
             }
             if (SceneDoor(new Rect(90, 370, 180, 180),
-                new Rect(115, 545, 130, 28), "ELITE DARK"))
+                new Rect(120, 516, 130, 28), "ELITE DARK"))
             {
                 inTower = false; activeTrialMode = TrialMode.Normal;
                 chapterScroll = Vector2.zero; page = Page.Trials;
             }
             if (SceneDoor(new Rect(415, 190, 120, 150),
-                new Rect(410, 330, 130, 28), "LABYRINTH"))
+                new Rect(408, 316, 130, 28), "LABYRINTH"))
             {
                 inLabyrinth = false; page = Page.Labyrinth;
             }
             if (SceneDoor(new Rect(415, 395, 120, 170),
-                new Rect(410, 555, 130, 28), "TOWERS"))
+                new Rect(408, 548, 130, 28), "TOWERS"))
             {
                 inTower = false; chapterScroll = Vector2.zero;
                 page = Page.Towers;
             }
             if (SceneDoor(new Rect(210, 70, 130, 170),
-                new Rect(205, 255, 130, 28), "WORLD BOSS"))
+                new Rect(207, 238, 130, 28), "WORLD BOSS"))
             {
                 inRaid = false; page = Page.Raid;
             }
