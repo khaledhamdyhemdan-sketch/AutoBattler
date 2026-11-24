@@ -1,23 +1,23 @@
-name: Capture Unity license file (internal)
+name: Capture Unity license state (internal)
 on: workflow_dispatch
 permissions:
   issues: write
 jobs:
   capture:
-    name: Activate Personal license inside builder container and artifact the ulf
+    name: Activate + editor smoke + state capture
     runs-on: ubuntu-latest
     container: unityci/editor:ubuntu-6000.3.0f1-android-4.0.0
-    timeout-minutes: 30
+    timeout-minutes: 35
     steps:
+      - name: Fixed machine-id
+        run: echo "9f1c7a2b4d3e5f608192a4b6c8d0e2f4" > /etc/machine-id
       - name: Install unity-cli
         run: |
-          (curl -fsSL https://public-cdn.cloud.unity3d.com/hub/prod/cli/install.sh || (apt-get update -qq && apt-get install -y -qq curl ca-certificates >/dev/null && curl -fsSL https://public-cdn.cloud.unity3d.com/hub/prod/cli/install.sh)) | UNITY_CLI_CHANNEL=beta bash
-          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+          curl -fsSL https://public-cdn.cloud.unity3d.com/hub/prod/cli/install.sh | UNITY_CLI_CHANNEL=beta bash
           find / -name unity -type f -path "*bin*" 2>/dev/null | head -3
       - name: Start login and publish URL
         run: |
           export PATH="$HOME/.local/bin:$HOME/.unity/bin:/root/.local/bin:$PATH"
-          which unity || { find / -name unity -type f -path "*bin*" 2>/dev/null | head -3; exit 1; }
           unity auth login --insecure-storage --no-banner > /tmp/auth.log 2>&1 &
           echo $! > /tmp/login.pid
           URL=""
@@ -32,7 +32,7 @@ jobs:
           import json, os, sys, urllib.request
           req = urllib.request.Request(
             "https://api.github.com/repos/%s/issues/8/comments" % os.environ["GITHUB_REPOSITORY"],
-            data=json.dumps({"body": "CAPTURE_LOGIN_URL: " + sys.argv[1]}).encode(),
+            data=json.dumps({"body": "CAPTURE2_LOGIN_URL: " + sys.argv[1]}).encode(),
             headers={"Authorization": "Bearer " + os.environ["TOKEN"], "Accept": "application/vnd.github+json"},
             method="POST")
           print("comment posted:", json.load(urllib.request.urlopen(req))["id"])
@@ -46,8 +46,8 @@ jobs:
           DONE=timeout
           for i in $(seq 1 56); do
             sleep 15
+            if unity auth status 2>/dev/null | grep -qi "signed in"; then DONE=status-signed-in; break; fi
             if ! kill -0 $PID 2>/dev/null; then DONE=process-exited; break; fi
-            if grep -qiE 'successfully' /tmp/auth.log; then DONE=log-success; break; fi
           done
           echo "wait_result=$DONE"
           unity auth status || true
@@ -56,21 +56,32 @@ jobs:
           export PATH="$HOME/.local/bin:$HOME/.unity/bin:/root/.local/bin:$PATH"
           unity license activate --personal --accept-eula
           unity license status || true
-      - name: Locate and artifact the license file
+      - name: Enumerate licensing state
         run: |
-          echo "machine-id: $(cat /etc/machine-id 2>/dev/null || echo none)"
-          find / -name "Unity_lic.ulf" 2>/dev/null | head -5
-          find $HOME -path "*unity3d*" -name "*.ulf" 2>/dev/null | head -5
-          ls -la $HOME/.local/share/unity3d/Unity/ 2>/dev/null || true
-          mkdir -p /tmp/licout
-          FOUND=$(find / -name "Unity_lic.ulf" 2>/dev/null | head -1)
-          if [ -z "$FOUND" ]; then echo "NO_ULF_FOUND"; exit 1; fi
-          cp "$FOUND" /tmp/licout/Unity_lic.ulf
-          cp /etc/machine-id /tmp/licout/machine-id.txt 2>/dev/null || true
-          echo "captured: $FOUND"
+          echo "== candidate state files =="
+          find / \( -name "*.ulf" -o -name "*.lic" -o -iname "*license*" -o -iname "*entitlement*" \) -type f 2>/dev/null | grep -viE "node_modules|/doc/|/share/doc|copyright|/proc/|/sys/" | head -40
+          echo "== home tree =="
+          find $HOME -type f 2>/dev/null | head -40
+          echo "== /usr/share/unity3d /root =="
+          ls -laR /usr/share/unity3d 2>/dev/null | head -20
+      - name: Editor license smoke test
+        run: |
+          ls /opt/unity/Editor/Unity 2>/dev/null || find / -name Unity -type f -path "*Editor*" 2>/dev/null | head -3
+          /opt/unity/Editor/Unity -batchmode -nographics -quit -logFile /tmp/ed.log || true
+          echo "== editor log licensing lines =="
+          grep -iE "licen|entitle|serial" /tmp/ed.log | head -25
+          echo "== tail =="
+          tail -5 /tmp/ed.log
+      - name: Pack state
+        run: |
+          mkdir -p /tmp/stateout
+          cp /tmp/ed.log /tmp/stateout/editor.log 2>/dev/null || true
+          tar czf /tmp/stateout/home-state.tgz -C / github/home/.local github/home/.config github/home/.unity 2>/dev/null || true
+          tar czf /tmp/stateout/sys-state.tgz /usr/share/unity3d /var/lib/unity3d /etc/machine-id 2>/dev/null || true
+          ls -la /tmp/stateout/
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: unity-license-ulf
-          path: /tmp/licout/
+          name: unity-license-state
+          path: /tmp/stateout/
           retention-days: 1
