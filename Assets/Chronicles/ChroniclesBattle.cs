@@ -30,6 +30,7 @@ namespace MythicChronicles
             public Vector3 world;
             public float remaining;
             public Color color;
+            public bool big;
         }
 
         private readonly List<Combatant> units = new List<Combatant>();
@@ -49,6 +50,13 @@ namespace MythicChronicles
         public bool Complete { get { return ended; } }
         public float SecondsLeft { get { return Mathf.Max(0f, 90f - elapsed); } }
         public float Speed { get; set; } = 1f;
+        private float shakeT, shakeAmp, hitStopT;
+        private Vector3 camBase = new Vector3(0f, 11.5f, -13f);
+        private string cutInHero;
+        private string cutInSkill;
+        private float cutInTime = 99f;
+        private readonly Dictionary<string, Texture2D> cutInPortraits = new Dictionary<string, Texture2D>();
+        private GUIStyle cutInNameStyle, cutInSkillStyle, popupBigStyle;
 
         public void Initialize(StageDefinition chosen, IList<OwnedHero> squad,
             PlayerSave savedProgress, Action<bool> onFinished,
@@ -294,6 +302,7 @@ namespace MythicChronicles
             cam.backgroundColor = new Color(.055f, .05f, .10f);
             cam.fieldOfView = 52f;
             cameraObject.transform.position = new Vector3(0f, 11.5f, -13f);
+            camBase = cameraObject.transform.position;
             cameraObject.transform.LookAt(new Vector3(0f, 0f, 0f));
             AudioListener activeListener = FindFirstObjectByType<AudioListener>();
             if (activeListener == null || !activeListener.isActiveAndEnabled)
@@ -373,6 +382,19 @@ namespace MythicChronicles
         {
             if (ended || Paused) return;
             float dt = Mathf.Min(.05f, Time.deltaTime * Speed);
+            if (hitStopT > 0f)
+            {
+                hitStopT -= Time.unscaledDeltaTime;
+                dt *= .15f;
+            }
+            if (cutInTime < 3f) cutInTime += dt;
+            if (shakeT > 0f && cam != null)
+            {
+                shakeT -= Time.unscaledDeltaTime;
+                Vector2 shakeOffset = UnityEngine.Random.insideUnitCircle * shakeAmp * Mathf.Max(0f, shakeT);
+                cam.transform.position = camBase + new Vector3(shakeOffset.x, shakeOffset.y, 0f);
+                if (shakeT <= 0f) cam.transform.position = camBase;
+            }
             if (introTime > 0f)
             {
                 introTime -= dt;
@@ -547,6 +569,7 @@ namespace MythicChronicles
                     break;
             }
             boss.visual.Play(HeroAnimation.Ultimate);
+            CutIn(boss, string.Empty);
             HeroSkillEffects.Play(boss.hero, true, boss.model.transform,
                 target == null ? null : target.model.transform);
         }
@@ -587,10 +610,10 @@ namespace MythicChronicles
             return found;
         }
 
-        private void Floating(string message, Combatant target, Color color)
+        private void Floating(string message, Combatant target, Color color, bool big = false)
         {
             if (popups.Count >= 22) popups.RemoveAt(0);
-            popups.Add(new FloatingText { text = message, color = color, remaining = .9f,
+            popups.Add(new FloatingText { text = message, color = color, big = big, remaining = .9f,
                 world = target.model.transform.position + Vector3.up * 1.6f });
         }
 
@@ -732,6 +755,16 @@ namespace MythicChronicles
             Floating("SHIELD", target, Color.cyan);
         }
 
+        private void CutIn(Combatant actor, string skillName)
+        {
+            cutInHero = actor.hero.id;
+            cutInSkill = skillName;
+            cutInTime = 0f;
+            hitStopT = .16f;
+            shakeT = .28f;
+            shakeAmp = .35f;
+        }
+
         private void CastSkill(Combatant actor, Combatant target)
         {
             HeroKit kit = HeroAbilityCatalog.For(actor.hero.id);
@@ -751,12 +784,13 @@ namespace MythicChronicles
             HeroKit kit = HeroAbilityCatalog.For(actor.hero.id);
             if (kit == null) { Hit(actor, target, actor.attack * 3f); return; }
             actor.visual.Play(HeroAnimation.Ultimate);
+            CutIn(actor, kit != null ? kit.ultimateName : string.Empty);
             HeroSkillEffects.Play(actor.hero, true,
                 actor.model.transform, target == null ? null : target.model.transform);
             if (ChroniclesAudioDirector.Instance != null)
                 ChroniclesAudioDirector.Instance.HeroUltimate(actor.hero.id);
             CastEffect(actor, target, kit.ultimate, kit.ultimatePower * actor.ultimateFactor, true);
-            Floating(kit.ultimateName, actor, new Color(1f, .75f, .22f));
+            Floating(kit.ultimateName, actor, new Color(1f, .75f, .22f), true);
         }
 
         private void CastEffect(Combatant actor, Combatant target, AbilityEffect effect, float power, bool ultimate)
@@ -914,9 +948,64 @@ namespace MythicChronicles
                 Vector3 point = cam.WorldToScreenPoint(popup.world);
                 if (point.z <= 0f) continue;
                 GUI.color = popup.color;
-                GUI.Label(new Rect(point.x / uiScale - 30f, (Screen.height - point.y) / uiScale - 18f, 100f, 30f), popup.text);
+                if (popupBigStyle == null)
+                {
+                    popupBigStyle = new GUIStyle(GUI.skin.label) { fontSize = 24, fontStyle = FontStyle.Bold, alignment = TextAnchor.MiddleCenter };
+                }
+                if (popup.big)
+                    GUI.Label(new Rect(point.x / uiScale - 140f, (Screen.height - point.y) / uiScale - 24f, 280f, 48f), popup.text, popupBigStyle);
+                else
+                    GUI.Label(new Rect(point.x / uiScale - 30f, (Screen.height - point.y) / uiScale - 18f, 100f, 30f), popup.text);
                 GUI.color = Color.white;
             }
+            DrawCutIn();
+        }
+
+        private void DrawCutIn()
+        {
+            if (cutInNameStyle == null)
+            {
+                cutInNameStyle = new GUIStyle(GUI.skin.label) { fontSize = 30, fontStyle = FontStyle.Bold };
+                cutInNameStyle.normal.textColor = new Color(1f, .87f, .55f);
+                cutInSkillStyle = new GUIStyle(GUI.skin.label) { fontSize = 21, fontStyle = FontStyle.Bold };
+            }
+            if (cutInTime >= 1.15f || string.IsNullOrEmpty(cutInHero)) return;
+            float t = cutInTime / 1.15f;
+            float inT = Mathf.Clamp01(t / .2f); inT = inT * inT * (3f - 2f * inT);
+            float outT = Mathf.Clamp01((t - .78f) / .22f); outT = outT * outT * (3f - 2f * outT);
+            float a = inT * (1f - outT);
+            HeroDefinition cutHero = WorldsCatalog.FindHero(cutInHero);
+            Color ec = cutHero != null ? HeroSkillEffects.ColorFor(cutHero.element) : new Color(1f, .75f, .3f);
+            GUI.color = new Color(ec.r, ec.g, ec.b, .28f * (1f - t));
+            GUI.DrawTexture(new Rect(0f, 0f, 540f, 960f), Texture2D.whiteTexture);
+            GUI.color = new Color(0f, 0f, 0f, .78f * a);
+            GUI.DrawTexture(new Rect(0f, 330f, 540f, 190f), Texture2D.whiteTexture);
+            GUI.color = new Color(ec.r, ec.g, ec.b, .9f * a);
+            GUI.DrawTexture(new Rect(0f, 330f, 540f, 3f), Texture2D.whiteTexture);
+            GUI.DrawTexture(new Rect(0f, 517f, 540f, 3f), Texture2D.whiteTexture);
+            Texture2D portrait;
+            if (!cutInPortraits.TryGetValue(cutInHero, out portrait))
+            {
+                portrait = Resources.Load<Texture2D>("Chronicles/Portraits/Static/" + cutInHero);
+                cutInPortraits[cutInHero] = portrait;
+            }
+            if (portrait != null)
+            {
+                float px = Mathf.Lerp(-300f, 18f, inT) - 340f * outT;
+                GUI.color = new Color(1f, 1f, 1f, a);
+                GUI.DrawTexture(new Rect(px, 302f, 300f, 246f), portrait, ScaleMode.ScaleToFit, true);
+            }
+            if (cutHero != null)
+            {
+                GUI.color = new Color(1f, 1f, 1f, a);
+                GUI.Label(new Rect(238f, 372f, 296f, 46f), cutHero.name.ToUpperInvariant(), cutInNameStyle);
+                if (!string.IsNullOrEmpty(cutInSkill))
+                {
+                    cutInSkillStyle.normal.textColor = ec;
+                    GUI.Label(new Rect(238f, 418f, 296f, 32f), cutInSkill.ToUpperInvariant(), cutInSkillStyle);
+                }
+            }
+            GUI.color = Color.white;
         }
 
         private void OnDestroy()
