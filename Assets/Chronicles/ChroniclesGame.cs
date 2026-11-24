@@ -1709,33 +1709,41 @@ namespace MythicChronicles
 
         private void Events()
         {
-            GUI.Label(new Rect(25, 228, 490, 62), "LIMITED-TIME EVENTS", heading);
-            GUI.Label(new Rect(25, 283, 490, 44),
-                "Live events rotate. Their bonuses apply automatically while active.",
+            OrnateGuiSkin.Title(new Rect(24, 224, 492, 64), "LIMITED-TIME EVENTS", 34);
+            GUI.Label(new Rect(30, 292, 480, 40),
+                "Live events rotate. Bonuses apply automatically while active.",
                 subtitle);
             System.DateTime now = System.DateTime.UtcNow;
-            float y = 348f;
+            float y = 350f;
             foreach (ChroniclesEventInfo info in ChroniclesEvents.All)
             {
                 bool active = ChroniclesEvents.IsActive(info, now);
                 bool upcoming = ChroniclesEvents.IsUpcoming(info, now);
-                GUI.Box(new Rect(24, y, 492, 148), "");
-                if (active)
-                    OrnateGuiSkin.PulseGlow(new Rect(24, y, 492, 148),
-                        new Color(1f, .82f, .42f, .35f), 1.8f);
-                GUIStyle cardTitle = new GUIStyle(subtitle) { fontStyle = FontStyle.Bold };
-                cardTitle.normal.textColor = OrnateGuiSkin.GoldBright;
-                GUI.Label(new Rect(40, y + 10, 340, 34), info.title, cardTitle);
-                GUI.color = active ? new Color(.45f, 1f, .55f) :
-                    upcoming ? new Color(1f, .85f, .4f) : Color.gray;
-                GUI.Label(new Rect(382, y + 12, 126, 30),
-                    active ? "ACTIVE" : upcoming ? "SOON" : "ENDED", cardTitle);
+                OrnateGuiSkin.Bar(new Rect(24, y, 492, 142));
+                // slim accent edge in the event's theme color, no heavy frame
+                Color accent = info.kind == ChroniclesEventKind.AstralRateUp ?
+                    new Color(.8f, .6f, 1f) : new Color(1f, .82f, .42f);
+                GUI.color = new Color(accent.r, accent.g, accent.b, active ? .95f : .45f);
+                GUI.DrawTexture(new Rect(24, y, 5, 142), Texture2D.whiteTexture);
                 GUI.color = Color.white;
-                GUI.Label(new Rect(40, y + 44, 460, 56), info.description, subtitle);
-                GUI.Label(new Rect(40, y + 100, 300, 30),
+                if (active)
+                    OrnateGuiSkin.PulseGlow(new Rect(24, y, 492, 142),
+                        new Color(accent.r, accent.g, accent.b, .28f), 1.8f);
+                GUIStyle cardTitle = new GUIStyle(subtitle) {
+                    fontStyle = FontStyle.Bold, fontSize = 22 };
+                cardTitle.normal.textColor = OrnateGuiSkin.GoldBright;
+                GUI.Label(new Rect(44, y + 12, 330, 34), info.title, cardTitle);
+                GUIStyle status = new GUIStyle(tiny) {
+                    fontStyle = FontStyle.Bold, alignment = TextAnchor.MiddleRight };
+                status.normal.textColor = active ? new Color(.45f, 1f, .55f) :
+                    upcoming ? new Color(1f, .85f, .4f) : Color.gray;
+                GUI.Label(new Rect(376, y + 16, 126, 26),
+                    active ? "ACTIVE" : upcoming ? "SOON" : "ENDED", status);
+                GUI.Label(new Rect(44, y + 48, 456, 52), info.description, subtitle);
+                GUI.Label(new Rect(44, y + 102, 280, 28),
                     ChroniclesEvents.Countdown(info, now), tiny);
                 GUI.enabled = active;
-                if (GUI.Button(new Rect(330, y + 94, 172, 42),
+                if (GUI.Button(new Rect(338, y + 92, 164, 40),
                     info.kind == ChroniclesEventKind.AstralRateUp ?
                         "GO TO SUMMON" : "FIGHT NOW", OrnateGuiSkin.ButtonStyle()))
                 {
@@ -1750,19 +1758,24 @@ namespace MythicChronicles
                     }
                 }
                 GUI.enabled = true;
-                y += 164f;
+                y += 158f;
             }
-            GUI.Box(new Rect(24, y, 492, 148), "");
-            GUIStyle permTitle = new GUIStyle(subtitle) { fontStyle = FontStyle.Bold };
-            permTitle.normal.textColor = OrnateGuiSkin.GoldBright;
-            GUI.Label(new Rect(40, y + 10, 340, 34), "28-DAY LOGIN REWARDS", permTitle);
-            GUI.color = new Color(.45f, 1f, .55f);
-            GUI.Label(new Rect(382, y + 12, 126, 30), "ALWAYS", permTitle);
+            OrnateGuiSkin.Bar(new Rect(24, y, 492, 142));
+            GUI.color = new Color(1f, .82f, .42f, .95f);
+            GUI.DrawTexture(new Rect(24, y, 5, 142), Texture2D.whiteTexture);
             GUI.color = Color.white;
-            GUI.Label(new Rect(40, y + 44, 460, 56),
+            GUIStyle permTitle = new GUIStyle(subtitle) {
+                fontStyle = FontStyle.Bold, fontSize = 22 };
+            permTitle.normal.textColor = OrnateGuiSkin.GoldBright;
+            GUI.Label(new Rect(44, y + 12, 340, 34), "28-DAY LOGIN REWARDS", permTitle);
+            GUIStyle permStatus = new GUIStyle(tiny) {
+                fontStyle = FontStyle.Bold, alignment = TextAnchor.MiddleRight };
+            permStatus.normal.textColor = new Color(.45f, 1f, .55f);
+            GUI.Label(new Rect(376, y + 16, 126, 26), "ALWAYS", permStatus);
+            GUI.Label(new Rect(44, y + 48, 456, 52),
                 "Claim one gift every UTC day. Missing a day never resets progress.",
                 subtitle);
-            if (GUI.Button(new Rect(330, y + 94, 172, 42), "OPEN",
+            if (GUI.Button(new Rect(338, y + 92, 164, 40), "OPEN",
                 OrnateGuiSkin.ButtonStyle()))
                 page = Page.Login;
         }
