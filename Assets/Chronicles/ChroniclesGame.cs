@@ -372,7 +372,9 @@ namespace MythicChronicles
                     WorldsCatalog.Chapters.Length - 1)];
             OrnateGuiSkin.Embers(new Rect(0, 180, 540, 300), 10, .04f,
                 new Color(1f, .85f, .5f, .8f));
-            OrnateGuiSkin.Bar(new Rect(34, 650, 472, 42));
+            // Story progress as clean shadowed text, no frame.
+            GUI.DrawTexture(new Rect(120, 652, 300, 36),
+                OrnateGuiSkin.Glow("story_shade", new Color(0f, 0f, 0f, .5f)));
             GUIStyle storyStyle = new GUIStyle(subtitle) {
                 alignment = TextAnchor.MiddleCenter };
             storyStyle.normal.textColor = OrnateGuiSkin.GoldBright;
@@ -416,9 +418,14 @@ namespace MythicChronicles
         // building itself. Returns true when tapped.
         private bool SceneDoor(Rect hotspot, Rect labelRect, string label)
         {
+            // Slim dark text backing instead of an ornate frame, so the
+            // scene stays clean and the label stays readable.
+            GUI.DrawTexture(new Rect(labelRect.x - 8f, labelRect.y - 2f,
+                labelRect.width + 16f, labelRect.height + 4f),
+                OrnateGuiSkin.Glow("door_label_bg",
+                    new Color(0f, 0f, 0f, .6f)));
             OrnateGuiSkin.PulseGlow(labelRect,
                 OrnateGuiSkin.GoldBright, 1.6f);
-            OrnateGuiSkin.Bar(labelRect);
             GUIStyle labelStyle = new GUIStyle(subtitle) {
                 alignment = TextAnchor.MiddleCenter, fontSize = 15 };
             labelStyle.normal.textColor = OrnateGuiSkin.GoldBright;
@@ -1486,7 +1493,8 @@ namespace MythicChronicles
                 }
             }
 
-            OrnateGuiSkin.Bar(new Rect(58, 700, 424, 42));
+            GUI.DrawTexture(new Rect(120, 700, 300, 40),
+                OrnateGuiSkin.Glow("pity_shade", new Color(0f, 0f, 0f, .5f)));
             GUI.Label(new Rect(66, 708, 408, 26),
                 astral ?
                     "UR PITY " + progress.Data.astralPity + "/" +
