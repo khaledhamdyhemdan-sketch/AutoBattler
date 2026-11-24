@@ -8,7 +8,7 @@ namespace MythicChronicles
     // to be replaced by production UI Toolkit art without changing progression logic.
     public sealed class ChroniclesGame : MonoBehaviour
     {
-        private enum Page { Home, More, Events, Shop, Mailbox, Chapters, Trials, Towers, Raid, Labyrinth, ArenaTraining, Bounty, Legacy, ElementalGates, EventAdventure, StageStory, Heroes, HeroDetails, Formation, Skins, Gear, Forge, Training, Runes, SignatureWeapon, RelicVault, Summon, Quests, WeeklyQuests, Achievements, Idle, Login, Settings, Battle, Results }
+        private enum Page { Home, More, Events, Shop, Mailbox, Chapters, Trials, Towers, Raid, Labyrinth, ArenaTraining, Bounty, Legacy, ElementalGates, EventAdventure, SeasonPass, StageStory, Heroes, HeroDetails, Formation, Skins, Gear, Forge, Training, Runes, SignatureWeapon, RelicVault, Summon, Quests, WeeklyQuests, Achievements, Idle, Login, Settings, Battle, Results }
         private Page page = Page.Home;
         private PlayerProgressService progress;
         private ChroniclesAudioDirector audio;
@@ -235,6 +235,7 @@ namespace MythicChronicles
                 case Page.Legacy: Legacy(); break;
                 case Page.ElementalGates: ElementalGates(); break;
                 case Page.EventAdventure: EventAdventure(); break;
+                case Page.SeasonPass: SeasonPass(); break;
                 case Page.Events: Events(); break;
                 case Page.Shop: Shop(); break;
                 case Page.Mailbox: Mailbox(); break;
@@ -460,7 +461,7 @@ namespace MythicChronicles
                 "SHOP", "MAILBOX",
                 "BOUNTY BOARD", "CHRONICLE LEGACY",
                 "ELEMENTAL GATES", "EVENT ADVENTURE",
-                "SETTINGS"
+                "SEASON PASS", "SETTINGS"
             };
             int rows = (names.Length + 1) / 2;
             chapterScroll = GUI.BeginScrollView(new Rect(19, 340, 505, 545),
@@ -491,7 +492,8 @@ namespace MythicChronicles
                     case 15: page = Page.Legacy; break;
                     case 16: page = Page.ElementalGates; break;
                     case 17: page = Page.EventAdventure; break;
-                    case 18: page = Page.Settings; break;
+                    case 18: page = Page.SeasonPass; break;
+                    case 19: page = Page.Settings; break;
                 }
             }
             GUI.EndScrollView();
@@ -647,6 +649,42 @@ namespace MythicChronicles
                         "Not enough " + def.currencyName + " yet.";
                 GUI.enabled = true;
                 y += 58f;
+            }
+            GUI.EndScrollView();
+        }
+
+        private void SeasonPass()
+        {
+            int level = progress.PassLevel();
+            int xpInto = ChroniclesBattlePass.XpIntoLevel(progress.Data.passSeasonXp);
+            DateTime end = ChroniclesBattlePass.SeasonEnd(System.DateTime.UtcNow);
+            TimeSpan left = end - System.DateTime.UtcNow;
+            GUI.Label(new Rect(26, 214, 488, 63), "SEASON PASS", heading);
+            GUI.Label(new Rect(29, 270, 479, 66),
+                "LEVEL " + level + "/" + ChroniclesBattlePass.Levels +
+                "  •  " + xpInto + "/" + ChroniclesBattlePass.XpPerLevel + " XP" +
+                "\nSeason resets in " + left.Days + "d " + left.Hours +
+                "h. Earn XP from battles and quest claims.", subtitle);
+            float contentHeight = ChroniclesBattlePass.Levels * 58f;
+            gearScroll = GUI.BeginScrollView(new Rect(19, 348, 505, 537),
+                gearScroll, new Rect(0, 0, 471, contentHeight));
+            for (int i = 1; i <= ChroniclesBattlePass.Levels; i++)
+            {
+                float y = (i - 1) * 58f;
+                bool claimed = progress.Data.passLevelsClaimed.Contains(i);
+                bool ready = i <= level && !claimed;
+                GUI.Box(new Rect(6, y, 460, 52), "");
+                GUI.Label(new Rect(16, y + 6, 60, 40), "LV " + i, subtitle);
+                GUI.Label(new Rect(86, y + 6, 260, 40),
+                    ChroniclesBattlePass.RewardLabel(i), tiny);
+                GUI.enabled = ready;
+                if (GUI.Button(new Rect(356, y + 8, 102, 36),
+                    claimed ? "TAKEN" : "CLAIM"))
+                    notice = progress.ClaimPassLevel(i) ?
+                        "Pass level " + i + " claimed: " +
+                        ChroniclesBattlePass.RewardLabel(i) :
+                        "Reach level " + i + " first.";
+                GUI.enabled = true;
             }
             GUI.EndScrollView();
         }

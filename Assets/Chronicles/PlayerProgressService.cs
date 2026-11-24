@@ -47,6 +47,9 @@ namespace MythicChronicles
         public int gateAttemptsUsed;
         public List<EventAdventureProgress> eventAdventures = new List<EventAdventureProgress>();
         public string adventurePendingRunId = "";
+        public string passSeasonKey = "";
+        public int passSeasonXp;
+        public List<int> passLevelsClaimed = new List<int>();
         public string bountyUtcDay = "";
         public List<ActiveBounty> activeBounties = new List<ActiveBounty>();
         public List<string> claimedBountyIds = new List<string>();
@@ -411,6 +414,7 @@ namespace MythicChronicles
             Data.claimedDailyQuests.Add(id);
             Data.gold += definition.goldReward;
             Data.gems += definition.gemReward;
+            AddPassXp(ChroniclesBattlePass.XpPerDailyQuestClaim);
             Save();
             return true;
         }
@@ -455,6 +459,7 @@ namespace MythicChronicles
             Data.claimedWeeklyQuests.Add(id);
             Data.gold += definition.goldReward;
             Data.gems += definition.gemReward;
+            AddPassXp(ChroniclesBattlePass.XpPerWeeklyQuestClaim);
             Save();
             return true;
         }
@@ -1606,6 +1611,7 @@ namespace MythicChronicles
             IncrementQuest("win_1");
             IncrementQuest("win_3");
             IncrementWeekly("win_10");
+            AddPassXp(ChroniclesBattlePass.XpPerBattleWin);
             if (WorldsCatalog.GetStage(stageId).boss)
                 IncrementWeekly("boss_3");
             if (!Data.stageRewardsClaimed.Contains(stageId))
@@ -1829,6 +1835,41 @@ namespace MythicChronicles
                 case 2000: Data.summonTickets += 2; Data.gems += 200; break;
                 default: return false;
             }
+            Save();
+            return true;
+        }
+
+        // Season pass: resets on the first touch of a new UTC month.
+        private void ResetPassIfNeeded()
+        {
+            string season = ChroniclesBattlePass.SeasonKey(DateTime.UtcNow);
+            if (Data.passSeasonKey == season) return;
+            Data.passSeasonKey = season;
+            Data.passSeasonXp = 0;
+            Data.passLevelsClaimed.Clear();
+            Save();
+        }
+
+        public void AddPassXp(int amount)
+        {
+            ResetPassIfNeeded();
+            Data.passSeasonXp = Mathf.Clamp(Data.passSeasonXp + amount, 0,
+                ChroniclesBattlePass.Levels * ChroniclesBattlePass.XpPerLevel);
+        }
+
+        public int PassLevel()
+        {
+            ResetPassIfNeeded();
+            return ChroniclesBattlePass.LevelFor(Data.passSeasonXp);
+        }
+
+        public bool ClaimPassLevel(int level)
+        {
+            ResetPassIfNeeded();
+            if (level < 1 || level > PassLevel() ||
+                Data.passLevelsClaimed.Contains(level)) return false;
+            Data.passLevelsClaimed.Add(level);
+            ChroniclesBattlePass.GrantReward(Data, level);
             Save();
             return true;
         }
