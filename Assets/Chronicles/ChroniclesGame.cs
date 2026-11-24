@@ -41,6 +41,7 @@ namespace MythicChronicles
         private bool lastVictory;
         private Vector2 chapterScroll, rosterScroll, formationScroll, gearScroll, runeScroll;
         private GUIStyle heading, subtitle, tiny;
+        private GUIStyle rowText, tinyCenter, cellText;
         private GUIStyle bigButton;
         private Texture2D panelTex;
         private Texture2D buttonNormalTex, buttonHoverTex, buttonPressedTex, boxTex;
@@ -101,6 +102,14 @@ namespace MythicChronicles
             subtitle.normal.textColor = new Color(.87f, .86f, .99f);
             tiny = new GUIStyle(GUI.skin.label) { fontSize = 14, wordWrap = true };
             tiny.normal.textColor = new Color(.84f, .83f, .94f);
+            tiny.padding = new RectOffset(12, 8, 6, 4); // device: text hugged frame edges
+            rowText = new GUIStyle(tiny) { alignment = TextAnchor.MiddleLeft,
+                padding = new RectOffset(16, 8, 0, 0) };
+            tinyCenter = new GUIStyle(tiny) { alignment = TextAnchor.MiddleCenter,
+                padding = new RectOffset(8, 8, 4, 4) };
+            cellText = new GUIStyle(tiny) { fontSize = 11, wordWrap = true,
+                alignment = TextAnchor.MiddleCenter,
+                padding = new RectOffset(1, 1, 1, 1) };
             // Original dark-violet / antique-gold Alpha theme. Only lightweight
             // runtime textures are used, so no third-party game art is copied.
             buttonNormalTex = MakePlate(new Color(.19f, .16f, .35f),
@@ -325,7 +334,11 @@ namespace MythicChronicles
                 progress.Data.gems + "   |   TICKETS " + progress.Data.summonTickets, currency);
             if (page != Page.Home && GUI.Button(new Rect(20, 183, 105, 42), "HOME")) GoHome();
             if (!string.IsNullOrEmpty(notice))
-                GUI.Label(new Rect(20, 903, 500, 43), notice, subtitle);
+            {
+                // Toast with a dark backing so it never bleeds into panels below.
+                GUI.Box(new Rect(20, 901, 500, 47), "");
+                GUI.Label(new Rect(28, 903, 484, 43), notice, subtitle);
+            }
         }
 
         private void Home()
@@ -1189,7 +1202,7 @@ namespace MythicChronicles
             GUI.Label(new Rect(43, 606, 452, 124),
                 "MILESTONE RANKS\n3000: BOSS HUNTER  •  15000: MASTER\n" +
                 "40000: LEGENDARY  •  80000: WORLD BREAKER\n" +
-                "150000: MYTHIC SLAYER", tiny);
+                "150000: MYTHIC SLAYER", tinyCenter);
             GUI.enabled = progress.Data.lastClearedStage >= 10 &&
                 attemptsLeft > 0 && string.IsNullOrEmpty(progress.Data.raidPendingRunId);
             if (GUI.Button(new Rect(40, 787, 460, 73), "CHALLENGE TODAY'S BOSS", bigButton))
@@ -1888,7 +1901,7 @@ namespace MythicChronicles
                     "\nPick 5 heroes, including at least 2 from this mythology." :
                     "Select five owned heroes. Order is used to place your team in front and back rows.", subtitle);
             formationScroll = GUI.BeginScrollView(new Rect(20, 317, 500, 413), formationScroll,
-                new Rect(0, 0, 473, progress.Data.heroes.Count * 66));
+                new Rect(0, 0, 473, progress.Data.heroes.Count * 74));
             for (int i = 0; i < progress.Data.heroes.Count; i++)
             {
                 OwnedHero owned = progress.Data.heroes[i];
@@ -1897,11 +1910,11 @@ namespace MythicChronicles
                 int picked = progress.Data.selectedTeam.IndexOf(owned.id);
                 string label = (picked >= 0 ? "[SLOT " + (picked + 1) + "] " : "[ + ] ") +
                     hero.name + "   Level " + owned.level + "   " + hero.role;
-                float y = i * 66f;
-                ChroniclesHeroPortrait.Draw(hero.id, new Rect(5, y, 48, 61), false);
-                GUI.Box(new Rect(54, y, 404, 61), "");
-                GUI.Label(new Rect(64, y + 7, 377, 46), label, tiny);
-                if (GUI.Button(new Rect(5, y, 457, 61), "", GUIStyle.none))
+                float y = i * 74f;
+                ChroniclesHeroPortrait.Draw(hero.id, new Rect(6, y, 56, 68), false);
+                GUI.Box(new Rect(64, y, 394, 68), "");
+                GUI.Label(new Rect(72, y, 378, 68), label, rowText);
+                if (GUI.Button(new Rect(6, y, 452, 68), "", GUIStyle.none))
                 {
                     List<string> temp = new List<string>(progress.Data.selectedTeam);
                     if (picked >= 0) temp.Remove(owned.id);
@@ -2251,10 +2264,10 @@ namespace MythicChronicles
                 else if (received)
                     GUI.backgroundColor = new Color(.49f, .61f, .60f);
                 GUI.Box(new Rect(x, y, 67, 89), "");
-                GUI.Label(new Rect(x + 2, y + 7, 62, 26),
-                    "DAY " + (i + 1), tiny);
-                GUI.Label(new Rect(x + 4, y + 29, 62, 56),
-                    received ? "CLAIMED" : gift.Label, tiny);
+                GUI.Label(new Rect(x + 2, y + 6, 63, 20),
+                    "DAY " + (i + 1), cellText);
+                GUI.Label(new Rect(x + 2, y + 26, 63, 58),
+                    received ? "CLAIMED" : gift.Label, cellText);
                 GUI.backgroundColor = previous;
             }
 

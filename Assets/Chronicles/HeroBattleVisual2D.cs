@@ -89,11 +89,13 @@ namespace MythicChronicles
         private void Build(HeroDefinition hero, Texture2D art, RigData rig)
         {
             elementColor = HeroSkillEffects.ColorFor(hero.element);
-            Shader shader = Shader.Find("Sprites/Default");
-            if (shader == null) shader = Shader.Find("Unlit/Transparent");
-            if (shader == null) shader = Shader.Find("Standard");
-            material = new Material(shader);
-            material.mainTexture = art;
+            Shader shader = ChroniclesShaders.FindAny(
+                "Sprites/Default", "Unlit/Transparent", "Standard");
+            if (shader != null)
+            {
+                material = new Material(shader);
+                material.mainTexture = art;
+            }
 
             motion = NewNode("Motion", transform, new Vector3(0f, RootGroundOffset, 0f));
             billboard = NewNode("Billboard", motion, Vector3.zero);
@@ -154,7 +156,7 @@ namespace MythicChronicles
                 MeshFilter filter = quad.AddComponent<MeshFilter>();
                 filter.sharedMesh = mesh;
                 MeshRenderer renderer = quad.AddComponent<MeshRenderer>();
-                renderer.sharedMaterial = material;
+                if (material != null) renderer.sharedMaterial = material;
                 renderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
                 renderer.receiveShadows = false;
                 parts.Add(new Part
@@ -373,7 +375,7 @@ namespace MythicChronicles
 
             Color tinted = Color.Lerp(Color.white, flashColor, flash);
             tinted.a = alpha;
-            material.color = tinted;
+            if (material != null) material.color = tinted;
 
             if (dead && alpha <= .01f)
             {

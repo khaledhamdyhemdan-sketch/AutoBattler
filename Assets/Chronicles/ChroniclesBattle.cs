@@ -246,9 +246,9 @@ namespace MythicChronicles
 
         private Material CreateMaterial(Color color)
         {
-            Shader shader = Shader.Find("Universal Render Pipeline/Lit");
-            if (shader == null) shader = Shader.Find("Standard");
-            if (shader == null) shader = Shader.Find("Sprites/Default");
+            Shader shader = ChroniclesShaders.FindAny(
+                "Universal Render Pipeline/Lit", "Standard", "Sprites/Default");
+            if (shader == null) return null; // renderer keeps its default material
             Material material = new Material(shader);
             material.color = color;
             return material;
@@ -281,7 +281,7 @@ namespace MythicChronicles
             go.name = name; go.transform.SetParent(parent);
             go.transform.position = position; go.transform.localScale = scale;
             Renderer renderer = go.GetComponent<Renderer>();
-            if (renderer != null) renderer.sharedMaterial = material;
+            if (renderer != null && material != null) renderer.sharedMaterial = material;
             Collider hit = go.GetComponent<Collider>();
             if (hit != null) Destroy(hit);
         }
@@ -324,9 +324,18 @@ namespace MythicChronicles
                 backdrop.transform.SetParent(transform);
                 backdrop.transform.position = new Vector3(0f, -13f, 18f);
                 backdrop.transform.localScale = new Vector3(18f, 33f, 1f);
-                var backdropMaterial = new Material(Shader.Find("Unlit/Texture"));
-                backdropMaterial.mainTexture = battlefield;
-                backdrop.GetComponent<MeshRenderer>().material = backdropMaterial;
+                Shader backdropShader = ChroniclesShaders.FindAny(
+                    "Unlit/Texture", "Sprites/Default",
+                    "Universal Render Pipeline/Unlit");
+                MeshRenderer backdropRenderer = backdrop.GetComponent<MeshRenderer>();
+                if (backdropShader != null && backdropRenderer != null)
+                {
+                    var backdropMaterial = new Material(backdropShader);
+                    backdropMaterial.mainTexture = battlefield;
+                    backdropRenderer.material = backdropMaterial;
+                }
+                // When every lookup fails the quad keeps its default material,
+                // which is still a dark backdrop; battle must never fail on this.
             }
 
             GameObject lightObject = new GameObject("Chronicles Arena Light");
