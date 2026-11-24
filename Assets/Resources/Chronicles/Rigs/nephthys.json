@@ -1,0 +1,27 @@
+{
+  "height": 2.05,
+  "parts": [
+    {
+      "name": "body",
+      "role": "body",
+      "x": 0.0,
+      "y": 0.0,
+      "w": 0.5,
+      "h": 1.0,
+      "pivotX": 0.5,
+      "pivotY": 0.0
+    },
+    {
+      "name": "head",
+      "role": "head",
+      "parent": "body",
+      "x": 0.6909,
+      "y": 0.8274,
+      "w": 0.1342,
+      "h": 0.1726,
+      "pivotX": 0.5,
+      "pivotY": 0.05,
+      "sampleOffsetU": 0.5
+    }
+  ]
+}

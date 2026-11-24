@@ -50,7 +50,11 @@ A rig JSON pairs with a **cutout atlas** at `Resources/Chronicles/BattleCutouts/
 - A rig JSON without an atlas samples the plain portrait instead (rects are in
   portrait UV space, no `sampleOffsetU`).
 
-Shipped example: `Rigs/ra.json` + `BattleCutouts/ra.png` give Ra a separate **head**
+Shipped rigs: `Rigs/ra.json` + `BattleCutouts/ra.png` (head + casting forearm);
+`Rigs/{sobek,bastet,set,nephthys,persephone}.json` + matching BattleCutouts atlases built from the
+HomeCutouts full-body art (head part each: nods on idle, flinches on hits).
+
+Original example note: `Rigs/ra.json` + `BattleCutouts/ra.png` give Ra a separate **head**
 (nods on idle, flinches on hits) and **casting forearm** (raises on attack, skill
 and ultimate). The forearm seam is hidden at the golden bracelet and the part pivot
 sits near that seam, so the boundary barely moves at full swing. His staff stays
