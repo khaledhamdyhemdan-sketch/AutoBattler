@@ -930,6 +930,9 @@ namespace MythicChronicles
             if (attacker != null) attacker.dealt += actualDamage;
             defender.energy = Mathf.Min(100f, defender.energy + actualDamage * .09f);
             Floating("-" + Mathf.RoundToInt(damage), defender, new Color(1f, .72f, .54f));
+            if (ChroniclesAudioDirector.Instance != null)
+                ChroniclesAudioDirector.Instance.PlayEffect(
+                    actualDamage >= defender.maxHp * .22f ? "hit_heavy" : "hit");
 
             if (attacker != null && attackingKit != null &&
                 attackingKit.passive == HeroPassive.Bloodthirst && attacker.Alive)
@@ -984,6 +987,8 @@ namespace MythicChronicles
             if (actual <= 0f) return;
             target.hp += actual;
             Floating("+" + Mathf.RoundToInt(actual), target, Color.green);
+            if (ChroniclesAudioDirector.Instance != null)
+                ChroniclesAudioDirector.Instance.PlayEffect("heal");
             HeroKit healerKit = healer == null ? null : HeroAbilityCatalog.For(healer.hero.id);
             if (healerKit != null && healerKit.passive == HeroPassive.Compassion)
                 Shield(target, actual * .16f * PassiveScale(healer.hero.rarity));
@@ -994,6 +999,8 @@ namespace MythicChronicles
             if (target == null || !target.Alive) return;
             target.shield = Mathf.Min(target.maxHp * .75f, target.shield + value);
             Floating("SHIELD", target, Color.cyan);
+            if (ChroniclesAudioDirector.Instance != null)
+                ChroniclesAudioDirector.Instance.PlayEffect("shield");
         }
 
         private void CutIn(Combatant actor, string skillName)
@@ -1030,6 +1037,8 @@ namespace MythicChronicles
                 actor.model.transform, target == null ? null : target.model.transform);
             CastEffect(actor, target, kit.skill, kit.skillPower * actor.skillFactor, false);
             Floating(kit.skillName, actor, Color.yellow);
+            if (ChroniclesAudioDirector.Instance != null)
+                ChroniclesAudioDirector.Instance.PlayEffect("skill");
         }
 
         private void CastUltimate(Combatant actor, Combatant target)

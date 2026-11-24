@@ -4,3 +4,4 @@ Music sources (OpenGameArt, verify license per track before public release):
 - menu.ogg    "Menu Song" - opengameart.org/content/calm-and-simple-title-music (license to re-verify)
 - victory.ogg "Victory Fanfare Short" - opengameart.org/content/victory-fanfare-short (license to re-verify)
 - defeat.ogg  "Game Over Jingle" - opengameart.org/content/game-over-short-jingle (license to re-verify)
+SFX (all CC0): hit/hit_heavy (Kenney Impact Sounds via OGA 150-combat-sound-effects), skill (Fire Spell Impact), ultimate (EnergyZap), heal (Healing Spell Impact), shield (Earth Spell Impact) - opengameart.org/content/150-combat-sound-effects, licenses in that pack's LICENSES.txt (CC0 1.0)

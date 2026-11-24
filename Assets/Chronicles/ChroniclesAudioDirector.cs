@@ -82,7 +82,13 @@ namespace MythicChronicles
 
         public void HeroUltimate(string heroId)
         {
-            if (!string.IsNullOrEmpty(heroId)) PlayEffect("hero_" + heroId + "_ultimate");
+            // Per-hero stinger when one ships; the generic stinger otherwise.
+            if (!string.IsNullOrEmpty(heroId) && Clip("SFX/hero_" + heroId + "_ultimate") != null)
+            {
+                PlayEffect("hero_" + heroId + "_ultimate");
+                return;
+            }
+            PlayEffect("ultimate");
         }
 
         private void OnDestroy()
