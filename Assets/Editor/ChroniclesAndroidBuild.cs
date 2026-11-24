@@ -85,13 +85,24 @@ namespace MythicChronicles.Editor
             string alias = Environment.GetEnvironmentVariable("KEYALIAS_NAME");
             string aliasPass = Environment.GetEnvironmentVariable("KEYALIAS_PASS");
             bool signed = !string.IsNullOrEmpty(ks) && File.Exists(ks);
+            Debug.Log("[Chronicles] CI keystore path='" + ks + "' exists=" +
+                (ks != null && File.Exists(ks)) +
+                (signed ? "" : " -> debug signing fallback"));
             if (signed)
             {
+                // Unity validates the keystore relative to the project in some
+                // pipeline paths, so copy it inside the workspace.
+                string localKs = Path.Combine(Directory.GetCurrentDirectory(),
+                    "Builds", "Chronicles", "ci.keystore");
+                Directory.CreateDirectory(Path.GetDirectoryName(localKs));
+                File.Copy(ks, localKs, true);
                 PlayerSettings.Android.useCustomKeystore = true;
-                PlayerSettings.Android.keystoreName = ks;
+                PlayerSettings.Android.keystoreName = localKs;
                 PlayerSettings.Android.keystorePass = ksPass;
                 PlayerSettings.Android.keyaliasName = alias;
                 PlayerSettings.Android.keyaliasPass = aliasPass;
+                Debug.Log("[Chronicles] CI signing with keystore '" + localKs +
+                    "' alias='" + alias + "' fileExists=" + File.Exists(localKs));
             }
             else
             {
