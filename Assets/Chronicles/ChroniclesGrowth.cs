@@ -72,7 +72,8 @@ namespace MythicChronicles
             {
                 if (owned == null) continue;
                 bonus += CollectionPerOwned;
-                bonus += Mathf.Clamp(owned.stars - 1, 0, 5) * CollectionPerExtraStar;
+                int extraStars = Math.Max(0, Math.Min(5, owned.stars - 1));
+                bonus += extraStars * CollectionPerExtraStar;
             }
             return Math.Min(CollectionCap, bonus);
         }
