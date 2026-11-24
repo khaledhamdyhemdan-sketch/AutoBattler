@@ -10,6 +10,8 @@ namespace MythicChronicles
     {
         private enum Page { Home, More, Events, Shop, Mailbox, Chapters, Trials, Towers, Raid, Labyrinth, ArenaTraining, Bounty, Legacy, ElementalGates, EventAdventure, SeasonPass, Leaderboards, Guild, Friends, Tournament, StageStory, Heroes, HeroDetails, Formation, Skins, Gear, Forge, Training, Runes, SignatureWeapon, RelicVault, Summon, Quests, WeeklyQuests, Achievements, Idle, Login, Settings, Battle, Results }
         private Page page = Page.Home;
+        private Page lastDrawnPage = Page.Home;
+        private float pageFadeT;
         private PlayerProgressService progress;
         private ChroniclesAudioDirector audio;
         private ChroniclesBattle battle;
@@ -285,6 +287,16 @@ namespace MythicChronicles
             }
             if (page != Page.Battle && page != Page.Results)
                 TutorialOverlay();
+            // Smooth page transitions: short black fade on every page switch
+            // instead of a hard cut.
+            if (page != lastDrawnPage) { pageFadeT = 1f; lastDrawnPage = page; }
+            if (pageFadeT > 0f)
+            {
+                pageFadeT = Mathf.Max(0f, pageFadeT - Time.deltaTime * 3.2f);
+                GUI.color = new Color(0f, 0f, 0f, pageFadeT * .9f);
+                GUI.DrawTexture(new Rect(0f, 0f, 540f, 960f),
+                    Texture2D.whiteTexture);
+            }
             GUI.color = oldColor;
             GUI.matrix = matrix;
         }
