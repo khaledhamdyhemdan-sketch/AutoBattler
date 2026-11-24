@@ -2565,6 +2565,8 @@ namespace MythicChronicles
             if (battle != null) Destroy(battle.gameObject);
             battle = new GameObject("Chronicles - Battle").AddComponent<ChroniclesBattle>();
             battle.PanelLayout = PanelBattleEnabled;
+            if (inTournament)
+                battle.BannerOverride = "ROUND " + (progress.Data.tournamentRoundsWon + 1);
             try
             {
                 battle.Initialize(stage, chosen, progress.Data, OnBattleFinished,

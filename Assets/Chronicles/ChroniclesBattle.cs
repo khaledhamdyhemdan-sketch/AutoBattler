@@ -53,6 +53,7 @@ namespace MythicChronicles
             Mathf.Clamp(raidDamage, 0f, 2000000f)); } }
         public bool Paused { get; set; }
         public bool PanelLayout { get; set; }
+        public string BannerOverride { set { bannerText = value ?? string.Empty; } }
         public bool Complete { get { return ended; } }
         public float SecondsLeft { get { return Mathf.Max(0f, 90f - elapsed); } }
         public float Speed { get; set; } = 1f;
@@ -62,8 +63,11 @@ namespace MythicChronicles
         private string cutInSkill;
         private float cutInTime = 99f;
         private bool cutInUltimate;
+        private string bannerText = string.Empty;
+        private float bannerT = 99f;
+        private Texture2D speechBubbleTex;
         private readonly Dictionary<string, Texture2D> cutInPortraits = new Dictionary<string, Texture2D>();
-        private GUIStyle cutInNameStyle, cutInSkillStyle, popupBigStyle;
+        private GUIStyle cutInNameStyle, cutInSkillStyle, popupBigStyle, bannerStyle, bubbleStyle;
         private Texture2D panelAllyTex, panelEnemyTex;
 
         public void Initialize(StageDefinition chosen, IList<OwnedHero> squad,
@@ -77,6 +81,12 @@ namespace MythicChronicles
             raidDamage = 0f;
             if (chosen == null || squad == null || squad.Count != 5) throw new ArgumentException("Battle requires stage and five heroes.");
             stage = chosen; finished = onFinished;
+            // Battle-start banner: stage name; tournament rounds say ROUND N.
+            bannerText = mode == TrialMode.Normal ?
+                (stage.name ?? string.Empty).ToUpperInvariant() :
+                mode.ToString().ToUpperInvariant() + " \u2022 " +
+                    (stage.name ?? string.Empty).ToUpperInvariant();
+            bannerT = 99f;
             arenaOrigin = towerOrigin.HasValue ?
                 towerOrigin.Value : WorldsCatalog.Chapters[stage.chapter - 1].origin;
             BuildArena();
@@ -494,6 +504,9 @@ namespace MythicChronicles
                 }
                 return;
             }
+
+            if (bannerT >= 99f && !string.IsNullOrEmpty(bannerText)) bannerT = 0f;
+            if (bannerT < 2.2f) bannerT += dt;
 
             elapsed += dt;
             foreach (Combatant f in units)
@@ -1117,6 +1130,35 @@ namespace MythicChronicles
                 GUI.color = Color.white;
             }
             DrawCutIn();
+            DrawBanner();
+        }
+
+        private void DrawBanner()
+        {
+            if (bannerT >= 2.2f || string.IsNullOrEmpty(bannerText)) return;
+            float t = bannerT / 2.2f;
+            float inT = Mathf.Clamp01(t / .22f); inT = inT * inT * (3f - 2f * inT);
+            float outT = Mathf.Clamp01((t - .78f) / .22f); outT = outT * outT * (3f - 2f * outT);
+            float a = inT * (1f - outT);
+            if (bannerStyle == null)
+            {
+                bannerStyle = new GUIStyle(GUI.skin.label) {
+                    fontSize = 46, fontStyle = FontStyle.BoldAndItalic,
+                    alignment = TextAnchor.MiddleCenter };
+                bannerStyle.normal.textColor = new Color(1f, .92f, .6f);
+            }
+            float x = Mathf.Lerp(-560f, 0f, inT) + 560f * outT;
+            // dark sweep plate behind the text
+            GUI.color = new Color(0f, 0f, 0f, .45f * a);
+            GUI.DrawTexture(new Rect(0f, 415f, 540f, 90f), Texture2D.whiteTexture);
+            GUI.color = new Color(1f, .85f, .4f, .9f * a);
+            GUI.DrawTexture(new Rect(0f, 415f, 540f, 3f), Texture2D.whiteTexture);
+            GUI.DrawTexture(new Rect(0f, 502f, 540f, 3f), Texture2D.whiteTexture);
+            GUI.color = new Color(0f, 0f, 0f, a);
+            GUI.Label(new Rect(x + 3f, 423f, 540f, 80f), bannerText, bannerStyle);
+            GUI.color = new Color(1f, .92f, .6f, a);
+            GUI.Label(new Rect(x, 420f, 540f, 80f), bannerText, bannerStyle);
+            GUI.color = Color.white;
         }
 
         private void DrawCutIn()
@@ -1196,6 +1238,29 @@ namespace MythicChronicles
             }
             GUI.matrix = keepMatrix;
             // hero splash: full-body cutout when one exists, else static portrait
+            // comic speech bubble with the skill name near the splash
+            if (!string.IsNullOrEmpty(cutInSkill))
+            {
+                if (speechBubbleTex == null)
+                    speechBubbleTex = Resources.Load<Texture2D>("Chronicles/UI/speech_bubble");
+                if (bubbleStyle == null)
+                {
+                    bubbleStyle = new GUIStyle(GUI.skin.label) {
+                        fontSize = 17, fontStyle = FontStyle.BoldItalic,
+                        alignment = TextAnchor.MiddleCenter };
+                    bubbleStyle.normal.textColor = new Color(.1f, .08f, .14f);
+                }
+                float bubA = Mathf.Clamp01((t - .1f) / .12f) * (1f - outT);
+                if (bubA > 0f)
+                {
+                    GUI.color = new Color(1f, 1f, 1f, bubA);
+                    if (speechBubbleTex != null)
+                        GUI.DrawTexture(new Rect(250f, 128f, 250f, 140f), speechBubbleTex);
+                    GUI.color = new Color(.1f, .08f, .14f, bubA);
+                    GUI.Label(new Rect(258f, 150f, 234f, 84f), cutInSkill, bubbleStyle);
+                    GUI.color = Color.white;
+                }
+            }
             Texture2D portrait;
             if (!cutInPortraits.TryGetValue(cutInHero, out portrait))
             {
