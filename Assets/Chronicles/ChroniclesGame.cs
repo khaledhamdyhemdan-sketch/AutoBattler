@@ -298,27 +298,38 @@ namespace MythicChronicles
 
         private void Home()
         {
-            // Vertical, low-clutter character-first lobby; authored original
-            // background/rig assets override the current placeholder portrait.
-            string featuredId = progress.Data.selectedTeam.Count > 0 ?
-                progress.Data.selectedTeam[0] : WorldsCatalog.StartingHeroes[0];
-            HeroDefinition featured = WorldsCatalog.FindHero(featuredId);
-            if (featured == null) featured = WorldsCatalog.Heroes[0];
-            GUI.DrawTexture(new Rect(96, 172, 350, 440),
-                OrnateGuiSkin.Glow("home_hero_glow",
-                    new Color(1f, .85f, .45f, .45f)));
-            OrnateGuiSkin.Panel(new Rect(126, 202, 289, 380), "home_hero_frame",
-                OrnateGuiSkin.Gold, new Color(.08f, .06f, .12f, .6f));
-            ChroniclesHeroPortrait.Draw(featured.id,
-                new Rect(138, 214, 265, 356),
-                !progress.Data.reducePortraitMotion);
-            OrnateGuiSkin.Bar(new Rect(118, 563, 305, 51));
+            // Scene-first lobby: no centered hero card. The player's team
+            // stands in the scene as a tappable lineup over the city vista,
+            // like the home screens of the genre's premium titles.
+            var teamIds = new List<string>();
+            foreach (string id in progress.Data.selectedTeam)
+                if (WorldsCatalog.FindHero(id) != null && !teamIds.Contains(id))
+                    teamIds.Add(id);
+            if (teamIds.Count == 0)
+                foreach (string id in WorldsCatalog.StartingHeroes)
+                    teamIds.Add(id);
+            int shown = Mathf.Min(5, teamIds.Count);
+            float startX = (540f - (shown * 96f + (shown - 1) * 6f)) / 2f;
+            for (int i = 0; i < shown; i++)
+            {
+                float x = startX + i * 102f;
+                HeroDefinition member = WorldsCatalog.FindHero(teamIds[i]);
+                GUI.DrawTexture(new Rect(x - 12, 478, 120, 176),
+                    OrnateGuiSkin.Glow("home_member_glow",
+                        new Color(1f, .85f, .45f, .35f)));
+                ChroniclesHeroPortrait.Draw(member.id,
+                    new Rect(x, 496, 96, 140), false);
+                if (GUI.Button(new Rect(x, 496, 96, 140), "", GUIStyle.none))
+                {
+                    selectedHero = member.id;
+                    showHeroMotion = true;
+                    notice = "";
+                    page = Page.HeroDetails;
+                }
+            }
             GUIStyle plateStyle = new GUIStyle(subtitle) {
                 alignment = TextAnchor.MiddleCenter };
             plateStyle.normal.textColor = OrnateGuiSkin.GoldBright;
-            GUI.Label(new Rect(126, 569, 287, 41),
-                featured.name.ToUpperInvariant() + " • " + featured.rarity +
-                " • " + featured.element, plateStyle);
 
             // A few contextual side doors, not a wall of oversized offer banners.
             if (GUI.Button(new Rect(29, 249, 108, 60), "ELITE\nDARK",
@@ -356,10 +367,14 @@ namespace MythicChronicles
             ChapterDefinition chapter = WorldsCatalog.Chapters[
                 Mathf.Clamp(progress.Data.lastClearedStage / 10, 0,
                     WorldsCatalog.Chapters.Length - 1)];
-            GUI.Label(new Rect(34, 634, 470, 45),
+            OrnateGuiSkin.Bar(new Rect(34, 650, 472, 42));
+            GUIStyle storyStyle = new GUIStyle(subtitle) {
+                alignment = TextAnchor.MiddleCenter };
+            storyStyle.normal.textColor = OrnateGuiSkin.GoldBright;
+            GUI.Label(new Rect(42, 656, 456, 30),
                 "STORY " + progress.Data.lastClearedStage +
-                "/60  •  " + chapter.title, subtitle);
-            if (GUI.Button(new Rect(49, 687, 443, 76),
+                "/60  •  " + chapter.title, storyStyle);
+            if (GUI.Button(new Rect(49, 708, 443, 72),
                 "CONTINUE ADVENTURE", OrnateGuiSkin.ButtonStyle()))
             {
                 inTower = false;
