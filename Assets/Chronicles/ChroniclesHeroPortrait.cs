@@ -75,7 +75,7 @@ namespace MythicChronicles
             }
             else if (authoredStill != null)
             {
-                GUI.DrawTexture(local, authoredStill, ScaleMode.ScaleAndCrop);
+                DrawTopCropped(local, authoredStill);
                 // A still illustration can animate as a gentle motion portrait
                 // until a full frame animation / rig is authored.
                 if (animated) AnimatedLightOverlay(heroId, local, phase, profile);
@@ -103,6 +103,26 @@ namespace MythicChronicles
             }
             DrawRarityBorder(local, heroId, animated);
             GUI.EndGroup();
+        }
+
+        // Cover-crop biased to the TOP of the artwork: hero faces live in the
+        // upper third, and a centered crop beheads them in wide card frames.
+        private static void DrawTopCropped(Rect r, Texture2D tex)
+        {
+            float imgAspect = (float)tex.width / tex.height;
+            float frameAspect = r.width / r.height;
+            Rect uv = new Rect(0f, 0f, 1f, 1f);
+            if (imgAspect < frameAspect)
+            {
+                float visible = imgAspect / frameAspect;
+                uv = new Rect(0f, 1f - visible, 1f, visible);
+            }
+            else
+            {
+                float visible = frameAspect / imgAspect;
+                uv = new Rect((1f - visible) * .5f, 0f, visible, 1f);
+            }
+            GUI.DrawTextureWithTexCoords(r, tex, uv);
         }
 
         private static void AnimatedLightOverlay(string id, Rect frame, float phase, PortraitIdentity profile)
