@@ -8,7 +8,7 @@ namespace MythicChronicles
     // to be replaced by production UI Toolkit art without changing progression logic.
     public sealed class ChroniclesGame : MonoBehaviour
     {
-        private enum Page { Home, More, Events, Shop, Mailbox, Chapters, Trials, Towers, Raid, Labyrinth, ArenaTraining, StageStory, Heroes, HeroDetails, Formation, Skins, Gear, Forge, Training, Runes, SignatureWeapon, RelicVault, Summon, Quests, WeeklyQuests, Achievements, Idle, Login, Settings, Battle, Results }
+        private enum Page { Home, More, Events, Shop, Mailbox, Chapters, Trials, Towers, Raid, Labyrinth, ArenaTraining, Bounty, StageStory, Heroes, HeroDetails, Formation, Skins, Gear, Forge, Training, Runes, SignatureWeapon, RelicVault, Summon, Quests, WeeklyQuests, Achievements, Idle, Login, Settings, Battle, Results }
         private Page page = Page.Home;
         private PlayerProgressService progress;
         private ChroniclesAudioDirector audio;
@@ -229,6 +229,7 @@ namespace MythicChronicles
             {
                 case Page.Home: Home(); break;
                 case Page.More: More(); break;
+                case Page.Bounty: Bounty(); break;
                 case Page.Events: Events(); break;
                 case Page.Shop: Shop(); break;
                 case Page.Mailbox: Mailbox(); break;
@@ -452,7 +453,7 @@ namespace MythicChronicles
                 "FACTION TOWERS", "WORLD BOSS",
                 "LABYRINTH", "ARENA TRAINING",
                 "SHOP", "MAILBOX",
-                "SETTINGS"
+                "BOUNTY BOARD", "SETTINGS"
             };
             for (int i = 0; i < names.Length; i++)
             {
@@ -476,9 +477,66 @@ namespace MythicChronicles
                     case 11: inArenaTraining = false; page = Page.ArenaTraining; break;
                     case 12: page = Page.Shop; break;
                     case 13: page = Page.Mailbox; break;
-                    case 14: page = Page.Settings; break;
+                    case 14: page = Page.Bounty; break;
+                    case 15: page = Page.Settings; break;
                 }
             }
+        }
+
+        private void Bounty()
+        {
+            GUI.Label(new Rect(26, 214, 488, 63), "BOUNTY BOARD", heading);
+            GUI.Label(new Rect(29, 269, 479, 40),
+                "Dispatch heroes on timed missions. New bounties every UTC day.",
+                subtitle);
+            var daily = ChroniclesBounty.DailyBounties(System.DateTime.UtcNow);
+            gearScroll = GUI.BeginScrollView(new Rect(19, 330, 505, 550),
+                gearScroll, new Rect(0, 0, 471, daily.Count * 105));
+            for (int i = 0; i < daily.Count; i++)
+            {
+                BountyDefinition def = daily[i];
+                float y = i * 105f;
+                GUI.Box(new Rect(6, y, 460, 99), "");
+                GUI.Label(new Rect(16, y + 7, 300, 27), def.name, subtitle);
+                GUI.Label(new Rect(16, y + 36, 295, 57),
+                    def.hours + "h  •  " + def.minHeroes + "+ heroes  •  power " +
+                    def.requiredPower + "\n" + def.RewardLabel, tiny);
+                ActiveBounty running = progress.FindActiveBounty(def.id);
+                bool claimedToday = progress.Data.claimedBountyIds.Contains(def.id);
+                if (running != null)
+                {
+                    long left = running.finishTicks - System.DateTime.UtcNow.Ticks;
+                    if (left <= 0)
+                    {
+                        if (GUI.Button(new Rect(314, y + 21, 142, 59), "CLAIM"))
+                            notice = progress.ClaimBounty(def.id) ?
+                                "Bounty complete: " + def.RewardLabel :
+                                "Bounty is still running.";
+                    }
+                    else
+                    {
+                        var span = System.TimeSpan.FromTicks(left);
+                        GUI.Label(new Rect(314, y + 30, 142, 40),
+                            "RETURN IN\n" + (int)span.TotalHours + "H " +
+                            span.Minutes + "M", tiny);
+                    }
+                }
+                else if (claimedToday)
+                {
+                    GUI.Label(new Rect(314, y + 30, 142, 40), "DONE", tiny);
+                }
+                else
+                {
+                    int power = progress.BestDispatchPower(def.minHeroes);
+                    GUI.enabled = power >= def.requiredPower;
+                    if (GUI.Button(new Rect(314, y + 21, 142, 59),
+                        power >= def.requiredPower ? "DISPATCH" : "WEAK"))
+                        notice = progress.StartBounty(def.id) ?
+                            def.name + " dispatched." : "Not enough hero power.";
+                    GUI.enabled = true;
+                }
+            }
+            GUI.EndScrollView();
         }
 
         private void Shop()

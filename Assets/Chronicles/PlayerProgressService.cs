@@ -41,6 +41,9 @@ namespace MythicChronicles
         public int loginDaysClaimed;
         public string fastBattleUtcDay = "";
         public int fastBattleUsed;
+        public string bountyUtcDay = "";
+        public List<ActiveBounty> activeBounties = new List<ActiveBounty>();
+        public List<string> claimedBountyIds = new List<string>();
         public string lastLoginGiftUtc = "";
         public List<SummonHistoryRecord> summonHistory = new List<SummonHistoryRecord>();
         public float musicVolume = .8f, effectsVolume = .9f;
@@ -1660,6 +1663,84 @@ namespace MythicChronicles
             IncrementWeekly("idle_minutes_180", FastBattleMinutes);
             Save();
             return collected;
+        }
+
+        public ActiveBounty FindActiveBounty(string bountyId)
+        {
+            foreach (ActiveBounty bounty in Data.activeBounties)
+                if (bounty.id == bountyId) return bounty;
+            return null;
+        }
+
+        // Sum of the effective levels of the N strongest owned heroes.
+        public int BestDispatchPower(int heroCount)
+        {
+            var levels = new List<int>();
+            foreach (OwnedHero hero in Data.heroes)
+                if (hero != null)
+                    levels.Add(ChroniclesGrowth.EffectiveLevel(Data, hero));
+            levels.Sort((a, b) => b.CompareTo(a));
+            int power = 0;
+            for (int i = 0; i < levels.Count && i < heroCount; i++)
+                power += levels[i];
+            return power;
+        }
+
+        private void ResetBountyDayIfNeeded()
+        {
+            string today = DateTime.UtcNow.ToString("yyyy-MM-dd");
+            if (Data.bountyUtcDay == today) return;
+            Data.bountyUtcDay = today;
+            Data.claimedBountyIds.Clear();
+        }
+
+        public bool StartBounty(string bountyId)
+        {
+            BountyDefinition def = ChroniclesBounty.Find(bountyId);
+            if (def == null) return false;
+            ResetBountyDayIfNeeded();
+            if (FindActiveBounty(bountyId) != null ||
+                Data.claimedBountyIds.Contains(bountyId)) return false;
+            if (Data.heroes.Count < def.minHeroes) return false;
+            // Auto-dispatch the strongest owned heroes.
+            var ranked = new List<OwnedHero>(Data.heroes);
+            ranked.Sort((a, b) =>
+                ChroniclesGrowth.EffectiveLevel(Data, b)
+                    .CompareTo(ChroniclesGrowth.EffectiveLevel(Data, a)));
+            var picks = new List<string>();
+            int power = 0;
+            for (int i = 0; i < ranked.Count && picks.Count < def.minHeroes; i++)
+            {
+                picks.Add(ranked[i].id);
+                power += ChroniclesGrowth.EffectiveLevel(Data, ranked[i]);
+            }
+            if (picks.Count < def.minHeroes || power < def.requiredPower)
+                return false;
+            Data.activeBounties.Add(new ActiveBounty
+            {
+                id = bountyId,
+                heroIds = picks,
+                finishTicks = DateTime.UtcNow.Ticks +
+                    TimeSpan.FromHours(def.hours).Ticks
+            });
+            Save();
+            return true;
+        }
+
+        public bool ClaimBounty(string bountyId)
+        {
+            ActiveBounty running = FindActiveBounty(bountyId);
+            BountyDefinition def = ChroniclesBounty.Find(bountyId);
+            if (running == null || def == null ||
+                running.finishTicks > DateTime.UtcNow.Ticks) return false;
+            ResetBountyDayIfNeeded();
+            Data.activeBounties.Remove(running);
+            Data.claimedBountyIds.Add(bountyId);
+            Data.gold += def.gold;
+            Data.gems += def.gems;
+            Data.forgeDust += def.forgeDust;
+            Save();
+            return true;
         }
 
         public int ClaimIdleGold()
