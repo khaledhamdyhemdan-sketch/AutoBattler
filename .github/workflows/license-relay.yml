@@ -1,0 +1,58 @@
+name: Unity license relay
+on: workflow_dispatch
+permissions:
+  issues: write
+jobs:
+  relay:
+    name: OAuth relay + Personal license activation
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: Install unity-cli
+        run: |
+          curl -fsSL https://public-cdn.cloud.unity3d.com/hub/prod/cli/install.sh | UNITY_CLI_CHANNEL=beta bash
+          echo "$HOME/.unity/bin" >> "$GITHUB_PATH"
+      - name: Start login and publish URL
+        run: |
+          set -x
+          unity auth login --insecure-storage --no-banner > /tmp/auth.log 2>&1 &
+          echo $! > /tmp/login.pid
+          for i in $(seq 1 20); do
+            sleep 3
+            URL=$(grep -oE 'https://services\.api\.unity\.com[^ ]+' /tmp/auth.log | head -1 || true)
+            if [ -n "$URL" ]; then break; fi
+          done
+          if [ -z "$URL" ]; then echo "NO_URL_CAPTURED"; cat /tmp/auth.log; exit 1; fi
+          echo "URL_LEN=${#URL}"
+          echo "$URL" > /tmp/login_url.txt
+          curl -s -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" -H "Accept: application/vnd.github+json" \
+            -X POST "https://api.github.com/repos/${{ github.repository }}/issues/7/comments" \
+            -d "$(python3 -c "import json,sys; print(json.dumps({'body':'LOGIN_URL: '+open('/tmp/login_url.txt').read().strip()}))")" \
+            | python3 -c "import json,sys; print('comment posted:', json.load(sys.stdin).get('id'))"
+      - name: Wait for sign-in completion
+        run: |
+          PID=$(cat /tmp/login.pid)
+          DONE=""
+          for i in $(seq 1 56); do
+            sleep 15
+            if ! kill -0 $PID 2>/dev/null; then DONE="process-exited"; break; fi
+            if grep -qiE 'success|signed in|complete' /tmp/auth.log; then DONE="log-success"; break; fi
+          done
+          echo "wait_result=$DONE"
+          echo "--- auth.log ---"; cat /tmp/auth.log
+          echo "--- auth status ---"; unity auth status || true
+          echo "done=$DONE" >> "$GITHUB_ENV"
+      - name: Activate Personal license
+        if: always()
+        run: |
+          unity license --help || true
+          unity license activate --personal --accept-eula || true
+          echo "--- license status ---"
+          unity license status || true
+      - name: Comment outcome
+        if: always()
+        run: |
+          BODY=$(printf 'relay finished. auth.log and license status in job log. wait=%s' "$done")
+          curl -s -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" -H "Accept: application/vnd.github+json" \
+            -X POST "https://api.github.com/repos/${{ github.repository }}/issues/7/comments" \
+            -d "$(python3 -c "import json,os; print(json.dumps({'body': os.environ.get('BODY','relay finished')}))" BODY="$BODY")" | python3 -c "import json,sys; print('comment posted:', json.load(sys.stdin).get('id'))"
