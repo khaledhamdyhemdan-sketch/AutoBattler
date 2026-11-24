@@ -967,42 +967,91 @@ namespace MythicChronicles
             {
                 cutInNameStyle = new GUIStyle(GUI.skin.label) { fontSize = 30, fontStyle = FontStyle.Bold };
                 cutInNameStyle.normal.textColor = new Color(1f, .87f, .55f);
-                cutInSkillStyle = new GUIStyle(GUI.skin.label) { fontSize = 21, fontStyle = FontStyle.Bold };
+                cutInSkillStyle = new GUIStyle(GUI.skin.label) { fontSize = 17, fontStyle = FontStyle.Bold };
             }
             if (cutInTime >= 1.15f || string.IsNullOrEmpty(cutInHero)) return;
             float t = cutInTime / 1.15f;
-            float inT = Mathf.Clamp01(t / .2f); inT = inT * inT * (3f - 2f * inT);
-            float outT = Mathf.Clamp01((t - .78f) / .22f); outT = outT * outT * (3f - 2f * outT);
+            float inT = Mathf.Clamp01(t / .18f); inT = inT * inT * (3f - 2f * inT);
+            float outT = Mathf.Clamp01((t - .8f) / .2f); outT = outT * outT * (3f - 2f * outT);
             float a = inT * (1f - outT);
             HeroDefinition cutHero = WorldsCatalog.FindHero(cutInHero);
             Color ec = cutHero != null ? HeroSkillEffects.ColorFor(cutHero.element) : new Color(1f, .75f, .3f);
-            GUI.color = new Color(ec.r, ec.g, ec.b, .28f * (1f - t));
+            // subtle full-screen element flash
+            GUI.color = new Color(ec.r, ec.g, ec.b, .16f * (1f - t));
             GUI.DrawTexture(new Rect(0f, 0f, 540f, 960f), Texture2D.whiteTexture);
-            GUI.color = new Color(0f, 0f, 0f, .78f * a);
-            GUI.DrawTexture(new Rect(0f, 330f, 540f, 190f), Texture2D.whiteTexture);
-            GUI.color = new Color(ec.r, ec.g, ec.b, .9f * a);
-            GUI.DrawTexture(new Rect(0f, 330f, 540f, 3f), Texture2D.whiteTexture);
-            GUI.DrawTexture(new Rect(0f, 517f, 540f, 3f), Texture2D.whiteTexture);
+            // diagonal slash band with element edge lines and speed lines
+            Matrix4x4 keepMatrix = GUI.matrix;
+            GUIUtility.RotateAroundPivot(-9f, new Vector2(270f, 470f));
+            GUI.color = new Color(0f, 0f, 0f, .8f * a);
+            GUI.DrawTexture(new Rect(-60f, 392f, 660f, 196f), Texture2D.whiteTexture);
+            GUI.color = new Color(ec.r, ec.g, ec.b, .85f * a);
+            GUI.DrawTexture(new Rect(-60f, 392f, 660f, 4f), Texture2D.whiteTexture);
+            GUI.DrawTexture(new Rect(-60f, 584f, 660f, 4f), Texture2D.whiteTexture);
+            for (int i = 0; i < 4; i++)
+            {
+                float lineY = 412f + i * 42f + 14f * Mathf.Sin(i * 2.1f);
+                float lineW = 210f + 80f * i;
+                GUI.color = new Color(ec.r, ec.g, ec.b, (.38f - .07f * i) * a);
+                GUI.DrawTexture(new Rect(560f - lineW + 26f * i, lineY, lineW, 3f), Texture2D.whiteTexture);
+            }
+            GUI.matrix = keepMatrix;
+            // hero splash: full-body cutout when one exists, else static portrait
             Texture2D portrait;
             if (!cutInPortraits.TryGetValue(cutInHero, out portrait))
             {
-                portrait = Resources.Load<Texture2D>("Chronicles/Portraits/Static/" + cutInHero);
+                portrait = Resources.Load<Texture2D>("Chronicles/HomeCutouts/" + cutInHero);
+                if (portrait == null)
+                    portrait = Resources.Load<Texture2D>("Chronicles/Portraits/Static/" + cutInHero);
                 cutInPortraits[cutInHero] = portrait;
             }
             if (portrait != null)
             {
-                float px = Mathf.Lerp(-300f, 18f, inT) - 340f * outT;
+                float slide = Mathf.Lerp(-430f, 0f, inT) - 390f * outT;
+                float maxW = 470f, maxH = 700f;
+                float ar = (float)portrait.width / portrait.height;
+                float ph = maxH, pw = ph * ar;
+                if (pw > maxW) { pw = maxW; ph = pw / ar; }
+                Rect fit = new Rect(-70f + slide, 170f + (maxH - ph), pw, ph);
+                float fadeW = Mathf.Min(110f, fit.width * .35f);
+                float fadeH = Mathf.Min(100f, fit.height * .2f);
+                float bodyW = fit.width - fadeW, bodyH = fit.height - fadeH;
                 GUI.color = new Color(1f, 1f, 1f, a);
-                GUI.DrawTexture(new Rect(px, 302f, 300f, 246f), portrait, ScaleMode.ScaleToFit, true);
+                // opaque body (left + bottom chunk)
+                GUI.DrawTextureWithTexCoords(
+                    new Rect(fit.x, fit.y + fadeH, bodyW, bodyH), portrait,
+                    new Rect(0f, 0f, bodyW / fit.width, bodyH / fit.height));
+                // right-edge fade: vertical strips with falling alpha
+                for (int i = 0; i < 5; i++)
+                {
+                    float sx = bodyW + i * fadeW / 5f;
+                    GUI.color = new Color(1f, 1f, 1f, a * (1f - (i + 1f) / 5f));
+                    GUI.DrawTextureWithTexCoords(
+                        new Rect(fit.x + sx, fit.y, fadeW / 5f, fit.height), portrait,
+                        new Rect(sx / fit.width, 0f, fadeW / 5f / fit.width, 1f));
+                }
+                // top-edge fade over the body region
+                for (int i = 0; i < 4; i++)
+                {
+                    float sy = fadeH - (i + 1f) * fadeH / 4f;
+                    GUI.color = new Color(1f, 1f, 1f, a * (1f - (i + 1f) / 4f));
+                    GUI.DrawTextureWithTexCoords(
+                        new Rect(fit.x, fit.y + sy, bodyW, fadeH / 4f), portrait,
+                        new Rect(0f, (fit.height - sy - fadeH / 4f) / fit.height,
+                            bodyW / fit.width, fadeH / 4f / fit.height));
+                }
             }
             if (cutHero != null)
             {
+                string cutName = cutHero.name.ToUpperInvariant();
+                GUI.color = new Color(0f, 0f, 0f, .9f * a);
+                GUI.Label(new Rect(298f, 426f, 240f, 52f), cutName, cutInNameStyle);
+                GUI.Label(new Rect(298f, 478f, 240f, 36f), string.IsNullOrEmpty(cutInSkill) ? "" : cutInSkill.ToUpperInvariant(), cutInSkillStyle);
                 GUI.color = new Color(1f, 1f, 1f, a);
-                GUI.Label(new Rect(238f, 372f, 296f, 46f), cutHero.name.ToUpperInvariant(), cutInNameStyle);
+                GUI.Label(new Rect(296f, 424f, 240f, 52f), cutName, cutInNameStyle);
                 if (!string.IsNullOrEmpty(cutInSkill))
                 {
                     cutInSkillStyle.normal.textColor = ec;
-                    GUI.Label(new Rect(238f, 418f, 296f, 32f), cutInSkill.ToUpperInvariant(), cutInSkillStyle);
+                    GUI.Label(new Rect(296f, 476f, 240f, 36f), cutInSkill.ToUpperInvariant(), cutInSkillStyle);
                 }
             }
             GUI.color = Color.white;
