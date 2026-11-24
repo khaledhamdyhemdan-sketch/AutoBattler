@@ -1,0 +1,76 @@
+name: Capture Unity license file (internal)
+on: workflow_dispatch
+permissions:
+  issues: write
+jobs:
+  capture:
+    name: Activate Personal license inside builder container and artifact the ulf
+    runs-on: ubuntu-latest
+    container: unityci/editor:ubuntu-6000.3.0f1-android-4.0.0
+    timeout-minutes: 30
+    steps:
+      - name: Install unity-cli
+        run: |
+          (curl -fsSL https://public-cdn.cloud.unity3d.com/hub/prod/cli/install.sh || (apt-get update -qq && apt-get install -y -qq curl ca-certificates >/dev/null && curl -fsSL https://public-cdn.cloud.unity3d.com/hub/prod/cli/install.sh)) | UNITY_CLI_CHANNEL=beta bash
+          echo "$HOME/.unity/bin" >> "$GITHUB_PATH"
+          find / -name unity -type f -path "*bin*" 2>/dev/null | head -3
+      - name: Start login and publish URL
+        run: |
+          export PATH="$HOME/.unity/bin:/root/.unity/bin:$PATH"
+          which unity || { find / -name unity -type f -path "*bin*" 2>/dev/null | head -3; exit 1; }
+          unity auth login --insecure-storage --no-banner > /tmp/auth.log 2>&1 &
+          echo $! > /tmp/login.pid
+          URL=""
+          for i in $(seq 1 20); do
+            sleep 3
+            URL=$(grep -oE 'https://services\.api\.unity\.com[^ ]+' /tmp/auth.log | head -1 || true)
+            if [ -n "$URL" ]; then break; fi
+          done
+          if [ -z "$URL" ]; then echo "NO_URL_CAPTURED"; cat /tmp/auth.log; exit 1; fi
+          echo "URL_LEN=${#URL}"
+          python3 - "$URL" <<'PY'
+          import json, os, sys, urllib.request
+          req = urllib.request.Request(
+            "https://api.github.com/repos/%s/issues/8/comments" % os.environ["GITHUB_REPOSITORY"],
+            data=json.dumps({"body": "CAPTURE_LOGIN_URL: " + sys.argv[1]}).encode(),
+            headers={"Authorization": "Bearer " + os.environ["TOKEN"], "Accept": "application/vnd.github+json"},
+            method="POST")
+          print("comment posted:", json.load(urllib.request.urlopen(req))["id"])
+          PY
+        env:
+          TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Wait for sign-in completion
+        run: |
+          export PATH="$HOME/.unity/bin:/root/.unity/bin:$PATH"
+          PID=$(cat /tmp/login.pid)
+          DONE=timeout
+          for i in $(seq 1 56); do
+            sleep 15
+            if ! kill -0 $PID 2>/dev/null; then DONE=process-exited; break; fi
+            if grep -qiE 'successfully' /tmp/auth.log; then DONE=log-success; break; fi
+          done
+          echo "wait_result=$DONE"
+          unity auth status || true
+      - name: Activate Personal license
+        run: |
+          export PATH="$HOME/.unity/bin:/root/.unity/bin:$PATH"
+          unity license activate --personal --accept-eula
+          unity license status || true
+      - name: Locate and artifact the license file
+        run: |
+          echo "machine-id: $(cat /etc/machine-id 2>/dev/null || echo none)"
+          find / -name "Unity_lic.ulf" 2>/dev/null | head -5
+          find $HOME -path "*unity3d*" -name "*.ulf" 2>/dev/null | head -5
+          ls -la $HOME/.local/share/unity3d/Unity/ 2>/dev/null || true
+          mkdir -p /tmp/licout
+          FOUND=$(find / -name "Unity_lic.ulf" 2>/dev/null | head -1)
+          if [ -z "$FOUND" ]; then echo "NO_ULF_FOUND"; exit 1; fi
+          cp "$FOUND" /tmp/licout/Unity_lic.ulf
+          cp /etc/machine-id /tmp/licout/machine-id.txt 2>/dev/null || true
+          echo "captured: $FOUND"
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: unity-license-ulf
+          path: /tmp/licout/
+          retention-days: 1
