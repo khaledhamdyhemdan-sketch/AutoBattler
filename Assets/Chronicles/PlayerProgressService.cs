@@ -52,6 +52,7 @@ namespace MythicChronicles
         public List<int> passLevelsClaimed = new List<int>();
         public string leaderboardWeekClaimed = "";
         public GuildState guild = new GuildState();
+        public FriendsState friends = new FriendsState();
         public string bountyUtcDay = "";
         public List<ActiveBounty> activeBounties = new List<ActiveBounty>();
         public List<string> claimedBountyIds = new List<string>();
@@ -2055,6 +2056,48 @@ namespace MythicChronicles
             label = ChroniclesGuild.WeeklyChestLabel(tier);
             Save();
             return true;
+        }
+
+        public bool ClaimFriendGift(string friendName)
+        {
+            var def = Array.Find(ChroniclesFriends.Friends,
+                f => f.name == friendName);
+            if (def == null) return false;
+            string today = DateTime.UtcNow.ToString("yyyy-MM-dd");
+            if (Data.friends.giftUtcDay != today)
+            {
+                Data.friends.giftUtcDay = today;
+                Data.friends.giftsClaimedToday.Clear();
+            }
+            if (Data.friends.giftsClaimedToday.Contains(friendName)) return false;
+            Data.friends.giftsClaimedToday.Add(friendName);
+            Data.gold += def.giftGold;
+            Data.friends.friendPoints += def.giftPoints;
+            Save();
+            return true;
+        }
+
+        public bool HireMercenary(string championId)
+        {
+            var def = Array.Find(ChroniclesFriends.Friends,
+                f => f.championId == championId);
+            string today = DateTime.UtcNow.ToString("yyyy-MM-dd");
+            if (def == null || Data.friends.mercenaryUtcDay == today ||
+                Data.friends.friendPoints < ChroniclesFriends.MercenaryCost)
+                return false;
+            Data.friends.friendPoints -= ChroniclesFriends.MercenaryCost;
+            Data.friends.mercenaryUtcDay = today;
+            Data.friends.mercenaryUsedHeroId = championId;
+            Data.friends.mercenaryPending = true;
+            Save();
+            return true;
+        }
+
+        public void ConsumeMercenary()
+        {
+            if (!Data.friends.mercenaryPending) return;
+            Data.friends.mercenaryPending = false;
+            Save();
         }
 
         public bool SpendLegacyPoint(int branch)

@@ -8,7 +8,7 @@ namespace MythicChronicles
     // to be replaced by production UI Toolkit art without changing progression logic.
     public sealed class ChroniclesGame : MonoBehaviour
     {
-        private enum Page { Home, More, Events, Shop, Mailbox, Chapters, Trials, Towers, Raid, Labyrinth, ArenaTraining, Bounty, Legacy, ElementalGates, EventAdventure, SeasonPass, Leaderboards, Guild, StageStory, Heroes, HeroDetails, Formation, Skins, Gear, Forge, Training, Runes, SignatureWeapon, RelicVault, Summon, Quests, WeeklyQuests, Achievements, Idle, Login, Settings, Battle, Results }
+        private enum Page { Home, More, Events, Shop, Mailbox, Chapters, Trials, Towers, Raid, Labyrinth, ArenaTraining, Bounty, Legacy, ElementalGates, EventAdventure, SeasonPass, Leaderboards, Guild, Friends, StageStory, Heroes, HeroDetails, Formation, Skins, Gear, Forge, Training, Runes, SignatureWeapon, RelicVault, Summon, Quests, WeeklyQuests, Achievements, Idle, Login, Settings, Battle, Results }
         private Page page = Page.Home;
         private PlayerProgressService progress;
         private ChroniclesAudioDirector audio;
@@ -238,6 +238,7 @@ namespace MythicChronicles
                 case Page.SeasonPass: SeasonPass(); break;
                 case Page.Leaderboards: Leaderboards(); break;
                 case Page.Guild: Guild(); break;
+                case Page.Friends: Friends(); break;
                 case Page.Events: Events(); break;
                 case Page.Shop: Shop(); break;
                 case Page.Mailbox: Mailbox(); break;
@@ -464,7 +465,8 @@ namespace MythicChronicles
                 "BOUNTY BOARD", "CHRONICLE LEGACY",
                 "ELEMENTAL GATES", "EVENT ADVENTURE",
                 "SEASON PASS", "RANKINGS",
-                "GUILD", "SETTINGS"
+                "GUILD", "FRIENDS",
+                "SETTINGS"
             };
             int rows = (names.Length + 1) / 2;
             chapterScroll = GUI.BeginScrollView(new Rect(19, 340, 505, 545),
@@ -498,7 +500,8 @@ namespace MythicChronicles
                     case 18: page = Page.SeasonPass; break;
                     case 19: page = Page.Leaderboards; break;
                     case 20: page = Page.Guild; break;
-                    case 21: page = Page.Settings; break;
+                    case 21: page = Page.Friends; break;
+                    case 22: page = Page.Settings; break;
                 }
             }
             GUI.EndScrollView();
@@ -818,6 +821,46 @@ namespace MythicChronicles
                 GUI.enabled = true;
                 my += 56f;
             }
+        }
+
+        private void Friends()
+        {
+            string today = System.DateTime.UtcNow.ToString("yyyy-MM-dd");
+            GUI.Label(new Rect(26, 214, 488, 63), "FRIENDS", heading);
+            GUI.Label(new Rect(29, 270, 479, 60),
+                "Offline prototype - real friends arrive with the server." +
+                "\nFriend points: " + progress.Data.friends.friendPoints +
+                "  •  Mercenary hire: " + ChroniclesFriends.MercenaryCost +
+                " pts (one +8% team blessing)", subtitle);
+            float y = 352f;
+            foreach (var friend in ChroniclesFriends.Friends)
+            {
+                bool gifted = progress.Data.friends.giftUtcDay == today &&
+                    progress.Data.friends.giftsClaimedToday.Contains(friend.name);
+                GUI.Box(new Rect(26, y, 488, 84), "");
+                GUI.Label(new Rect(44, y + 8, 250, 30), friend.name, subtitle);
+                GUI.Label(new Rect(44, y + 40, 260, 40),
+                    "Champion: " + friend.championLabel +
+                    "\nDaily gift: " + friend.giftGold + " gold + " +
+                    friend.giftPoints + " pts", tiny);
+                GUI.enabled = !gifted;
+                if (GUI.Button(new Rect(300, y + 18, 100, 48),
+                    gifted ? "TAKEN" : "GIFT"))
+                    notice = progress.ClaimFriendGift(friend.name) ?
+                        friend.name + "'s gift claimed." : "Already claimed today.";
+                GUI.enabled = progress.Data.friends.mercenaryUtcDay != today &&
+                    progress.Data.friends.friendPoints >=
+                    ChroniclesFriends.MercenaryCost;
+                if (GUI.Button(new Rect(408, y + 18, 100, 48), "HIRE"))
+                    notice = progress.HireMercenary(friend.championId) ?
+                        friend.championLabel + " joins your next battle (+8%)." :
+                        "Hire unavailable today.";
+                GUI.enabled = true;
+                y += 92f;
+            }
+            if (progress.Data.friends.mercenaryPending)
+                GUI.Label(new Rect(29, y + 8, 479, 30),
+                    "A mercenary blessing is ready for your next battle.", subtitle);
         }
 
         private void Bounty()
@@ -2450,6 +2493,7 @@ namespace MythicChronicles
         private void OnBattleFinished(bool victory)
         {
             lastVictory = victory;
+            progress.ConsumeMercenary();
             if (inArenaTraining)
             {
                 bool savedArena = progress.CompleteArenaTraining(arenaRunId, victory);

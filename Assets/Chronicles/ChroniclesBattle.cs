@@ -84,10 +84,14 @@ namespace MythicChronicles
                 HeroGrowthStats growth = ChroniclesGrowth.Calculate(savedProgress, squad[i]);
                 EquipmentBonuses gear = ChroniclesEquipment.Calculate(
                     savedProgress == null ? null : savedProgress.equipment, hero.id);
+                float mercenary = savedProgress != null &&
+                    savedProgress.friends != null &&
+                    savedProgress.friends.mercenaryPending ?
+                    1f + ChroniclesFriends.MercenaryPowerBonus : 1f;
                 fighter.attack = (fighter.attack + gear.attack) *
-                    growth.attackMultiplier * gear.attackMultiplier;
+                    growth.attackMultiplier * gear.attackMultiplier * mercenary;
                 fighter.maxHp = (fighter.maxHp + gear.health) *
-                    growth.hpMultiplier * gear.healthMultiplier;
+                    growth.hpMultiplier * gear.healthMultiplier * mercenary;
                 fighter.armor = (fighter.armor + gear.defense) * growth.defenseMultiplier;
                 fighter.hp = fighter.maxHp;
                 fighter.skillFactor = growth.skillMultiplier;
