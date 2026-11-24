@@ -2105,21 +2105,25 @@ namespace MythicChronicles
                 Rect er = new Rect((540f - ew) / 2f, 118, ew, eh);
                 GUI.DrawTexture(er, resultEmblem, ScaleMode.ScaleToFit);
                 GUIStyle vt = new GUIStyle(heading) {
-                    alignment = TextAnchor.MiddleCenter, fontSize = 38,
+                    alignment = TextAnchor.MiddleCenter, fontSize = 40,
                     fontStyle = FontStyle.Bold };
+                // Cream word with a dark outline reads on the busy ribbon art.
                 vt.normal.textColor = lastVictory ?
-                    new Color(.16f, .11f, .03f) : new Color(.92f, .90f, .98f);
+                    new Color(1f, .95f, .82f) : new Color(.93f, .91f, .99f);
                 Rect ribbon = new Rect(20, er.y + er.height * .45f, 500,
                     er.height * .24f);
-                if (!lastVictory)
-                {
-                    GUIStyle vtShadow = new GUIStyle(vt);
-                    vtShadow.normal.textColor = new Color(0f, 0f, 0f, .7f);
-                    GUI.Label(new Rect(ribbon.x + 2, ribbon.y + 2,
-                        ribbon.width, ribbon.height),
-                        "DEFEAT", vtShadow);
-                }
-                GUI.Label(ribbon, lastVictory ? "VICTORY!" : "DEFEAT", vt);
+                string word = lastVictory ? "VICTORY!" : "DEFEAT";
+                GUIStyle vtOutline = new GUIStyle(vt);
+                vtOutline.normal.textColor = new Color(.08f, .05f, .02f, .9f);
+                for (int ox = -2; ox <= 2; ox++)
+                    for (int oy = -2; oy <= 2; oy++)
+                    {
+                        if (ox == 0 && oy == 0) continue;
+                        if (Mathf.Abs(ox) + Mathf.Abs(oy) > 3) continue;
+                        GUI.Label(new Rect(ribbon.x + ox, ribbon.y + oy,
+                            ribbon.width, ribbon.height), word, vtOutline);
+                    }
+                GUI.Label(ribbon, word, vt);
             }
             else
             {
