@@ -42,6 +42,9 @@ namespace MythicChronicles
         public string fastBattleUtcDay = "";
         public int fastBattleUsed;
         public int legacyWar, legacyGuard, legacyFortune;
+        public List<ElementalGateProgress> elementalGates = new List<ElementalGateProgress>();
+        public string gateUtcDay = "";
+        public int gateAttemptsUsed;
         public string bountyUtcDay = "";
         public List<ActiveBounty> activeBounties = new List<ActiveBounty>();
         public List<string> claimedBountyIds = new List<string>();
@@ -96,7 +99,8 @@ namespace MythicChronicles
             new QuestInfo("win_3", "Win 3 battles", 3, 350, 30),
             new QuestInfo("upgrade_1", "Upgrade any hero", 1, 180, 15),
             new QuestInfo("summon_1", "Summon a hero", 1, 180, 15),
-            new QuestInfo("idle_1", "Collect idle earnings", 1, 120, 10)
+            new QuestInfo("idle_1", "Collect idle earnings", 1, 120, 10),
+            new QuestInfo("gates_1", "Clear an Elemental Gate", 1, 220, 20)
         };
         public static readonly QuestInfo[] WeeklyQuests =
         {
@@ -1665,6 +1669,85 @@ namespace MythicChronicles
             IncrementWeekly("idle_minutes_180", FastBattleMinutes);
             Save();
             return collected;
+        }
+
+        public ElementalGateProgress GateState(HeroElement element)
+        {
+            foreach (ElementalGateProgress gate in Data.elementalGates)
+                if (gate.element == element.ToString()) return gate;
+            var created = new ElementalGateProgress { element = element.ToString() };
+            Data.elementalGates.Add(created);
+            return created;
+        }
+
+        public int GateAttemptsRemaining()
+        {
+            string today = DateTime.UtcNow.ToString("yyyy-MM-dd");
+            return Data.gateUtcDay == today ?
+                Mathf.Max(0, ChroniclesElementalGates.DailyAttempts -
+                    Data.gateAttemptsUsed) :
+                ChroniclesElementalGates.DailyAttempts;
+        }
+
+        // Team check: all five selected heroes must match the gate element.
+        public bool GateTeamMatches(HeroElement element)
+        {
+            if (Data.selectedTeam.Count != 5) return false;
+            foreach (string id in Data.selectedTeam)
+                if (HeroElements.For(id) != element) return false;
+            return true;
+        }
+
+        public bool CanEnterGate(HeroElement element)
+        {
+            return ChroniclesElementalGates.IsOpen(element, DateTime.UtcNow) &&
+                GateAttemptsRemaining() > 0 && GateTeamMatches(element);
+        }
+
+        // Consumes one attempt; returns "" when entry is not allowed.
+        public string BeginGate(HeroElement element)
+        {
+            if (!CanEnterGate(element)) return "";
+            string today = DateTime.UtcNow.ToString("yyyy-MM-dd");
+            if (Data.gateUtcDay != today)
+            {
+                Data.gateUtcDay = today;
+                Data.gateAttemptsUsed = 0;
+            }
+            Data.gateAttemptsUsed++;
+            Save();
+            return element.ToString();
+        }
+
+        public void AbandonGate(HeroElement element)
+        {
+            // Attempts stay consumed (genre standard for failed entries),
+            // but a battle that never started refunds the attempt.
+            if (Data.gateAttemptsUsed > 0) Data.gateAttemptsUsed--;
+            Save();
+        }
+
+        public bool CompleteGate(string runElement, bool victory, out string rewardLabel)
+        {
+            rewardLabel = "";
+            HeroElement element;
+            if (!System.Enum.TryParse(runElement, out element)) return false;
+            ElementalGateProgress gate = GateState(element);
+            if (!victory) { Save(); return true; }
+            int level = Mathf.Clamp(gate.unlockedLevel, 1,
+                ChroniclesElementalGates.Levels);
+            bool firstClear = !gate.firstClears.Contains(level);
+            if (firstClear) gate.firstClears.Add(level);
+            Data.gold += ChroniclesElementalGates.RewardGold(level);
+            Data.gems += ChroniclesElementalGates.RewardGems(level);
+            Data.forgeDust += ChroniclesElementalGates.RewardForgeDust(level, firstClear);
+            Data.relicDust += ChroniclesElementalGates.RewardRelicDust(level, firstClear);
+            rewardLabel = ChroniclesElementalGates.RewardLabel(level, firstClear);
+            if (gate.unlockedLevel < ChroniclesElementalGates.Levels)
+                gate.unlockedLevel++;
+            IncrementQuest("gates_1");
+            Save();
+            return true;
         }
 
         public bool SpendLegacyPoint(int branch)
