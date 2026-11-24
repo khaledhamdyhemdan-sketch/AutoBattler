@@ -2094,8 +2094,38 @@ namespace MythicChronicles
                     GoHome();
                 return;
             }
-            OrnateGuiSkin.Title(new Rect(25, 235, 490, 80),
-                lastVictory ? "VICTORY!" : "DEFEAT", 44);
+            // Illustrated result emblem with the word on its ribbon; text-only
+            // fallback when the art is missing.
+            Texture2D resultEmblem = OrnateGuiSkin.Art(
+                lastVictory ? "victory_emblem" : "defeat_emblem");
+            if (resultEmblem != null)
+            {
+                float ew = 330f, eh = ew * resultEmblem.height /
+                    (float)resultEmblem.width;
+                Rect er = new Rect((540f - ew) / 2f, 118, ew, eh);
+                GUI.DrawTexture(er, resultEmblem, ScaleMode.ScaleToFit);
+                GUIStyle vt = new GUIStyle(heading) {
+                    alignment = TextAnchor.MiddleCenter, fontSize = 38,
+                    fontStyle = FontStyle.Bold };
+                vt.normal.textColor = lastVictory ?
+                    new Color(.16f, .11f, .03f) : new Color(.92f, .90f, .98f);
+                Rect ribbon = new Rect(20, er.y + er.height * .45f, 500,
+                    er.height * .24f);
+                if (!lastVictory)
+                {
+                    GUIStyle vtShadow = new GUIStyle(vt);
+                    vtShadow.normal.textColor = new Color(0f, 0f, 0f, .7f);
+                    GUI.Label(new Rect(ribbon.x + 2, ribbon.y + 2,
+                        ribbon.width, ribbon.height),
+                        "DEFEAT", vtShadow);
+                }
+                GUI.Label(ribbon, lastVictory ? "VICTORY!" : "DEFEAT", vt);
+            }
+            else
+            {
+                OrnateGuiSkin.Title(new Rect(25, 235, 490, 80),
+                    lastVictory ? "VICTORY!" : "DEFEAT", 44);
+            }
             StageDefinition stage = WorldsCatalog.GetStage(stageId);
             GUI.Label(new Rect(35, 362, 470, 100),
                 inTower ? ChroniclesTowers.DisplayName(selectedTowerOrigin) +
