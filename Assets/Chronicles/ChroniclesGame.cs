@@ -123,6 +123,14 @@ namespace MythicChronicles
             GUI.skin.button.active.textColor = new Color(1f, .87f, .49f);
             GUI.skin.box.normal.background = boxTex;
             GUI.skin.box.border = new RectOffset(10, 10, 10, 10);
+            // Illustrated ornate panel art replaces the procedural plate for
+            // every GUI.Box panel in the game (9-sliced at the corners).
+            Texture2D ornatePanelArt = OrnateGuiSkin.Art("panel_ornate");
+            if (ornatePanelArt != null)
+            {
+                GUI.skin.box.normal.background = ornatePanelArt;
+                GUI.skin.box.border = new RectOffset(42, 42, 42, 42);
+            }
             GUI.skin.box.fontSize = 14;
             GUI.skin.box.wordWrap = true;
             GUI.skin.box.normal.textColor = new Color(.90f, .87f, .98f);
@@ -137,12 +145,6 @@ namespace MythicChronicles
                 GUI.skin.button.focused.background = btnArt;
                 GUI.skin.button.border = new RectOffset(0, 0, 0, 0);
                 GUI.skin.button.normal.textColor = OrnateGuiSkin.GoldBright;
-            }
-            Texture2D panelArt = OrnateGuiSkin.Art("panel_frame");
-            if (panelArt != null)
-            {
-                GUI.skin.box.normal.background = panelArt;
-                GUI.skin.box.border = new RectOffset(0, 0, 0, 0);
             }
             bigButton = new GUIStyle(GUI.skin.button) {
                 fontSize = 18, fontStyle = FontStyle.Bold,
@@ -1762,12 +1764,20 @@ namespace MythicChronicles
             GUI.Label(new Rect(r.x + 22, r.y + 13, r.width - 160, 32), title, cardTitle);
             cardTitle.normal.textColor = OrnateGuiSkin.GoldBright;
             GUI.Label(new Rect(r.x + 20, r.y + 11, r.width - 160, 32), title, cardTitle);
+            // status chip on ornate bar art, not a plain code plate
+            Texture2D chipArt = OrnateGuiSkin.Art("bar_plate");
+            Rect chip = new Rect(r.x + r.width - 118, r.y + 12, 100, 28);
+            if (chipArt != null)
+            {
+                GUI.color = active ? new Color(.55f, 1f, .6f) :
+                    upcoming ? new Color(1f, .9f, .5f) : Color.gray;
+                GUI.DrawTexture(chip, chipArt, ScaleMode.StretchToFill);
+                GUI.color = Color.white;
+            }
             GUIStyle status = new GUIStyle(tiny) {
-                fontStyle = FontStyle.Bold, alignment = TextAnchor.MiddleRight };
-            status.normal.textColor = active ? new Color(.55f, 1f, .6f) :
-                upcoming ? new Color(1f, .9f, .5f) : Color.gray;
-            GUI.Label(new Rect(r.x + r.width - 146, r.y + 14, 126, 26),
-                active ? "ACTIVE" : upcoming ? "SOON" : "ENDED", status);
+                fontStyle = FontStyle.Bold, alignment = TextAnchor.MiddleCenter };
+            status.normal.textColor = new Color(.08f, .06f, .12f);
+            GUI.Label(chip, active ? "ACTIVE" : upcoming ? "SOON" : "ENDED", status);
             GUIStyle desc = new GUIStyle(tiny);
             desc.normal.textColor = new Color(1f, .96f, .88f);
             GUI.Label(new Rect(r.x + 20, r.y + 44, r.width - 190, 44),
