@@ -2895,6 +2895,38 @@ namespace MythicChronicles
                 float ew = 330f, eh = ew * resultEmblem.height /
                     (float)resultEmblem.width;
                 Rect er = new Rect((540f - ew) / 2f, 118, ew, eh);
+                if (lastVictory)
+                {
+                    // Rotating golden rays behind the emblem: a celebration,
+                    // not a flat plate.
+                    Vector2 emblemCenter = new Vector2(er.x + er.width / 2f,
+                        er.y + er.height / 2f);
+                    Matrix4x4 raysKeep = GUI.matrix;
+                    Color raysColor = GUI.color;
+                    for (int ray = 0; ray < 12; ray++)
+                    {
+                        GUIUtility.RotateAroundPivot(ray * 30f + Time.time * 16f,
+                            emblemCenter);
+                        GUI.color = new Color(1f, .82f, .38f, .10f);
+                        GUI.DrawTexture(new Rect(emblemCenter.x - 8f,
+                            emblemCenter.y - 260f, 16f, 260f),
+                            Texture2D.whiteTexture);
+                    }
+                    GUI.matrix = raysKeep;
+                    GUI.color = raysColor;
+                }
+                else
+                {
+                    // Defeat mood: crimson wash and a dark floor under the panel.
+                    Color washKeep = GUI.color;
+                    GUI.color = new Color(.45f, .05f, .08f, .20f);
+                    GUI.DrawTexture(new Rect(0f, 0f, 540f, 960f),
+                        Texture2D.whiteTexture);
+                    GUI.color = new Color(0f, 0f, 0f, .30f);
+                    GUI.DrawTexture(new Rect(0f, 780f, 540f, 180f),
+                        Texture2D.whiteTexture);
+                    GUI.color = washKeep;
+                }
                 GUI.DrawTexture(er, resultEmblem, ScaleMode.ScaleToFit);
                 GUIStyle vt = new GUIStyle(heading) {
                     alignment = TextAnchor.MiddleCenter, fontSize = 40,
