@@ -252,9 +252,18 @@ namespace MythicChronicles
         public static void TitlePlate(Rect r, string text, int size)
         {
             var plate = new GUIStyle(GUI.skin.box);
-            plate.normal.background = Frame("titleplate_frame", gold,
-                new Color(.07f, .055f, .11f, .93f), 64, 4);
-            plate.border = new RectOffset(12, 12, 12, 12);
+            Texture2D plaqueArt = Art("bar_plate");
+            if (plaqueArt != null)
+            {
+                plate.normal.background = plaqueArt;
+                plate.border = new RectOffset(0, 0, 0, 0);
+            }
+            else
+            {
+                plate.normal.background = Frame("titleplate_frame", gold,
+                    new Color(.07f, .055f, .11f, .93f), 64, 4);
+                plate.border = new RectOffset(12, 12, 12, 12);
+            }
             GUI.Box(r, GUIContent.none, plate);
             GUIStyle shadow = new GUIStyle(TitleStyle(size));
             shadow.normal.textColor = new Color(0f, 0f, 0f, .9f);
@@ -263,6 +272,42 @@ namespace MythicChronicles
             GUIStyle top = new GUIStyle(TitleStyle(size));
             top.wordWrap = true;
             GUI.Label(r, text, top);
+        }
+
+        private static GUIStyle cachedRowBox, cachedCellBox;
+
+        // Illustrated horizontal row plaque (bar_plate art): list rows, toast
+        // strips and short stat bands. Replaces collapsed 9-slice square frames.
+        public static GUIStyle RowBox()
+        {
+            if (cachedRowBox != null) return cachedRowBox;
+            var s = new GUIStyle(GUI.skin.box);
+            Texture2D art = Art("bar_plate");
+            if (art != null)
+            {
+                s.normal.background = art;
+                s.border = new RectOffset(0, 0, 0, 0);
+            }
+            s.padding = new RectOffset(14, 14, 4, 4);
+            cachedRowBox = s;
+            return s;
+        }
+
+        // Small illustrated cell (panel_frame art stretched whole, no slicing):
+        // reward-grid cells and filter chips too small for 9-slice corners.
+        public static GUIStyle CellBox()
+        {
+            if (cachedCellBox != null) return cachedCellBox;
+            var s = new GUIStyle(GUI.skin.box);
+            Texture2D art = Art("panel_frame");
+            if (art != null)
+            {
+                s.normal.background = art;
+                s.border = new RectOffset(0, 0, 0, 0);
+            }
+            s.padding = new RectOffset(3, 3, 3, 3);
+            cachedCellBox = s;
+            return s;
         }
 
         // Framed panel draw helper (authored art when present, else 9-slice).

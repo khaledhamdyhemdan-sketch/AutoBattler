@@ -14,8 +14,8 @@ namespace MythicChronicles
         {
             get
             {
-                if (astralSeals > 0) return astralSeals + " ASTRAL SEAL";
-                if (tickets > 0) return tickets + " SUMMON TICKET";
+                if (astralSeals > 0) return astralSeals + (astralSeals > 1 ? " SEALS" : " SEAL");
+                if (tickets > 0) return tickets + (tickets > 1 ? " TICKETS" : " TICKET");
                 if (gems > 0) return gems + " GEMS";
                 return gold + " GOLD";
             }

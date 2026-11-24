@@ -140,11 +140,11 @@ namespace MythicChronicles
             GUI.skin.box.border = new RectOffset(10, 10, 10, 10);
             // Illustrated ornate panel art replaces the procedural plate for
             // every GUI.Box panel in the game (9-sliced at the corners).
-            Texture2D ornatePanelArt = OrnateGuiSkin.Art("panel_ornate");
+            Texture2D ornatePanelArt = OrnateGuiSkin.Art("panel_frame");
             if (ornatePanelArt != null)
             {
                 GUI.skin.box.normal.background = ornatePanelArt;
-                GUI.skin.box.border = new RectOffset(42, 42, 42, 42);
+                GUI.skin.box.border = new RectOffset(44, 44, 44, 44);
             }
             GUI.skin.box.fontSize = 14;
             GUI.skin.box.wordWrap = true;
@@ -294,7 +294,7 @@ namespace MythicChronicles
             if (progress == null || progress.Data.tutorialCompleted) return;
             int step = Mathf.Clamp(progress.Data.tutorialStep, 0,
                 ChroniclesTutorial.StepCount - 1);
-            GUI.Box(new Rect(125, 170, 395, 103), "");
+            GUI.Box(new Rect(125, 170, 395, 103), "", OrnateGuiSkin.RowBox());
             GUI.Label(new Rect(132, 175, 379, 50),
                 "GUIDE " + (step + 1) + "/" + ChroniclesTutorial.StepCount +
                 "  •  " + ChroniclesTutorial.Description(step), tiny);
@@ -340,7 +340,7 @@ namespace MythicChronicles
             if (!string.IsNullOrEmpty(notice))
             {
                 // Toast with a dark backing so it never bleeds into panels below.
-                GUI.Box(new Rect(20, 901, 500, 47), "");
+                GUI.Box(new Rect(20, 901, 500, 47), "", OrnateGuiSkin.RowBox());
                 GUI.Label(new Rect(28, 903, 484, 43), notice, subtitle);
             }
         }
@@ -551,7 +551,7 @@ namespace MythicChronicles
             for (int i = 0; i < 3; i++)
             {
                 float y = 336 + i * 120f;
-                GUI.Box(new Rect(26, y, 488, 108), "");
+                GUI.Box(new Rect(26, y, 488, 108), "", OrnateGuiSkin.RowBox());
                 GUI.Label(new Rect(44, y + 12, 300, 30),
                     names[i] + "  LV " + levels[i] + "/" +
                     ChroniclesGrowth.LegacyCap, subtitle);
@@ -588,7 +588,7 @@ namespace MythicChronicles
                 bool open = ChroniclesElementalGates.IsOpen(element, System.DateTime.UtcNow);
                 ElementalGateProgress gate = progress.GateState(element);
                 int level = Mathf.Clamp(gate.unlockedLevel, 1, ChroniclesElementalGates.Levels);
-                GUI.Box(new Rect(26, y, 488, 80), "");
+                GUI.Box(new Rect(26, y, 488, 80), "", OrnateGuiSkin.RowBox());
                 GUI.Label(new Rect(44, y + 8, 320, 28),
                     ChroniclesElementalGates.GateName(element) + "  •  LV " + level,
                     subtitle);
@@ -635,7 +635,7 @@ namespace MythicChronicles
             {
                 bool cleared = stage <= state.highestCleared;
                 bool playable = progress.CanEnterAdventureStage(def.id, stage);
-                GUI.Box(new Rect(26, y, 488, 56), "");
+                GUI.Box(new Rect(26, y, 488, 56), "", OrnateGuiSkin.RowBox());
                 GUI.Label(new Rect(44, y + 6, 250, 24),
                     "STAGE " + stage + (cleared ? "  •  CLEARED" : ""), subtitle);
                 GUI.Label(new Rect(44, y + 30, 320, 22),
@@ -663,7 +663,7 @@ namespace MythicChronicles
             {
                 bool claimed = state.milestonesClaimed.Contains(threshold);
                 bool ready = state.currencyEarned >= threshold && !claimed;
-                GUI.Box(new Rect(26, y, 488, 52), "");
+                GUI.Box(new Rect(26, y, 488, 52), "", OrnateGuiSkin.RowBox());
                 GUI.Label(new Rect(44, y + 6, 300, 40),
                     threshold + " " + def.currencyName + "\n" +
                     ChroniclesEventAdventures.MilestoneRewardLabel(threshold), tiny);
@@ -700,7 +700,7 @@ namespace MythicChronicles
                 float y = (i - 1) * 58f;
                 bool claimed = progress.Data.passLevelsClaimed.Contains(i);
                 bool ready = i <= level && !claimed;
-                GUI.Box(new Rect(6, y, 460, 52), "");
+                GUI.Box(new Rect(6, y, 460, 52), "", OrnateGuiSkin.RowBox());
                 GUI.Label(new Rect(16, y + 6, 60, 40), "LV " + i, subtitle);
                 GUI.Label(new Rect(86, y + 6, 260, 40),
                     ChroniclesBattlePass.RewardLabel(i), tiny);
@@ -761,7 +761,7 @@ namespace MythicChronicles
                 var entry = board[i];
                 float y = i * 44f;
                 if (entry.isPlayer)
-                    GUI.Box(new Rect(6, y, 460, 40), "");
+                    GUI.Box(new Rect(6, y, 460, 40), "", OrnateGuiSkin.RowBox());
                 GUI.Label(new Rect(16, y + 8, 60, 26), "#" + (i + 1),
                     entry.isPlayer ? subtitle : tiny);
                 GUI.Label(new Rect(80, y + 8, 240, 26), entry.name,
@@ -785,7 +785,7 @@ namespace MythicChronicles
                 ChroniclesGuild.GuildLevel(guild.contributionTotal) +
                 "  •  " + (ChroniclesGuild.MemberCount) + " MEMBERS" +
                 "\nOffline prototype - live guilds arrive with the server.", pageDesc);
-            GUI.Box(new Rect(26, 348, 488, 108), "");
+            GUI.Box(new Rect(26, 348, 488, 108), "", OrnateGuiSkin.RowBox());
             GUI.Label(new Rect(44, 358, 300, 88),
                 "WEEKLY ACTIVITY: " + weekly +
                 "\nYour contribution today: " + guild.contributionToday + "/" +
@@ -799,7 +799,7 @@ namespace MythicChronicles
                     "Guild chest: " + chestLabel :
                     "Chest already claimed this week.";
             GUI.enabled = true;
-            GUI.Box(new Rect(26, 470, 488, 108), "");
+            GUI.Box(new Rect(26, 470, 488, 108), "", OrnateGuiSkin.RowBox());
             GUI.Label(new Rect(44, 480, 300, 88),
                 "GUILD BOSS - DAILY" +
                 "\nGuild damage today: " + bossTotal.ToString("N0") +
@@ -826,7 +826,7 @@ namespace MythicChronicles
             {
                 bool claimed = guild.guildBossMilestonesClaimed.Contains(threshold);
                 bool ready = bossTotal >= threshold && !claimed;
-                GUI.Box(new Rect(26, my, 488, 50), "");
+                GUI.Box(new Rect(26, my, 488, 50), "", OrnateGuiSkin.RowBox());
                 GUI.Label(new Rect(44, my + 5, 310, 40),
                     threshold.ToString("N0") + " damage\n" +
                     ChroniclesGuild.BossMilestoneLabel(threshold), tiny);
@@ -856,8 +856,8 @@ namespace MythicChronicles
             {
                 bool gifted = progress.Data.friends.giftUtcDay == today &&
                     progress.Data.friends.giftsClaimedToday.Contains(friend.name);
-                GUI.Box(new Rect(26, y, 488, 84), "");
-                GUI.Label(new Rect(44, y + 8, 250, 30), friend.name, subtitle);
+                GUI.Box(new Rect(26, y, 488, 84), "", OrnateGuiSkin.RowBox());
+                GUI.Label(new Rect(44, y + 8, 250, 30), friend.name, rowText);
                 GUI.Label(new Rect(44, y + 40, 260, 40),
                     "Champion: " + friend.championLabel +
                     "\nDaily gift: " + friend.giftGold + " gold + " +
@@ -925,7 +925,7 @@ namespace MythicChronicles
                 page = Page.Formation;
             }
             GUI.enabled = true;
-            GUI.Box(new Rect(26, 578, 488, 90), "");
+            GUI.Box(new Rect(26, 578, 488, 90), "", OrnateGuiSkin.RowBox());
             GUI.Label(new Rect(44, 590, 440, 68),
                 "THE FIELD: YOU + " +
                 string.Join(", ", ChroniclesTournament.RivalNames) +
@@ -945,8 +945,8 @@ namespace MythicChronicles
             {
                 BountyDefinition def = daily[i];
                 float y = i * 105f;
-                GUI.Box(new Rect(6, y, 460, 99), "");
-                GUI.Label(new Rect(16, y + 7, 300, 27), def.name, subtitle);
+                GUI.Box(new Rect(6, y, 460, 99), "", OrnateGuiSkin.RowBox());
+                GUI.Label(new Rect(16, y + 7, 300, 27), def.name, rowText);
                 GUI.Label(new Rect(16, y + 36, 295, 57),
                     def.hours + "h  •  " + def.minHeroes + "+ heroes  •  power " +
                     def.requiredPower + "\n" + def.RewardLabel, tiny);
@@ -1002,7 +1002,7 @@ namespace MythicChronicles
                 ShopOffer offer = ChroniclesShop.Offers[i];
                 int left = progress.ShopRemaining(offer.id);
                 float y = i * 105f;
-                GUI.Box(new Rect(6, y, 460, 99), "");
+                GUI.Box(new Rect(6, y, 460, 99), "", OrnateGuiSkin.RowBox());
                 // Illustrated item icon per offer when the art exists.
                 Texture2D offerIcon = OrnateGuiSkin.Art("icon_" + offer.id);
                 if (offerIcon != null)
@@ -1010,7 +1010,7 @@ namespace MythicChronicles
                         ScaleMode.ScaleToFit);
                 float textX = offerIcon != null ? 92f : 16f;
                 float textW = 460f - textX - 160f;
-                GUI.Label(new Rect(textX, y + 7, textW, 27), offer.name, subtitle);
+                GUI.Label(new Rect(textX, y + 7, textW, 27), offer.name, rowText);
                 GUI.Label(new Rect(textX, y + 36, textW, 57),
                     offer.RewardLabel + "\n" + offer.CostLabel +
                     "  •  LEFT " + left + "/" + offer.dailyLimit, tiny);
@@ -1039,7 +1039,7 @@ namespace MythicChronicles
                 RewardMail mail = progress.Data.mailbox[i];
                 float y = i * 145f;
                 GUI.Box(new Rect(5, y, 463, 137), "");
-                GUI.Label(new Rect(18, y + 8, 435, 32), mail.subject, subtitle);
+                GUI.Label(new Rect(18, y + 8, 435, 32), mail.subject, rowText);
                 GUI.Label(new Rect(17, y + 45, 435, 49),
                     mail.body + "\n" + mail.RewardSummary, tiny);
                 GUI.enabled = !mail.claimed;
@@ -1155,7 +1155,7 @@ namespace MythicChronicles
                 LabyrinthOption option = options[i];
                 float y = 558 + i * 129;
                 GUI.Box(new Rect(32, y, 478, 114), "");
-                GUI.Label(new Rect(43, y + 8, 454, 51), option.title, subtitle);
+                GUI.Label(new Rect(43, y + 8, 454, 51), option.title, rowText);
                 GUI.Label(new Rect(44, y + 58, 459, 47),
                     option.description, tiny);
                 if (GUI.Button(new Rect(371, y + 75, 122, 34),
@@ -1353,7 +1353,7 @@ namespace MythicChronicles
                 ChapterDefinition chapter = WorldsCatalog.Chapters[c];
                 float y = c * 498;
                 GUI.Box(new Rect(5, y, 465, 482), "");
-                GUI.Label(new Rect(15, y + 10, 430, 44), chapter.number + ". " + chapter.title, subtitle);
+                GUI.Label(new Rect(15, y + 10, 430, 44), chapter.number + ". " + chapter.title, rowText);
                 GUI.Label(new Rect(20, y + 52, 425, 60), chapter.summary, tiny);
                 for (int j = 0; j < 10; j++)
                 {
@@ -1448,7 +1448,7 @@ namespace MythicChronicles
                 float x = 22f + i * 83f;
                 if (i == 5)
                 {
-                    GUI.Box(new Rect(x, 268, 77, 45), "");
+                    GUI.Box(new Rect(x, 268, 77, 45), "", OrnateGuiSkin.CellBox());
                     GUI.Label(new Rect(x, 270, 77, 39), "EX LOCKED", tiny);
                     continue;
                 }
@@ -1697,7 +1697,7 @@ namespace MythicChronicles
                 GearTemplate gear = ChroniclesEquipment.Find(item.templateId);
                 if (gear == null) continue;
                 float y = i * 111f;
-                GUI.Box(new Rect(4, y, 469, 104), "");
+                GUI.Box(new Rect(4, y, 469, 104), "", OrnateGuiSkin.RowBox());
                 string wearing = item.equippedHeroId == hero.id ? "EQUIPPED" :
                     string.IsNullOrEmpty(item.equippedHeroId) ? "IN BAG" : "ON " + item.equippedHeroId;
                 GUI.Label(new Rect(11, y + 5, 456, 34),
@@ -1744,7 +1744,7 @@ namespace MythicChronicles
                 float y = i * 77f;
                 int dust = 20 + (int)item.rarity * 35;
                 int gold = 200 + (int)item.rarity * 300;
-                GUI.Box(new Rect(3, y, 469, 71), "");
+                GUI.Box(new Rect(3, y, 469, 71), "", OrnateGuiSkin.RowBox());
                 GUI.Label(new Rect(11, y + 5, 300, 62),
                     item.name + " [" + item.rarity + "]\n" + dust + " dust + " + gold + " gold", tiny);
                 GUI.enabled = progress.Data.forgeDust >= dust && progress.Data.gold >= gold;
@@ -1770,7 +1770,7 @@ namespace MythicChronicles
             for (int i = 0; i < skillTypes.Length; i++)
             {
                 float y = 367 + i * 89;
-                GUI.Box(new Rect(30, y, 480, 78), "");
+                GUI.Box(new Rect(30, y, 480, 78), "", OrnateGuiSkin.RowBox());
                 GUI.Label(new Rect(45, y + 10, 248, 55),
                     skillTypes[i].ToUpperInvariant() + " Lv." + levels[i] +
                     "\nNext: " + ChroniclesGrowth.SkillCost(levels[i]) + " Gold", tiny);
@@ -1835,7 +1835,7 @@ namespace MythicChronicles
                 RelicRank owned = progress.Data.relics.Find(x => x.id == relic.id);
                 bool equipped = progress.Data.equippedRelicId == relic.id;
                 float y = 102f * i;
-                GUI.Box(new Rect(5, y, 468, 97), "");
+                GUI.Box(new Rect(5, y, 468, 97), "", OrnateGuiSkin.RowBox());
                 GUI.Label(new Rect(16, y + 5, 450, 34),
                     relic.name + "  •  " +
                     (owned == null ? "LOCKED" : "LV " + owned.level), tiny);
@@ -1867,7 +1867,7 @@ namespace MythicChronicles
             {
                 RuneInstance rune = progress.Data.runes[i];
                 float y = i * 101f;
-                GUI.Box(new Rect(5, y, 469, 95), "");
+                GUI.Box(new Rect(5, y, 469, 95), "", OrnateGuiSkin.RowBox());
                 GUI.Label(new Rect(14, y + 7, 450, 35),
                     rune.type + " RUNE — LV " + rune.level, tiny);
                 GUI.Label(new Rect(14, y + 36, 180, 45),
@@ -1915,8 +1915,8 @@ namespace MythicChronicles
                     hero.name + "   Level " + owned.level + "   " + hero.role;
                 float y = i * 74f;
                 ChroniclesHeroPortrait.Draw(hero.id, new Rect(6, y, 56, 68), false);
-                GUI.Box(new Rect(64, y, 394, 68), "");
-                GUI.Label(new Rect(72, y, 378, 68), label, rowText);
+                GUI.Box(new Rect(64, y, 394, 68), "", OrnateGuiSkin.RowBox());
+                GUI.Label(new Rect(104, y, 350, 68), label, rowText);
                 if (GUI.Button(new Rect(6, y, 452, 68), "", GUIStyle.none))
                 {
                     List<string> temp = new List<string>(progress.Data.selectedTeam);
@@ -1933,7 +1933,7 @@ namespace MythicChronicles
                 }
             }
             GUI.EndScrollView();
-            GUI.Box(new Rect(26, 720, 488, 80), "");
+            GUI.Box(new Rect(26, 720, 488, 80), "", OrnateGuiSkin.RowBox());
             var synergyHeroes = new List<HeroDefinition>();
             foreach (string id in progress.Data.selectedTeam)
             {
@@ -2097,13 +2097,13 @@ namespace MythicChronicles
             if (canTen)
                 OrnateGuiSkin.PulseGlow(new Rect(262, 742, 258, 90),
                     new Color(1f, .8f, .4f, .8f));
+            GUIStyle summonBtn = new GUIStyle(OrnateGuiSkin.ButtonStyle()) {
+                fontSize = 13, padding = new RectOffset(16, 16, 4, 4) };
             if (GUI.Button(new Rect(34, 756, 230, 62),
-                "SUMMON x1\n1 " + type + " / " + cost + " GEMS",
-                OrnateGuiSkin.ButtonStyle()))
+                "SUMMON x1\n1 " + type + " / " + cost + " GEMS", summonBtn))
                 DoSummon(1);
             if (GUI.Button(new Rect(276, 756, 230, 62),
-                "SUMMON x10\n10 " + type + " / " + (cost * 10) + " GEMS",
-                OrnateGuiSkin.ButtonStyle()))
+                "SUMMON x10\n10 " + type + " / " + (cost * 10) + " GEMS", summonBtn))
                 DoSummon(10);
 
             OrnateGuiSkin.Panel(new Rect(30, 832, 480, 92),
@@ -2175,7 +2175,7 @@ namespace MythicChronicles
                 bool claimed = weekly ? progress.Data.claimedWeeklyQuests.Contains(quest.id)
                     : progress.Data.claimedDailyQuests.Contains(quest.id);
                 float y = 361 + i * 99;
-                GUI.Box(new Rect(21, y, 500, 87), "");
+                GUI.Box(new Rect(21, y, 500, 87), "", OrnateGuiSkin.RowBox());
                 GUI.Label(new Rect(37, y + 8, 276, 67),
                     quest.title + "\n" + Math.Min(quest.target, amount) + "/" + quest.target +
                     "  •  " + quest.goldReward + " gold / " + quest.gemReward + " gems", tiny);
@@ -2204,7 +2204,7 @@ namespace MythicChronicles
                 bool claimed = progress.Data.claimedAchievements.Contains(entry.id);
                 bool available = progress.CanClaimAchievement(entry.id);
                 float y = i * 101f;
-                GUI.Box(new Rect(5, y, 461, 94), "");
+                GUI.Box(new Rect(5, y, 461, 94), "", OrnateGuiSkin.RowBox());
                 GUI.Label(new Rect(14, y + 8, 288, 77),
                     entry.title + "\n" + Math.Min(entry.target, completed) + "/" +
                     entry.target + "  •  " + entry.gems + " Gems" +
@@ -2267,7 +2267,7 @@ namespace MythicChronicles
                     GUI.backgroundColor = new Color(.92f, .77f, .44f);
                 else if (received)
                     GUI.backgroundColor = new Color(.49f, .61f, .60f);
-                GUI.Box(new Rect(x, y, 67, 89), "");
+                GUI.Box(new Rect(x, y, 67, 89), "", OrnateGuiSkin.CellBox());
                 GUI.Label(new Rect(x + 2, y + 6, 63, 20),
                     "DAY " + (i + 1), cellText);
                 GUI.Label(new Rect(x + 2, y + 26, 63, 58),
@@ -2292,7 +2292,7 @@ namespace MythicChronicles
 
         private void Events()
         {
-            OrnateGuiSkin.Title(new Rect(24, 224, 492, 64), "LIMITED-TIME EVENTS", 34);
+            OrnateGuiSkin.TitlePlate(new Rect(30, 224, 480, 54), "LIMITED-TIME EVENTS", 24);
             System.DateTime now = System.DateTime.UtcNow;
             float y = 306f;
             foreach (ChroniclesEventInfo info in ChroniclesEvents.All)
