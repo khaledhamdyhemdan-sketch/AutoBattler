@@ -34,6 +34,8 @@ namespace MythicChronicles
         public string lastWeeklyUtc;
         public long lastIdleClaimTicks;
         public int gold = 2500, gems = 350, summonTickets = 3, heroFragments, forgeDust, relicDust, nextItemSerial = 1;
+        public int stamina = 40;
+        public long lastStaminaTicks;
         public int lastClearedStage;
         public int astralSeals;
         public int standardPity, astralPity;
@@ -546,6 +548,50 @@ namespace MythicChronicles
 
         public bool OwnsHero(string id) { return Data.heroes.Exists(h => h.id == id); }
         public OwnedHero FindOwnedHero(string id) { return Data.heroes.Find(h => h.id == id); }
+
+        // Stamina: local-first, free time-based regeneration only (#12).
+        public const int StaminaMax = 40;
+        public const int StaminaRegenSeconds = 480; // 1 per 8 minutes
+        public const int StaminaCostCampaign = 6;
+
+        public int CurrentStamina()
+        {
+            long now = DateTime.UtcNow.Ticks;
+            if (Data.lastStaminaTicks <= 0)
+            {
+                Data.lastStaminaTicks = now;
+                Save();
+                return Data.stamina;
+            }
+            long elapsed = (now - Data.lastStaminaTicks) / TimeSpan.TicksPerSecond;
+            if (elapsed <= 0) return Data.stamina;
+            int gained = (int)(elapsed / StaminaRegenSeconds);
+            if (gained <= 0) return Data.stamina;
+            Data.stamina = Mathf.Min(StaminaMax, Data.stamina + gained);
+            Data.lastStaminaTicks += (long)gained * StaminaRegenSeconds * TimeSpan.TicksPerSecond;
+            if (Data.stamina >= StaminaMax) Data.lastStaminaTicks = now;
+            Save();
+            return Data.stamina;
+        }
+
+        public int StaminaSecondsToNext()
+        {
+            if (Data.stamina >= StaminaMax) return 0;
+            long now = DateTime.UtcNow.Ticks;
+            if (Data.lastStaminaTicks <= 0) return StaminaRegenSeconds;
+            long elapsed = (now - Data.lastStaminaTicks) / TimeSpan.TicksPerSecond;
+            return (int)Mathf.Max(1f, StaminaRegenSeconds - (elapsed % StaminaRegenSeconds));
+        }
+
+        public bool TrySpendStamina(int cost)
+        {
+            if (CurrentStamina() < cost) return false;
+            Data.stamina -= cost;
+            if (Data.stamina < StaminaMax && Data.lastStaminaTicks <= 0)
+                Data.lastStaminaTicks = DateTime.UtcNow.Ticks;
+            Save();
+            return true;
+        }
 
         public bool SetTeam(IList<string> heroIds)
         {

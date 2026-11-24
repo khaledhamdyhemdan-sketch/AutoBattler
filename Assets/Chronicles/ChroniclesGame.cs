@@ -334,9 +334,10 @@ namespace MythicChronicles
             GUIStyle currency = new GUIStyle(tiny) {
                 alignment = TextAnchor.MiddleLeft, fontSize = 17 };
             currency.normal.textColor = OrnateGuiSkin.GoldBright;
-            DrawCurrency(40, 118, "icon_gold_gems", progress.Data.gold, currency);
-            DrawCurrency(205, 118, "icon_gems", progress.Data.gems, currency);
-            DrawCurrency(350, 118, "icon_ticket_gold", progress.Data.summonTickets, currency);
+            DrawCurrency(30, 118, "icon_gold_gems", progress.Data.gold, currency);
+            DrawCurrency(158, 118, "icon_gems", progress.Data.gems, currency);
+            DrawCurrency(288, 118, "icon_ticket_gold", progress.Data.summonTickets, currency);
+            DrawCurrency(425, 118, "icon_stamina", progress.CurrentStamina(), currency);
             if (page != Page.Home && GUI.Button(new Rect(20, 64, 105, 42), "HOME")) GoHome();
             if (!string.IsNullOrEmpty(notice))
             {
@@ -2472,6 +2473,16 @@ namespace MythicChronicles
         {
             if (progress.Data.selectedTeam.Count != 5)
             { notice = "Select exactly five heroes first."; return; }
+            // Campaign stages cost stamina; every other mode keeps its own
+            // attempt system (#12: free regen only, no purchases).
+            bool isCampaign = !inArenaTraining && !inLabyrinth && !inRaid &&
+                !inGuildBoss && !inTournament && !inEventAdventure &&
+                !inElementalGate && !inTower;
+            if (isCampaign && !progress.TrySpendStamina(PlayerProgressService.StaminaCostCampaign))
+            {
+                notice = "Not enough stamina. It regenerates free over time.";
+                return;
+            }
             if (!progress.SetTeam(progress.Data.selectedTeam))
             { notice = "Invalid team."; return; }
             var chosen = new List<OwnedHero>();
