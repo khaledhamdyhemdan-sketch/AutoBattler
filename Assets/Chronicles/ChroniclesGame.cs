@@ -1917,21 +1917,82 @@ namespace MythicChronicles
                 inTower ? "TOWER: " + ChroniclesTowers.DisplayName(selectedTowerOrigin) +
                     "\nPick 5 heroes, including at least 2 from this mythology." :
                     "Pick five heroes. Order sets your front and back rows.", pageDesc);
-            formationScroll = GUI.BeginScrollView(new Rect(20, 317, 500, 398), formationScroll,
-                new Rect(0, 0, 473, progress.Data.heroes.Count * 74));
+            // Selected team as five big cards - the way the genre presents a squad.
+            for (int slot = 0; slot < 5; slot++)
+            {
+                float sx = 26f + slot * 99f;
+                Rect slotRect = new Rect(sx, 310f, 92f, 176f);
+                if (slot < progress.Data.selectedTeam.Count)
+                {
+                    string pickedId = progress.Data.selectedTeam[slot];
+                    HeroDefinition pickedHero = WorldsCatalog.FindHero(pickedId);
+                    OwnedHero pickedOwned = progress.FindOwnedHero(pickedId);
+                    if (pickedHero != null)
+                    {
+                        OrnateGuiSkin.Panel(slotRect, "card_" + pickedHero.rarity,
+                            RarityFrameColor(pickedHero.rarity),
+                            new Color(.08f, .06f, .12f, .94f));
+                        ChroniclesHeroPortrait.Draw(pickedHero.id,
+                            new Rect(slotRect.x + 4, slotRect.y + 4, 84, 118), false);
+                        OrnateGuiSkin.PulseGlow(slotRect,
+                            new Color(1f, .82f, .42f, .18f), 1.6f + slot * .1f);
+                        GUI.Label(new Rect(slotRect.x + 4, slotRect.y + 126, 84, 20),
+                            "SLOT " + (slot + 1), tiny);
+                        GUI.Label(new Rect(slotRect.x + 4, slotRect.y + 144, 84, 28),
+                            "Lv " + (pickedOwned != null ? pickedOwned.level : 1) +
+                            " " + pickedHero.role, tiny);
+                        if (GUI.Button(slotRect, "", GUIStyle.none))
+                        {
+                            List<string> temp = new List<string>(progress.Data.selectedTeam);
+                            temp.Remove(pickedId);
+                            progress.Data.selectedTeam = temp;
+                            notice = temp.Count + "/5 heroes selected. Complete your team to save.";
+                        }
+                        continue;
+                    }
+                }
+                // Empty slot: quiet framed dash with a plus.
+                OrnateGuiSkin.Panel(slotRect, "card_empty",
+                    new Color(.45f, .42f, .55f), new Color(.05f, .045f, .09f, .9f));
+                GUIStyle plus = new GUIStyle(heading) {
+                    alignment = TextAnchor.MiddleCenter, fontSize = 34 };
+                plus.normal.textColor = new Color(.6f, .56f, .7f, .8f);
+                GUI.Label(slotRect, "+", plus);
+            }
+            int rosterRows = Mathf.CeilToInt(progress.Data.heroes.Count / 3f);
+            formationScroll = GUI.BeginScrollView(new Rect(20, 494, 500, 248), formationScroll,
+                new Rect(0, 0, 473, rosterRows * 178 + 8));
             for (int i = 0; i < progress.Data.heroes.Count; i++)
             {
                 OwnedHero owned = progress.Data.heroes[i];
                 HeroDefinition hero = WorldsCatalog.FindHero(owned.id);
                 if (hero == null) continue;
                 int picked = progress.Data.selectedTeam.IndexOf(owned.id);
-                string label = (picked >= 0 ? "[SLOT " + (picked + 1) + "] " : "[ + ] ") +
-                    hero.name + "   Level " + owned.level + "   " + hero.role;
-                float y = i * 74f;
-                ChroniclesHeroPortrait.Draw(hero.id, new Rect(6, y, 56, 68), false);
-                GUI.Box(new Rect(64, y, 394, 68), "", OrnateGuiSkin.RowBox());
-                GUI.Label(new Rect(104, y, 350, 68), label, rowText);
-                if (GUI.Button(new Rect(6, y, 452, 68), "", GUIStyle.none))
+                int col = i % 3, row = i / 3;
+                float x = 4f + col * 158f, y = 4f + row * 178f;
+                if (y + 174f < formationScroll.y - 30f ||
+                    y > formationScroll.y + 280f) continue;
+                OrnateGuiSkin.Panel(new Rect(x, y, 150, 170),
+                    "card_" + hero.rarity, RarityFrameColor(hero.rarity),
+                    new Color(.08f, .06f, .12f, .94f));
+                ChroniclesHeroPortrait.Draw(hero.id, new Rect(x + 4, y + 4, 142, 116), false);
+                GUI.Label(new Rect(x + 7, y + 124, 136, 20),
+                    hero.name + "  " + hero.rarity, tiny);
+                GUI.Label(new Rect(x + 7, y + 144, 136, 20),
+                    "Lv " + owned.level + " " + hero.role, tiny);
+                if (picked >= 0)
+                {
+                    OrnateGuiSkin.PulseGlow(new Rect(x, y, 150, 170),
+                        new Color(1f, .82f, .42f, .25f), 1.7f);
+                    GUIStyle slotBadge = new GUIStyle(tiny) {
+                        alignment = TextAnchor.MiddleCenter, fontStyle = FontStyle.Bold };
+                    slotBadge.normal.textColor = new Color(1f, .9f, .6f);
+                    GUI.color = new Color(0f, 0f, 0f, .6f);
+                    GUI.DrawTexture(new Rect(x + 4, y + 4, 60, 22), Texture2D.whiteTexture);
+                    GUI.color = Color.white;
+                    GUI.Label(new Rect(x + 4, y + 4, 60, 22), "SLOT " + (picked + 1), slotBadge);
+                }
+                if (GUI.Button(new Rect(x, y, 150, 170), "", GUIStyle.none))
                 {
                     List<string> temp = new List<string>(progress.Data.selectedTeam);
                     if (picked >= 0) temp.Remove(owned.id);
@@ -1947,7 +2008,7 @@ namespace MythicChronicles
                 }
             }
             GUI.EndScrollView();
-            GUI.Box(new Rect(26, 720, 488, 80), "", OrnateGuiSkin.RowBox());
+            GUI.Box(new Rect(26, 748, 488, 62), "", OrnateGuiSkin.RowBox());
             var synergyHeroes = new List<HeroDefinition>();
             foreach (string id in progress.Data.selectedTeam)
             {
@@ -1956,14 +2017,14 @@ namespace MythicChronicles
             }
             TeamSynergyBonus bonus = TeamSynergy.Calculate(synergyHeroes);
             ElementalTeamBonus elemental = HeroElements.Calculate(synergyHeroes);
-            GUI.Label(new Rect(34, 726, 472, 72),
+            GUI.Label(new Rect(34, 752, 472, 56),
                 "Selected " + progress.Data.selectedTeam.Count + "/5  |  " +
                 elemental.description + "\nOrigin: " + bonus.description +
-                "\nElement ATK/HP +" +
+                "  •  Element ATK/HP +" +
                 Mathf.RoundToInt((elemental.attackMultiplier - 1f) * 100f) +
                 "%  •  START ENERGY +" + elemental.startingEnergy, subtitle);
             GUI.enabled = progress.Data.selectedTeam.Count == 5;
-            if (GUI.Button(new Rect(40, 803, 460, 70),
+            if (GUI.Button(new Rect(40, 818, 460, 64),
                 inTower ? "START " + selectedTowerOrigin.ToString().ToUpperInvariant() +
                     " TOWER FLOOR " + selectedTowerFloor :
                 "START " + (activeTrialMode == TrialMode.Normal ?
