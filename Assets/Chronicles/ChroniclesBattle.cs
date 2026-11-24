@@ -10,6 +10,7 @@ namespace MythicChronicles
     {
         private sealed class Combatant
         {
+            public bool entered;
             public HeroDefinition hero;
             public GameObject model;
             public HeroVisualDriver visual;
@@ -405,6 +406,12 @@ namespace MythicChronicles
                     float stagger = Mathf.Clamp01(t * 1.6f - (i % 5) * .12f);
                     f.model.transform.position = Vector3.Lerp(f.arrivalPosition, f.formationPosition, stagger);
                     f.model.transform.localScale = f.displayScale * Mathf.Max(.001f, stagger) * (f.boss ? 1.4f : 1f);
+                    if (stagger >= 1f && !f.entered)
+                    {
+                        f.entered = true;
+                        if (f.hero.rarity == Rarity.UR || f.hero.rarity == Rarity.EX)
+                            HeroSkillEffects.Play(f.hero, false, f.model.transform, null);
+                    }
                 }
                 return;
             }
@@ -720,6 +727,7 @@ namespace MythicChronicles
                 }
             }
             defender.visual.Play(HeroAnimation.Death);
+            hitStopT = Mathf.Max(hitStopT, .32f);
             if (defender.visual.IsPlaceholder) defender.model.SetActive(false);
             foreach (Combatant unit in units)
             {
