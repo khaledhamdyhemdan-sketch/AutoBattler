@@ -320,31 +320,50 @@ namespace MythicChronicles
                 alignment = TextAnchor.MiddleCenter };
             plateStyle.normal.textColor = OrnateGuiSkin.GoldBright;
 
-            // Side doors as named buildings: each door is an original building
-            // cutout that matches its name, with a small label plate beneath.
-            if (HomeDoor(83, 188, "elite_dark", "ELITE DARK"))
+            // Khalid's own boss artwork comes alive: a breathing red aura
+            // around the boss, glowing eyes, drifting red embers in the sky.
+            OrnateGuiSkin.PulseGlow(new Rect(140, 0, 260, 270),
+                new Color(1f, .18f, .12f, .5f), 1.3f);
+            OrnateGuiSkin.PulseGlow(new Rect(190, 40, 160, 190),
+                new Color(1f, .1f, .08f, .45f), 2.1f);
+            OrnateGuiSkin.PulseGlow(new Rect(244, 130, 22, 14),
+                new Color(1f, .08f, .08f, .9f), 3.2f);
+            OrnateGuiSkin.PulseGlow(new Rect(270, 130, 22, 14),
+                new Color(1f, .08f, .08f, .9f), 3.2f);
+            OrnateGuiSkin.Embers(new Rect(0, 0, 540, 430), 14, .03f,
+                new Color(1f, .3f, .18f, .55f));
+
+            // The doors are the buildings inside the scene itself: invisible
+            // hotspots over each named building, with a glowing label plate.
+            if (SceneDoor(new Rect(100, 170, 110, 135),
+                new Rect(90, 308, 130, 28), "ARENA"))
+            {
+                inArenaTraining = false; page = Page.ArenaTraining;
+            }
+            if (SceneDoor(new Rect(90, 370, 180, 180),
+                new Rect(115, 545, 130, 28), "ELITE DARK"))
             {
                 inTower = false; activeTrialMode = TrialMode.Normal;
                 chapterScroll = Vector2.zero; page = Page.Trials;
             }
-            if (HomeDoor(83, 340, "towers", "TOWERS"))
+            if (SceneDoor(new Rect(415, 190, 120, 150),
+                new Rect(410, 330, 130, 28), "LABYRINTH"))
+            {
+                inLabyrinth = false; page = Page.Labyrinth;
+            }
+            if (SceneDoor(new Rect(415, 395, 120, 170),
+                new Rect(410, 555, 130, 28), "TOWERS"))
             {
                 inTower = false; chapterScroll = Vector2.zero;
                 page = Page.Towers;
             }
-            if (HomeDoor(83, 492, "labyrinth", "LABYRINTH"))
-            {
-                inLabyrinth = false; page = Page.Labyrinth;
-            }
-            if (HomeDoor(458, 188, "arena", "ARENA"))
-            {
-                inArenaTraining = false; page = Page.ArenaTraining;
-            }
-            if (HomeDoor(458, 340, "world_boss", "WORLD BOSS"))
+            if (SceneDoor(new Rect(210, 70, 130, 170),
+                new Rect(205, 255, 130, 28), "WORLD BOSS"))
             {
                 inRaid = false; page = Page.Raid;
             }
-            if (HomeDoor(458, 492, "free_gift",
+            if (SceneDoor(new Rect(190, 604, 190, 44),
+                new Rect(220, 610, 130, 28),
                 progress.CanClaimDailyLogin() ? "FREE GIFT!" : "DAILY GIFT"))
                 page = Page.Login;
 
@@ -392,35 +411,19 @@ namespace MythicChronicles
                 page = Page.More;
         }
 
-        // Draws one Home side door: a named-building cutout over the vista
-        // with a small label plate beneath. Returns true when tapped.
-        private bool HomeDoor(float centerX, float y, string icon, string label)
+        // Draws a door over a building inside the Home scene: a soft idle
+        // glow plus a small label plate, and an invisible tap hotspot on the
+        // building itself. Returns true when tapped.
+        private bool SceneDoor(Rect hotspot, Rect labelRect, string label)
         {
-            const float iconH = 124f;
-            // A soft dark backing disc keeps the building readable against
-            // any part of the busy vista.
-            GUI.DrawTexture(
-                new Rect(centerX - 82f, y + 8f, 164f, iconH + 6f),
-                OrnateGuiSkin.Glow("door_back_" + icon,
-                    new Color(0f, 0f, 0f, .55f)));
-            Texture2D tex = OrnateGuiSkin.Art("door_" + icon);
-            if (tex != null)
-            {
-                float iconW = Mathf.Min(150f,
-                    iconH * tex.width / (float)tex.height);
-                GUI.DrawTexture(
-                    new Rect(centerX - iconW / 2f, y, iconW, iconH),
-                    tex, ScaleMode.ScaleToFit, true);
-            }
-            Rect labelRect = new Rect(centerX - 65f, y + iconH + 2f, 130f, 30f);
+            OrnateGuiSkin.PulseGlow(labelRect,
+                OrnateGuiSkin.GoldBright, 1.6f);
             OrnateGuiSkin.Bar(labelRect);
             GUIStyle labelStyle = new GUIStyle(subtitle) {
-                alignment = TextAnchor.MiddleCenter, fontSize = 16 };
+                alignment = TextAnchor.MiddleCenter, fontSize = 15 };
             labelStyle.normal.textColor = OrnateGuiSkin.GoldBright;
             GUI.Label(labelRect, label, labelStyle);
-            return GUI.Button(
-                new Rect(centerX - 78f, y - 4f, 156f, iconH + 40f),
-                "", GUIStyle.none);
+            return GUI.Button(hotspot, "", GUIStyle.none);
         }
 
         private void More()
