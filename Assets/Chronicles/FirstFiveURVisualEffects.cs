@@ -41,7 +41,7 @@ namespace MythicChronicles
                 target == null ? caster.position : target.position);
         }
 
-        private static bool IsSupported(string id)
+        public static bool IsSupported(string id)
         {
             return id == "ra" || id == "apep" || id == "odin" ||
                 id == "hades" || id == "amaterasu";

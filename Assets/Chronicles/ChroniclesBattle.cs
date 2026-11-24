@@ -284,6 +284,7 @@ namespace MythicChronicles
             }
 
             GameObject cameraObject = new GameObject("Chronicles Portrait Camera");
+            cameraObject.tag = "MainCamera";
             cameraObject.transform.SetParent(transform);
             cam = cameraObject.AddComponent<Camera>();
             cam.clearFlags = CameraClearFlags.SolidColor;
@@ -526,6 +527,8 @@ namespace MythicChronicles
                     break;
             }
             boss.visual.Play(HeroAnimation.Ultimate);
+            HeroSkillEffects.Play(boss.hero, true, boss.model.transform,
+                target == null ? null : target.model.transform);
         }
 
         private Combatant FindTarget(Combatant actor)
@@ -717,7 +720,7 @@ namespace MythicChronicles
             if (kit.passive == HeroPassive.Stormborn)
                 actor.rallied = Mathf.Max(actor.rallied, 3.2f);
             actor.visual.Play(HeroAnimation.Skill);
-            FirstFiveURVisualEffects.Play(actor.hero.id, false,
+            HeroSkillEffects.Play(actor.hero, false,
                 actor.model.transform, target == null ? null : target.model.transform);
             CastEffect(actor, target, kit.skill, kit.skillPower * actor.skillFactor, false);
             Floating(kit.skillName, actor, Color.yellow);
@@ -728,7 +731,7 @@ namespace MythicChronicles
             HeroKit kit = HeroAbilityCatalog.For(actor.hero.id);
             if (kit == null) { Hit(actor, target, actor.attack * 3f); return; }
             actor.visual.Play(HeroAnimation.Ultimate);
-            FirstFiveURVisualEffects.Play(actor.hero.id, true,
+            HeroSkillEffects.Play(actor.hero, true,
                 actor.model.transform, target == null ? null : target.model.transform);
             if (ChroniclesAudioDirector.Instance != null)
                 ChroniclesAudioDirector.Instance.HeroUltimate(actor.hero.id);

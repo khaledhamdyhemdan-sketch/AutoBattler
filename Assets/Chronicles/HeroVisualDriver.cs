@@ -11,10 +11,14 @@ namespace MythicChronicles
     /// or Resources/Chronicles/Heroes/{id}.prefab (default fallback).
     /// Animator triggers should be: Entrance, Idle, Run, Attack, Skill, Ultimate, Hit, Death, Victory.
     /// Optional VFX live at Resources/Chronicles/VFX/Entrances/{id}.
+    /// When no prefab exists, a 2D rig is assembled from the hero's portrait art
+    /// (HeroBattleVisual2D); the capsule remains the last-resort placeholder only
+    /// for heroes with no portrait art at all.
     /// </summary>
     public sealed class HeroVisualDriver : MonoBehaviour
     {
         private Animator animator;
+        private HeroBattleVisual2D rig2d;
         private HeroAnimation currentLoop;
         private bool loopInitialized;
         public bool IsPlaceholder { get; private set; }
@@ -31,10 +35,23 @@ namespace MythicChronicles
             string basePath = "Chronicles/Heroes/" + hero.id;
             GameObject prefab = Resources.Load<GameObject>(basePath + "/" + safeSkin);
             if (prefab == null) prefab = Resources.Load<GameObject>(basePath);
-            GameObject view;
-            bool placeholder = prefab == null;
-            if (placeholder)
+            GameObject view = null;
+            bool placeholder = false;
+            if (prefab != null)
             {
+                view = Instantiate(prefab);
+                view.name = hero.name + " - " + safeSkin;
+            }
+            if (view == null)
+            {
+                // Interim path: a 2D skeletal rig from the portrait art, so roster
+                // heroes fight as their characters while the 3D rigs are produced.
+                HeroBattleVisual2D rig = HeroBattleVisual2D.Create(hero, safeSkin);
+                if (rig != null) view = rig.gameObject;
+            }
+            if (view == null)
+            {
+                placeholder = true;
                 view = GameObject.CreatePrimitive(PrimitiveType.Capsule);
                 view.name = hero.name + " - ART PLACEHOLDER";
                 Renderer renderer = view.GetComponent<Renderer>();
@@ -42,16 +59,12 @@ namespace MythicChronicles
                 Collider collider = view.GetComponent<Collider>();
                 if (collider != null) Destroy(collider);
             }
-            else
-            {
-                view = Instantiate(prefab);
-                view.name = hero.name + " - " + safeSkin;
-            }
             view.transform.SetParent(parent, false);
             HeroVisualDriver driver = view.GetComponent<HeroVisualDriver>();
             if (driver == null) driver = view.AddComponent<HeroVisualDriver>();
             driver.IsPlaceholder = placeholder;
             driver.animator = view.GetComponentInChildren<Animator>(true);
+            driver.rig2d = view.GetComponent<HeroBattleVisual2D>();
             driver.currentLoop = HeroAnimation.Idle;
             driver.loopInitialized = false;
             return driver;
@@ -68,6 +81,11 @@ namespace MythicChronicles
 
         public void Play(HeroAnimation animation)
         {
+            if (rig2d != null)
+            {
+                rig2d.Play(animation);
+                return;
+            }
             if (animator == null) return;
             bool looping = animation == HeroAnimation.Idle || animation == HeroAnimation.Run;
             if (looping && loopInitialized && currentLoop == animation) return;
