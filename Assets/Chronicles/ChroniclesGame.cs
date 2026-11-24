@@ -1338,22 +1338,45 @@ namespace MythicChronicles
 
         private void Summon()
         {
-            GUI.Label(new Rect(25, 223, 490, 55), "SUMMONING CHAMBER", heading);
-            if (GUI.Button(new Rect(28, 282, 230, 52), "STANDARD"))
-                SelectBanner(SummonBannerType.Standard);
-            if (GUI.Button(new Rect(274, 282, 236, 52), "LIGHT / DARK UR"))
-                SelectBanner(SummonBannerType.AstralCovenant);
             bool astral = activeSummonBanner == SummonBannerType.AstralCovenant;
-            GUI.Label(new Rect(22, 337, 494, 75),
-                ChroniclesSummonRules.DisplayName(activeSummonBanner) + "\n" +
-                ChroniclesSummonRules.Rates(activeSummonBanner) + "\n" +
-                (astral ?
-                    "UR PITY " + progress.Data.astralPity + "/" +
-                    ChroniclesSummonRules.AstralUrPity + "  •  ASTRAL SEALS " +
-                    progress.Data.astralSeals :
-                    "SSR PITY " + progress.Data.standardPity + "/" +
-                    ChroniclesSummonRules.StandardSsrPity + "  •  TICKETS " +
-                    progress.Data.summonTickets), subtitle);
+            GUIStyle goldCenter = new GUIStyle(tiny) {
+                alignment = TextAnchor.MiddleCenter,
+                fontSize = 15 };
+            goldCenter.normal.textColor = OrnateGuiSkin.GoldBright;
+            GUIStyle plainCenter = new GUIStyle(tiny) {
+                alignment = TextAnchor.MiddleCenter };
+
+            // Full-bleed featured hero art behind the controls, with a warm
+            // glow and a bottom shade so text stays readable over the art.
+            if (lastSummonBatch.Count == 0)
+            {
+                GUI.DrawTexture(new Rect(30, 240, 480, 460),
+                    OrnateGuiSkin.Glow("summon_glow",
+                        new Color(.95f, .75f, .35f, .42f)));
+                ChroniclesHeroPortrait.Draw(FeaturedBannerHero(astral),
+                    new Rect(115, 258, 310, 400),
+                    !progress.Data.reducePortraitMotion);
+                GUI.DrawTexture(new Rect(20, 520, 500, 190),
+                    OrnateGuiSkin.Backdrop("summon_shade",
+                        new Color(0f, 0f, 0f, 0f), new Color(0f, 0f, 0f, .85f)));
+            }
+
+            OrnateGuiSkin.Title(new Rect(20, 226, 500, 42),
+                ChroniclesSummonRules.DisplayName(activeSummonBanner)
+                    .ToUpperInvariant(), 29);
+
+            if (GUI.Button(new Rect(58, 276, 200, 44), "STANDARD",
+                OrnateGuiSkin.ButtonStyle()))
+                SelectBanner(SummonBannerType.Standard);
+            if (GUI.Button(new Rect(282, 276, 200, 44), "LIGHT / DARK UR",
+                OrnateGuiSkin.ButtonStyle()))
+                SelectBanner(SummonBannerType.AstralCovenant);
+
+            GUI.Label(new Rect(40, 648, 460, 26),
+                ChroniclesSummonRules.Rates(activeSummonBanner), plainCenter);
+            if (astral)
+                GUI.Label(new Rect(40, 670, 460, 22),
+                    "UR SHOWCASE  -  NO FEATURED RATE-UP", plainCenter);
 
             if (lastSummonBatch.Count == 1)
             {
@@ -1361,66 +1384,68 @@ namespace MythicChronicles
                 HeroDefinition hero = WorldsCatalog.FindHero(id);
                 if (hero != null)
                 {
+                    GUI.DrawTexture(new Rect(120, 310, 300, 330),
+                        OrnateGuiSkin.Glow("summon_result_glow",
+                            new Color(.95f, .8f, .4f, .5f)));
+                    OrnateGuiSkin.Panel(new Rect(150, 320, 240, 300),
+                        "summon_result", OrnateGuiSkin.GoldBright,
+                        new Color(.08f, .06f, .12f, .95f));
                     ChroniclesHeroPortrait.Draw(id,
-                        new Rect(165, 424, 210, 258),
+                        new Rect(162, 332, 216, 246),
                         !progress.Data.reducePortraitMotion);
-                    GUI.Label(new Rect(30, 680, 480, 38),
-                        hero.name.ToUpperInvariant() + "  •  " + hero.rarity +
-                        "  •  " + hero.element, subtitle);
+                    OrnateGuiSkin.Title(new Rect(30, 574, 480, 36),
+                        hero.name.ToUpperInvariant(), 24);
+                    GUI.Label(new Rect(30, 608, 480, 28),
+                        hero.rarity + "  -  " + hero.element, goldCenter);
                 }
             }
             else if (lastSummonBatch.Count > 1)
             {
-                GUI.Box(new Rect(36, 415, 468, 278), "");
+                OrnateGuiSkin.Panel(new Rect(30, 320, 480, 330),
+                    "summon_batch", OrnateGuiSkin.Gold,
+                    new Color(.08f, .06f, .12f, .95f));
                 for (int i = 0; i < lastSummonBatch.Count; i++)
                 {
                     HeroDefinition hero = WorldsCatalog.FindHero(lastSummonBatch[i]);
                     if (hero == null) continue;
                     int column = i % 5, row = i / 5;
-                    float x = 45 + column * 92, y = 424 + row * 133;
+                    float x = 45 + column * 92, y = 334 + row * 156;
                     ChroniclesHeroPortrait.Draw(hero.id,
                         new Rect(x, y, 83, 98), false);
-                    GUI.Label(new Rect(x, y + 99, 89, 34),
-                        hero.name + "\n" + hero.rarity, tiny);
+                    GUI.Label(new Rect(x - 4, y + 100, 91, 48),
+                        hero.name + "\n" + hero.rarity, plainCenter);
                 }
             }
-            else
-            {
-                if (astral)
-                {
-                    // These two portraits illustrate elements only.
-                    // This is not a featured-unit rate-up banner.
-                    GUI.Box(new Rect(68, 427, 404, 263), "");
-                    ChroniclesHeroPortrait.Draw("ra", new Rect(79, 440, 182, 219),
-                        !progress.Data.reducePortraitMotion);
-                    ChroniclesHeroPortrait.Draw("hades", new Rect(280, 440, 182, 219),
-                        !progress.Data.reducePortraitMotion);
-                    Color old = GUI.color;
-                    GUI.color = new Color(1f, .82f, .39f);
-                    GUI.DrawTexture(new Rect(82, 439, 174, 5), Texture2D.whiteTexture);
-                    GUI.color = new Color(.58f, .38f, .91f);
-                    GUI.DrawTexture(new Rect(284, 439, 174, 5), Texture2D.whiteTexture);
-                    GUI.color = old;
-                    GUI.Label(new Rect(82, 666, 176, 27), "LIGHT  •  9 UR", tiny);
-                    GUI.Label(new Rect(285, 666, 176, 27), "DARK  •  7 UR", tiny);
-                }
-                else
-                {
-                    GUI.Box(new Rect(68, 427, 404, 263),
-                        "STANDARD SUMMON\nCollect heroes from R, SR and SSR.");
-                }
-            }
+
+            OrnateGuiSkin.Panel(new Rect(58, 700, 424, 42),
+                "summon_pity", OrnateGuiSkin.Gold,
+                new Color(.10f, .08f, .14f, .94f));
+            GUI.Label(new Rect(66, 708, 408, 26),
+                astral ?
+                    "UR PITY " + progress.Data.astralPity + "/" +
+                        ChroniclesSummonRules.AstralUrPity +
+                        "  -  ASTRAL SEALS " + progress.Data.astralSeals :
+                    "SSR PITY " + progress.Data.standardPity + "/" +
+                        ChroniclesSummonRules.StandardSsrPity +
+                        "  -  TICKETS " + progress.Data.summonTickets,
+                goldCenter);
+
             int cost = ChroniclesSummonRules.GemCost(activeSummonBanner);
             string type = astral ? "ASTRAL SEAL" : "TICKET";
-            if (GUI.Button(new Rect(34, 714, 230, 58),
-                "SUMMON ×1\n1 " + type + " / " + cost + " GEMS"))
+            if (GUI.Button(new Rect(34, 756, 230, 62),
+                "SUMMON x1\n1 " + type + " / " + cost + " GEMS",
+                OrnateGuiSkin.ButtonStyle()))
                 DoSummon(1);
-            if (GUI.Button(new Rect(274, 714, 229, 58),
-                "SUMMON ×10\n10 " + type + " / " + (cost * 10) + " GEMS"))
+            if (GUI.Button(new Rect(276, 756, 230, 62),
+                "SUMMON x10\n10 " + type + " / " + (cost * 10) + " GEMS",
+                OrnateGuiSkin.ButtonStyle()))
                 DoSummon(10);
 
-            GUI.Box(new Rect(30, 784, 482, 107), "");
-            GUI.Label(new Rect(36, 788, 462, 30), "RECENT SUMMON HISTORY", subtitle);
+            OrnateGuiSkin.Panel(new Rect(30, 832, 480, 92),
+                "summon_history", OrnateGuiSkin.Gold,
+                new Color(.09f, .07f, .12f, .94f));
+            GUI.Label(new Rect(40, 838, 460, 24), "RECENT SUMMON HISTORY",
+                goldCenter);
             int first = Math.Max(0, progress.Data.summonHistory.Count - 3);
             for (int i = first; i < progress.Data.summonHistory.Count; i++)
             {
@@ -1428,10 +1453,22 @@ namespace MythicChronicles
                 HeroDefinition hero = WorldsCatalog.FindHero(record.heroId);
                 if (hero == null) continue;
                 int index = i - first;
-                GUI.Label(new Rect(48, 817 + index * 22, 451, 24),
-                    hero.name + "  •  " + hero.rarity + "  •  " +
+                GUI.Label(new Rect(48, 862 + index * 20, 444, 22),
+                    hero.name + "  -  " + hero.rarity + "  -  " +
                     record.banner + (record.guaranteed ? "  [PITY]" : ""), tiny);
             }
+        }
+
+        // Deterministic daily showcase hero for the banner art. The Astral
+        // Covenant pool is UR-only; the Standard pool shows SSR heroes.
+        private static string FeaturedBannerHero(bool astral)
+        {
+            var pool = new List<string>();
+            foreach (HeroDefinition hero in WorldsCatalog.Heroes)
+                if (astral ? hero.rarity == Rarity.UR : hero.rarity == Rarity.SSR)
+                    pool.Add(hero.id);
+            if (pool.Count == 0) return "ra";
+            return pool[DateTime.UtcNow.DayOfYear % pool.Count];
         }
 
         private void SelectBanner(SummonBannerType banner)
