@@ -316,39 +316,6 @@ namespace MythicChronicles
 
         private void Home()
         {
-            // Scene-first lobby: no centered hero card. The player's team
-            // stands in the scene as a tappable lineup over the city vista,
-            // like the home screens of the genre's premium titles.
-            // One hero stands in the scene at mid-distance as a transparent
-            // cutout seated in the vista's light (never boxed cards on Home).
-            // Heroes without an authored cutout simply leave the scene empty.
-            string featuredId = progress.Data.selectedTeam.Count > 0 ?
-                progress.Data.selectedTeam[0] : WorldsCatalog.StartingHeroes[0];
-            if (WorldsCatalog.FindHero(featuredId) == null)
-                featuredId = WorldsCatalog.Heroes[0].id;
-            Texture2D standee = Resources.Load<Texture2D>(
-                "Chronicles/HomeCutouts/" + featuredId);
-            if (standee != null)
-            {
-                float figureH = 320f;
-                float figureW = figureH * standee.width / (float)standee.height;
-                Rect figure = new Rect(270f - figureW / 2f, 356f, figureW, figureH);
-                GUI.DrawTexture(new Rect(figure.x + figureW * .15f,
-                    figure.y + figureH - 18f, figureW * .7f, 30f),
-                    OrnateGuiSkin.Glow("home_shadow",
-                        new Color(0f, 0f, 0f, .5f)));
-                Color oldGrade = GUI.color;
-                GUI.color = new Color(.93f, .85f, .88f, 1f);
-                GUI.DrawTexture(figure, standee, ScaleMode.ScaleToFit, true);
-                GUI.color = oldGrade;
-                if (GUI.Button(figure, "", GUIStyle.none))
-                {
-                    selectedHero = featuredId;
-                    showHeroMotion = true;
-                    notice = "";
-                    page = Page.HeroDetails;
-                }
-            }
             GUIStyle plateStyle = new GUIStyle(subtitle) {
                 alignment = TextAnchor.MiddleCenter };
             plateStyle.normal.textColor = OrnateGuiSkin.GoldBright;
