@@ -2906,9 +2906,10 @@ namespace MythicChronicles
                 activeTrialMode + " • " + stage.name +
                     "\nCampaign rank: " + ChroniclesTrials.CampaignRank(progress.Data),
                 subtitle);
-            GUI.Box(new Rect(38, 480, 464, 142),
+            DrawVsResults(new Rect(38, 452, 464, 196), 452f);
+            GUI.Label(new Rect(38, 654, 464, 30),
                 lastVictory ? "First-clear rewards are added once. Your progress is saved." :
-                    "Upgrade your heroes or change formation to try again.");
+                    "Upgrade your heroes or change formation to try again.", tiny);
             bool finalTrialStage = activeTrialMode != TrialMode.Normal &&
                 stageId % ChroniclesTrials.StagesPerChapter == 0;
             bool finishedTower = inTower &&
@@ -2947,6 +2948,80 @@ namespace MythicChronicles
                 CleanupBattle();
             }
             if (GUI.Button(new Rect(42, 781, 456, 65), "RETURN HOME", bigButton)) GoHome();
+        }
+
+
+        private readonly System.Collections.Generic.Dictionary<string, Texture2D>
+            resultIconCache = new System.Collections.Generic.Dictionary<string, Texture2D>();
+
+        private Texture2D ResultIcon(string heroId)
+        {
+            Texture2D icon;
+            if (resultIconCache.TryGetValue(heroId, out icon)) return icon;
+            icon = Resources.Load<Texture2D>("Chronicles/Portraits/Static/" + heroId);
+            if (icon == null)
+                icon = Resources.Load<Texture2D>("Chronicles/HomeCutouts/" + heroId);
+            resultIconCache[heroId] = icon;
+            return icon;
+        }
+
+        // Reference-style VS block: winner's hero cards colored with per-hero
+        // damage bars, loser's side grayscale. Icons only, no written names.
+        private void DrawVsResults(Rect area, float top)
+        {
+            if (battle == null) return;
+            battle.FillDamageMeter(damageMeterScratch);
+            if (damageMeterScratch.Count == 0) return;
+            int maxDmg = 1;
+            foreach (var entry in damageMeterScratch)
+                if (entry.amount > maxDmg) maxDmg = entry.amount;
+            Texture2D vsFrame = OrnateGuiSkin.Art("panel_frame");
+            if (vsFrame != null) GUI.DrawTexture(area, vsFrame);
+            else GUI.Box(area, "");
+            GUIStyle vsStyle = new GUIStyle(heading) {
+                alignment = TextAnchor.MiddleCenter, fontSize = 34,
+                fontStyle = FontStyle.BoldAndItalic };
+            vsStyle.normal.textColor = new Color(1f, .85f, .4f);
+            GUI.Label(new Rect(area.x + area.width / 2f - 30f, area.y + 62f, 60f, 60f),
+                "VS", vsStyle);
+            GUIStyle amtStyle = new GUIStyle(tiny) {
+                alignment = TextAnchor.MiddleRight, fontSize = 11 };
+            amtStyle.normal.textColor = new Color(1f, .96f, .88f);
+            var allies = damageMeterScratch.FindAll(e => e.ally);
+            var foes = damageMeterScratch.FindAll(e => !e.ally);
+            for (int side = 0; side <= 1; side++)
+            {
+                var list = side == 0 ? allies : foes;
+                bool winnerSide = side == 0 ? lastVictory : !lastVictory;
+                float x = side == 0 ? area.x + 12f : area.x + area.width / 2f + 12f;
+                for (int i = 0; i < list.Count && i < 5; i++)
+                {
+                    var entry = list[i];
+                    float y = area.y + 14f + i * 34f;
+                    Texture2D icon = ResultIcon(entry.heroId);
+                    if (icon != null)
+                    {
+                        GUI.color = winnerSide ? Color.white :
+                            new Color(.5f, .5f, .55f, 1f);
+                        GUI.DrawTexture(new Rect(x, y, 30f, 30f), icon,
+                            ScaleMode.ScaleAndCrop);
+                        GUI.color = Color.white;
+                    }
+                    float frac = Mathf.Clamp01((float)entry.amount / maxDmg);
+                    GUI.color = new Color(0f, 0f, 0f, .55f);
+                    GUI.DrawTexture(new Rect(x + 36f, y + 9f, 148f, 14f),
+                        Texture2D.whiteTexture);
+                    GUI.color = winnerSide ? new Color(1f, .75f, .25f) :
+                        new Color(.45f, .45f, .5f);
+                    GUI.DrawTexture(new Rect(x + 36f, y + 9f, 148f * frac, 14f),
+                        Texture2D.whiteTexture);
+                    GUI.color = Color.white;
+                    GUI.Label(new Rect(x + 36f, y + 8f, 144f, 16f),
+                        entry.amount >= 1000 ?
+                            (entry.amount / 1000).ToString() + "K" :
+                            entry.amount.ToString(), amtStyle);
+                }
+            }
         }
 
         private void CleanupBattle()
