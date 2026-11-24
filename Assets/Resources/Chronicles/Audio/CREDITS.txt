@@ -1,0 +1,6 @@
+Music sources (OpenGameArt, verify license per track before public release):
+- battle.mp3  "Determined Pursuit" (epic orchestra loop) - CC0 - opengameart.org/content/determined-pursuit-epic-orchestra-loop
+- story.ogg   "The Final Battle" - opengameart.org/content/the-final-battle (license to re-verify)
+- menu.ogg    "Menu Song" - opengameart.org/content/calm-and-simple-title-music (license to re-verify)
+- victory.ogg "Victory Fanfare Short" - opengameart.org/content/victory-fanfare-short (license to re-verify)
+- defeat.ogg  "Game Over Jingle" - opengameart.org/content/game-over-short-jingle (license to re-verify)
