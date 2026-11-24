@@ -2,7 +2,7 @@ name: Probe unity-cli auth flow
 on: workflow_dispatch
 jobs:
   probe:
-    name: Inspect unity auth login behavior headless
+    name: Capture unity auth login URL headless
     runs-on: ubuntu-latest
     steps:
       - name: Install unity-cli
@@ -10,11 +10,16 @@ jobs:
           curl -fsSL https://public-cdn.cloud.unity3d.com/hub/prod/cli/install.sh | UNITY_CLI_CHANNEL=beta bash
           export PATH="$HOME/.unity/bin:$PATH"
           unity --version
-      - name: Probe auth login output (no completion)
+      - name: Capture login URL
         run: |
           export PATH="$HOME/.unity/bin:$PATH"
-          unity auth login --help 2>&1 | head -40
-          echo "=== attempting login with 25s capture ==="
-          timeout 25 unity auth login --no-store > /tmp/auth.log 2>&1 || true
-          echo "--- captured ---"
+          export HOME="$HOME"
+          timeout 60 unity auth login --insecure-storage --no-banner > /tmp/auth.log 2>&1 &
+          PID=$!
+          for i in $(seq 1 20); do
+            sleep 3
+            if grep -qE "https://[^ ]*unity[^ ]*" /tmp/auth.log 2>/dev/null; then break; fi
+          done
+          echo "--- captured after ${i}0s-ish ---"
           cat /tmp/auth.log
+          kill $PID 2>/dev/null || true
