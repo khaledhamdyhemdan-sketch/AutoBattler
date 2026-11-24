@@ -1193,16 +1193,33 @@ namespace MythicChronicles
                 if (point.z <= 0f) continue;
                 float x = point.x / uiScale - 38f;
                 float y = (Screen.height - point.y) / uiScale - 15f;
-                GUI.Box(new Rect(x, y, 76, 30), "");
+                // Illustrated name plate instead of a flat code box.
+                Texture2D plate = OrnateGuiSkin.Art("bar_plate");
+                Color oldC = GUI.color;
+                if (plate != null)
+                {
+                    GUI.color = new Color(.14f, .12f, .26f, .95f);
+                    GUI.DrawTexture(new Rect(x - 4f, y - 3f, 84f, 36f),
+                        plate, ScaleMode.StretchToFill);
+                }
+                else
+                {
+                    GUI.color = new Color(.05f, .045f, .10f, .92f);
+                    GUI.DrawTexture(new Rect(x, y, 76f, 30f),
+                        Texture2D.whiteTexture);
+                }
                 GUI.color = ChroniclesGame.RarityFrameColor(unit.hero.rarity);
                 GUI.Label(new Rect(x + 3f, y + 2f, 73f, 16f),
                     unit.hero.name.Length > 11 ? unit.hero.name.Substring(0, 11) : unit.hero.name);
-                GUI.color = Color.white;
+                // Bars sit in a dark inset channel, not floating strips.
+                GUI.color = new Color(0f, 0f, 0f, .65f);
+                GUI.DrawTexture(new Rect(x + 1f, y + 18f, 74f, 6f), Texture2D.whiteTexture);
+                GUI.DrawTexture(new Rect(x + 1f, y + 24f, 74f, 5f), Texture2D.whiteTexture);
                 GUI.color = Color.green;
                 GUI.DrawTexture(new Rect(x + 2f, y + 19f, 72f * unit.hp / unit.maxHp, 4f), Texture2D.whiteTexture);
                 GUI.color = Color.cyan;
                 GUI.DrawTexture(new Rect(x + 2f, y + 25f, 72f * unit.energy / 100f, 3f), Texture2D.whiteTexture);
-                GUI.color = Color.white;
+                GUI.color = oldC;
             }
             foreach (var popup in popups)
             {

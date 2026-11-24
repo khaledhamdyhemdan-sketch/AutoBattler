@@ -2740,6 +2740,17 @@ namespace MythicChronicles
                 if (GUI.Button(new Rect(486, 150, 52, 46), ">>",
                     OrnateGuiSkin.ButtonStyle(false)))
                     battle.Speed = 8f;
+                Texture2D railPlate = OrnateGuiSkin.Art("bar_plate");
+                if (railPlate != null)
+                {
+                    Color railC = new Color(.14f, .12f, .26f, .95f);
+                    GUI.color = railC;
+                    GUI.DrawTexture(new Rect(478, 236, 62, 44),
+                        railPlate, ScaleMode.StretchToFill);
+                    GUI.DrawTexture(new Rect(478, 326, 62, 34),
+                        railPlate, ScaleMode.StretchToFill);
+                    GUI.color = Color.white;
+                }
                 GUI.Label(new Rect(482, 240, 58, 40),
                     Mathf.CeilToInt(battle.SecondsLeft) + "s", subtitle);
                 GUI.Label(new Rect(482, 330, 58, 30), "DMG", subtitle);
