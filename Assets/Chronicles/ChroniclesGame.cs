@@ -8,7 +8,7 @@ namespace MythicChronicles
     // to be replaced by production UI Toolkit art without changing progression logic.
     public sealed class ChroniclesGame : MonoBehaviour
     {
-        private enum Page { Home, More, Events, Shop, Mailbox, Chapters, Trials, Towers, Raid, Labyrinth, ArenaTraining, Bounty, StageStory, Heroes, HeroDetails, Formation, Skins, Gear, Forge, Training, Runes, SignatureWeapon, RelicVault, Summon, Quests, WeeklyQuests, Achievements, Idle, Login, Settings, Battle, Results }
+        private enum Page { Home, More, Events, Shop, Mailbox, Chapters, Trials, Towers, Raid, Labyrinth, ArenaTraining, Bounty, Legacy, StageStory, Heroes, HeroDetails, Formation, Skins, Gear, Forge, Training, Runes, SignatureWeapon, RelicVault, Summon, Quests, WeeklyQuests, Achievements, Idle, Login, Settings, Battle, Results }
         private Page page = Page.Home;
         private PlayerProgressService progress;
         private ChroniclesAudioDirector audio;
@@ -230,6 +230,7 @@ namespace MythicChronicles
                 case Page.Home: Home(); break;
                 case Page.More: More(); break;
                 case Page.Bounty: Bounty(); break;
+                case Page.Legacy: Legacy(); break;
                 case Page.Events: Events(); break;
                 case Page.Shop: Shop(); break;
                 case Page.Mailbox: Mailbox(); break;
@@ -453,13 +454,17 @@ namespace MythicChronicles
                 "FACTION TOWERS", "WORLD BOSS",
                 "LABYRINTH", "ARENA TRAINING",
                 "SHOP", "MAILBOX",
-                "BOUNTY BOARD", "SETTINGS"
+                "BOUNTY BOARD", "CHRONICLE LEGACY",
+                "SETTINGS"
             };
+            int rows = (names.Length + 1) / 2;
+            chapterScroll = GUI.BeginScrollView(new Rect(19, 340, 505, 545),
+                chapterScroll, new Rect(0, 0, 471, rows * 80f));
             for (int i = 0; i < names.Length; i++)
             {
                 int row = i / 2, col = i % 2;
-                float x = 34 + col * 244f, y = 348 + row * 83f;
-                if (!GUI.Button(new Rect(x, y, 231, 72), names[i], bigButton))
+                float x = 15 + col * 236f, y = 4 + row * 80f;
+                if (!GUI.Button(new Rect(x, y, 224, 70), names[i], bigButton))
                     continue;
                 switch (i)
                 {
@@ -478,9 +483,53 @@ namespace MythicChronicles
                     case 12: page = Page.Shop; break;
                     case 13: page = Page.Mailbox; break;
                     case 14: page = Page.Bounty; break;
-                    case 15: page = Page.Settings; break;
+                    case 15: page = Page.Legacy; break;
+                    case 16: page = Page.Settings; break;
                 }
             }
+            GUI.EndScrollView();
+        }
+
+        private void Legacy()
+        {
+            GUI.Label(new Rect(26, 214, 488, 63), "CHRONICLE LEGACY", heading);
+            int earned = ChroniclesGrowth.LegacyPointsEarned(progress.Data);
+            int spent = ChroniclesGrowth.LegacyPointsSpent(progress.Data);
+            GUI.Label(new Rect(29, 272, 479, 42),
+                "Account-wide blessings. Points: " + (earned - spent) +
+                " available  (" + earned + " earned from story + achievements)",
+                subtitle);
+            string[] names = { "WARPATH", "AEGIS", "FORTUNE" };
+            int[] levels =
+            {
+                progress.Data.legacyWar, progress.Data.legacyGuard,
+                progress.Data.legacyFortune
+            };
+            string[] effects =
+            {
+                "+" + (progress.Data.legacyWar * 1) + "% attack for every hero",
+                "+" + (progress.Data.legacyGuard * 1) + "% health and +" +
+                    (progress.Data.legacyGuard / 2f).ToString("0.#") + "% defense",
+                "+" + (progress.Data.legacyFortune * 2) + "% gold from idle and fast battle"
+            };
+            for (int i = 0; i < 3; i++)
+            {
+                float y = 336 + i * 120f;
+                GUI.Box(new Rect(26, y, 488, 108), "");
+                GUI.Label(new Rect(44, y + 12, 300, 30),
+                    names[i] + "  LV " + levels[i] + "/" +
+                    ChroniclesGrowth.LegacyCap, subtitle);
+                GUI.Label(new Rect(44, y + 44, 300, 54), effects[i], tiny);
+                GUI.enabled = earned - spent > 0 &&
+                    levels[i] < ChroniclesGrowth.LegacyCap;
+                if (GUI.Button(new Rect(360, y + 26, 136, 56), "BLESS +1"))
+                    notice = progress.SpendLegacyPoint(i) ?
+                        names[i] + " grows stronger." : "No legacy points.";
+                GUI.enabled = true;
+            }
+            GUI.Box(new Rect(26, 712, 488, 96),
+                "Earn a point every 3 story stages and for each achievement " +
+                "claimed. Blessings are permanent and apply to the whole roster.");
         }
 
         private void Bounty()

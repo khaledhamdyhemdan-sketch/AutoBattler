@@ -77,6 +77,40 @@ namespace MythicChronicles
             return Math.Min(CollectionCap, bonus);
         }
 
+        // Chronicle Legacy: account-wide passive tree. Points come from story
+        // progress and achievements; each level adds a small permanent bonus.
+        public const int LegacyCap = 20;
+        public const float LegacyPerLevel = .01f;
+        public const float LegacyGoldPerLevel = .02f;
+
+        public static int LegacyPointsEarned(PlayerSave data)
+        {
+            if (data == null) return 0;
+            return data.lastClearedStage / 3 +
+                (data.claimedAchievements != null ? data.claimedAchievements.Count : 0);
+        }
+
+        public static int LegacyPointsSpent(PlayerSave data)
+        {
+            return data == null ? 0 :
+                data.legacyWar + data.legacyGuard + data.legacyFortune;
+        }
+
+        public static float LegacyWarBonus(PlayerSave data)
+        {
+            return (data == null ? 0 : data.legacyWar) * LegacyPerLevel;
+        }
+
+        public static float LegacyGuardBonus(PlayerSave data)
+        {
+            return (data == null ? 0 : data.legacyGuard) * LegacyPerLevel;
+        }
+
+        public static float LegacyGoldBonus(PlayerSave data)
+        {
+            return (data == null ? 0 : data.legacyFortune) * LegacyGoldPerLevel;
+        }
+
         public static HeroGrowthStats Calculate(PlayerSave data, OwnedHero hero)
         {
             HeroGrowthStats stats = new HeroGrowthStats
@@ -91,9 +125,9 @@ namespace MythicChronicles
             };
             if (hero == null) return stats;
             float collection = CollectionBonus(data);
-            stats.attackMultiplier += collection;
-            stats.hpMultiplier += collection;
-            stats.defenseMultiplier += collection * .5f;
+            stats.attackMultiplier += collection + LegacyWarBonus(data);
+            stats.hpMultiplier += collection + LegacyGuardBonus(data);
+            stats.defenseMultiplier += collection * .5f + LegacyGuardBonus(data) * .5f;
             stats.attackMultiplier += hero.attackTalents * .012f;
             stats.hpMultiplier += hero.defenseTalents * .017f;
             stats.skillMultiplier += (Math.Max(1, hero.activeSkillLevel) - 1) * .075f;

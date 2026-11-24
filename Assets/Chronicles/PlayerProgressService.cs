@@ -41,6 +41,7 @@ namespace MythicChronicles
         public int loginDaysClaimed;
         public string fastBattleUtcDay = "";
         public int fastBattleUsed;
+        public int legacyWar, legacyGuard, legacyFortune;
         public string bountyUtcDay = "";
         public List<ActiveBounty> activeBounties = new List<ActiveBounty>();
         public List<string> claimedBountyIds = new List<string>();
@@ -1658,11 +1659,33 @@ namespace MythicChronicles
             int collected = FastBattleMinutes *
                 (IdleGoldPerMinute + Data.lastClearedStage * IdleGoldPerStagePerMinute);
             Data.fastBattleUsed++;
+            collected += (int)(collected * ChroniclesGrowth.LegacyGoldBonus(Data));
             Data.gold += collected;
             IncrementQuest("idle_1");
             IncrementWeekly("idle_minutes_180", FastBattleMinutes);
             Save();
             return collected;
+        }
+
+        public bool SpendLegacyPoint(int branch)
+        {
+            int earned = ChroniclesGrowth.LegacyPointsEarned(Data);
+            if (ChroniclesGrowth.LegacyPointsSpent(Data) >= earned) return false;
+            switch (branch)
+            {
+                case 0:
+                    if (Data.legacyWar >= ChroniclesGrowth.LegacyCap) return false;
+                    Data.legacyWar++; break;
+                case 1:
+                    if (Data.legacyGuard >= ChroniclesGrowth.LegacyCap) return false;
+                    Data.legacyGuard++; break;
+                case 2:
+                    if (Data.legacyFortune >= ChroniclesGrowth.LegacyCap) return false;
+                    Data.legacyFortune++; break;
+                default: return false;
+            }
+            Save();
+            return true;
         }
 
         public ActiveBounty FindActiveBounty(string bountyId)
@@ -1748,6 +1771,7 @@ namespace MythicChronicles
             int minutes = IdleAvailableMinutes();
             if (minutes <= 0) return 0;
             int collected = IdleProjectedGold();
+            collected += (int)(collected * ChroniclesGrowth.LegacyGoldBonus(Data));
             Data.gold += collected;
             // Consume only whole minutes so sub-minute earnings are preserved.
             Data.lastIdleClaimTicks = Math.Min(DateTime.UtcNow.Ticks,
