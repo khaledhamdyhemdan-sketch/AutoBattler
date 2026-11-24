@@ -53,6 +53,11 @@ namespace MythicChronicles
         public string leaderboardWeekClaimed = "";
         public GuildState guild = new GuildState();
         public FriendsState friends = new FriendsState();
+        public string tournamentWeekKey = "";
+        public int tournamentRoundsWon;
+        public bool tournamentEliminated;
+        public string tournamentPendingRunId = "";
+        public string tournamentRewardClaimed = "";
         public string bountyUtcDay = "";
         public List<ActiveBounty> activeBounties = new List<ActiveBounty>();
         public List<string> claimedBountyIds = new List<string>();
@@ -2098,6 +2103,73 @@ namespace MythicChronicles
             if (!Data.friends.mercenaryPending) return;
             Data.friends.mercenaryPending = false;
             Save();
+        }
+
+        private void RefreshTournamentWeek()
+        {
+            string week = ChroniclesTournament.WeekKey(DateTime.UtcNow);
+            if (Data.tournamentWeekKey == week) return;
+            Data.tournamentWeekKey = week;
+            Data.tournamentRoundsWon = 0;
+            Data.tournamentEliminated = false;
+            Data.tournamentPendingRunId = "";
+        }
+
+        public bool CanEnterTournament()
+        {
+            RefreshTournamentWeek();
+            return Data.lastClearedStage >= 10 && !Data.tournamentEliminated &&
+                Data.tournamentRoundsWon < ChroniclesTournament.Rounds &&
+                string.IsNullOrEmpty(Data.tournamentPendingRunId);
+        }
+
+        public string BeginTournamentRound()
+        {
+            if (!CanEnterTournament()) return "";
+            Data.tournamentPendingRunId = Guid.NewGuid().ToString("N");
+            Save();
+            return Data.tournamentPendingRunId;
+        }
+
+        public void AbandonTournament()
+        {
+            Data.tournamentPendingRunId = "";
+            Save();
+        }
+
+        public bool CompleteTournamentRound(string runId, bool victory)
+        {
+            RefreshTournamentWeek();
+            if (string.IsNullOrEmpty(runId) ||
+                runId != Data.tournamentPendingRunId) return false;
+            Data.tournamentPendingRunId = "";
+            if (victory)
+            {
+                Data.tournamentRoundsWon++;
+                AddPassXp(10);
+            }
+            else Data.tournamentEliminated = true;
+            Save();
+            return true;
+        }
+
+        public bool ClaimTournamentReward(out string label)
+        {
+            label = "";
+            RefreshTournamentWeek();
+            bool champion = Data.tournamentRoundsWon >= ChroniclesTournament.Rounds;
+            if (!champion && !Data.tournamentEliminated) return false;
+            if (Data.tournamentRewardClaimed == Data.tournamentWeekKey) return false;
+            Data.tournamentRewardClaimed = Data.tournamentWeekKey;
+            if (champion) { Data.gems += 300; Data.summonTickets += 2; }
+            else if (Data.tournamentRoundsWon == 2)
+            { Data.gems += 150; Data.summonTickets += 1; }
+            else if (Data.tournamentRoundsWon == 1) Data.gems += 75;
+            else Data.gems += 30;
+            label = ChroniclesTournament.RewardLabel(
+                Data.tournamentRoundsWon, Data.tournamentEliminated);
+            Save();
+            return true;
         }
 
         public bool SpendLegacyPoint(int branch)
