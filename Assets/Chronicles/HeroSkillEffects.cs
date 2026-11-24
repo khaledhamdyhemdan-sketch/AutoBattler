@@ -77,17 +77,53 @@ namespace MythicChronicles
             }
         }
 
+
+        private static Texture2D glowTex;
+
+        // Soft radial glow texture, generated once: white-hot core fading to
+        // transparent, so overlapping quads blend into light instead of hard
+        // squares. Runtime-generated so no authored art is required.
+        private static Texture2D GlowTexture()
+        {
+            if (glowTex != null) return glowTex;
+            const int size = 64;
+            glowTex = new Texture2D(size, size, TextureFormat.RGBA32, false);
+            glowTex.wrapMode = TextureWrapMode.Clamp;
+            glowTex.filterMode = FilterMode.Bilinear;
+            for (int y = 0; y < size; y++)
+                for (int x = 0; x < size; x++)
+                {
+                    float dx = (x + .5f) / size - .5f, dy = (y + .5f) / size - .5f;
+                    float d = Mathf.Sqrt(dx * dx + dy * dy) * 2f;
+                    float a = Mathf.Pow(Mathf.Clamp01(1f - d), 2.2f);
+                    glowTex.SetPixel(x, y, new Color(1f, 1f, 1f, a));
+                }
+            glowTex.Apply();
+            return glowTex;
+        }
+
+        private static Shader AdditiveShader()
+        {
+            Shader shader = Shader.Find("Legacy Shaders/Particles/Additive");
+            if (shader == null) shader = Shader.Find("Particles/Additive");
+            if (shader == null) shader = Shader.Find("Unlit/Transparent");
+            if (shader == null) shader = Shader.Find("Unlit/Color");
+            if (shader == null) shader = Shader.Find("Standard");
+            return shader;
+        }
+
         private void Initialize(Color color, bool isUltimate, int rarityTier = 1)
         {
             effectColor = color;
             ultimate = isUltimate;
             tier = Mathf.Clamp(rarityTier, 1, 4);
             duration = (isUltimate ? 1.6f : .9f) * (1f + (tier - 1) * .12f);
-            Shader shader = Shader.Find("Universal Render Pipeline/Unlit");
-            if (shader == null) shader = Shader.Find("Unlit/Color");
-            if (shader == null) shader = Shader.Find("Standard");
+            Shader shader = AdditiveShader();
             if (shader == null) { Destroy(gameObject); return; }
             material = new Material(shader);
+            if (material.HasProperty("_MainTex")) material.mainTexture = GlowTexture();
+            // Additive shaders tint via TintColor.
+            if (material.HasProperty("_TintColor")) material.SetColor("_TintColor", color);
             int count = (isUltimate ? 10 : 6) + (tier - 1) * 3;
             pieces = new Transform[count];
             baseScales = new Vector3[count];
@@ -143,6 +179,12 @@ namespace MythicChronicles
                 Color c = effectColor;
                 c.a = fade * .85f;
                 material.color = c;
+                if (material.HasProperty("_TintColor"))
+                {
+                    Color tint = effectColor * 1.6f; // hot core on additive
+                    tint.a = fade * .8f;
+                    material.SetColor("_TintColor", tint);
+                }
             }
             float reach = 1f + (tier - 1) * .22f;
             int count = pieces.Length;
@@ -154,8 +196,11 @@ namespace MythicChronicles
                 pieces[i].localPosition = new Vector3(Mathf.Cos(angle) * radius,
                     .9f + Mathf.Sin(t * Mathf.PI) * (ultimate ? .8f : .35f),
                     Mathf.Sin(angle) * radius);
+                // Spin around Z only: the glow texture is radially symmetric,
+                // so this reads as shimmering light instead of turning the quad
+                // edge-on into invisible slivers.
                 pieces[i].localRotation = Quaternion.Euler(
-                    t * 160f + i * 23f, t * 240f + i * 31f, 0f);
+                    0f, 0f, t * 200f + i * 47f);
                 pieces[i].localScale = baseScales[i] *
                     Mathf.Max(.001f, grow * fade) * (ultimate ? 1.5f : 1f);
             }
