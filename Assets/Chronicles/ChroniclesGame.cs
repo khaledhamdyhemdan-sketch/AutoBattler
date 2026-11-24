@@ -277,11 +277,15 @@ namespace MythicChronicles
 
         private void Header()
         {
-            GUI.Label(new Rect(20, 20, 500, 54), "CHRONICLES OF THE LOOM", heading);
+            OrnateGuiSkin.Title(new Rect(20, 18, 500, 50), "CHRONICLES OF THE LOOM", 27);
             GUI.Label(new Rect(25, 66, 490, 34), "An original crossover of myths, legends and histories", subtitle);
-            GUI.Box(new Rect(15, 112, 510, 55), "");
+            OrnateGuiSkin.Panel(new Rect(15, 112, 510, 55), "hdr_bar",
+                OrnateGuiSkin.Gold, new Color(.10f, .08f, .14f, .92f));
+            GUIStyle currency = new GUIStyle(tiny) {
+                alignment = TextAnchor.MiddleCenter, fontSize = 15 };
+            currency.normal.textColor = OrnateGuiSkin.GoldBright;
             GUI.Label(new Rect(28, 124, 485, 30), "GOLD " + progress.Data.gold + "   |   GEMS " +
-                progress.Data.gems + "   |   TICKETS " + progress.Data.summonTickets, tiny);
+                progress.Data.gems + "   |   TICKETS " + progress.Data.summonTickets, currency);
             if (page != Page.Home && GUI.Button(new Rect(20, 183, 105, 42), "HOME")) GoHome();
             if (!string.IsNullOrEmpty(notice))
                 GUI.Label(new Rect(20, 903, 500, 43), notice, subtitle);
@@ -305,10 +309,14 @@ namespace MythicChronicles
             ChroniclesHeroPortrait.Draw(featured.id,
                 new Rect(138, 214, 265, 356),
                 !progress.Data.reducePortraitMotion);
-            GUI.Box(new Rect(118, 563, 305, 51), "");
+            OrnateGuiSkin.Panel(new Rect(118, 563, 305, 51), "home_plate",
+                OrnateGuiSkin.Gold, new Color(.08f, .06f, .12f, .94f));
+            GUIStyle plateStyle = new GUIStyle(subtitle) {
+                alignment = TextAnchor.MiddleCenter };
+            plateStyle.normal.textColor = OrnateGuiSkin.GoldBright;
             GUI.Label(new Rect(126, 569, 287, 41),
                 featured.name.ToUpperInvariant() + " • " + featured.rarity +
-                " • " + featured.element, subtitle);
+                " • " + featured.element, plateStyle);
 
             // A few contextual side doors, not a wall of oversized offer banners.
             if (GUI.Button(new Rect(29, 249, 108, 60), "ELITE\nDARK"))
@@ -344,7 +352,7 @@ namespace MythicChronicles
                 "STORY " + progress.Data.lastClearedStage +
                 "/60  •  " + chapter.title, subtitle);
             if (GUI.Button(new Rect(49, 687, 443, 76),
-                "CONTINUE ADVENTURE", bigButton))
+                "CONTINUE ADVENTURE", OrnateGuiSkin.ButtonStyle()))
             {
                 inTower = false;
                 inRaid = false;
@@ -356,19 +364,21 @@ namespace MythicChronicles
             }
 
             // Bottom navigation follows common mobile hero-RPG conventions.
-            GUI.Box(new Rect(12, 802, 516, 85), "");
-            if (GUI.Button(new Rect(18, 813, 96, 61), "HOME"))
+            GUIStyle navStyle = OrnateGuiSkin.ButtonStyle();
+            OrnateGuiSkin.Panel(new Rect(12, 802, 516, 85), "home_nav",
+                OrnateGuiSkin.Gold, new Color(.09f, .07f, .12f, .95f));
+            if (GUI.Button(new Rect(18, 813, 96, 61), "HOME", navStyle))
                 page = Page.Home;
-            if (GUI.Button(new Rect(118, 813, 96, 61), "HEROES"))
+            if (GUI.Button(new Rect(118, 813, 96, 61), "HEROES", navStyle))
                 page = Page.Heroes;
-            if (GUI.Button(new Rect(218, 813, 101, 61), "ADVENTURE"))
+            if (GUI.Button(new Rect(218, 813, 101, 61), "ADVENTURE", navStyle))
             {
                 inTower = false; activeTrialMode = TrialMode.Normal;
                 page = Page.Chapters;
             }
-            if (GUI.Button(new Rect(323, 813, 96, 61), "SUMMON"))
+            if (GUI.Button(new Rect(323, 813, 96, 61), "SUMMON", navStyle))
                 page = Page.Summon;
-            if (GUI.Button(new Rect(423, 813, 96, 61), "MORE"))
+            if (GUI.Button(new Rect(423, 813, 96, 61), "MORE", navStyle))
                 page = Page.More;
         }
 
@@ -900,7 +910,9 @@ namespace MythicChronicles
                 // Generate only thumbnails inside or near the viewport.
                 if (y + 218f < rosterScroll.y - 30f ||
                     y > rosterScroll.y + 550f) continue;
-                GUI.Box(new Rect(x, y, 150, 212), "");
+                OrnateGuiSkin.Panel(new Rect(x, y, 150, 212),
+                    "card_" + hero.rarity, RarityFrameColor(hero.rarity),
+                    new Color(.08f, .06f, .12f, .94f));
                 ChroniclesHeroPortrait.Draw(hero.id,
                     new Rect(x + 4, y + 4, 142, 164), false);
                 Color oldColor = GUI.color;
@@ -935,13 +947,16 @@ namespace MythicChronicles
             HeroKit kit = HeroAbilityCatalog.For(hero.id);
             URCardIdentity premium = hero.rarity == Rarity.UR ?
                 URCardCatalog.For(hero.id) : null;
-            GUI.Label(new Rect(28, 235, 485, 54),
-                hero.name.ToUpperInvariant(), heading);
+            OrnateGuiSkin.Title(new Rect(28, 232, 485, 52),
+                hero.name.ToUpperInvariant(), 27);
             GUI.Label(new Rect(26, 292, 487, 39),
                 hero.rarity + " • " + hero.element + " • " +
                 hero.origin + " • " + hero.role, subtitle);
 
             // Both static and animated portraits are available for EVERY hero.
+            GUI.DrawTexture(new Rect(0, 320, 300, 340),
+                OrnateGuiSkin.Glow("detail_glow",
+                    new Color(.95f, .78f, .38f, .4f)));
             ChroniclesHeroPortrait.Draw(hero.id,
                 new Rect(30, 350, 228, 280),
                 showHeroMotion && !progress.Data.reducePortraitMotion);
@@ -954,10 +969,13 @@ namespace MythicChronicles
                 !showHeroMotion ? "● STATIC" : "STATIC"))
                 showHeroMotion = false;
 
-            GUI.Box(new Rect(268, 350, 243, 323), "");
-            if (GUI.Button(new Rect(276, 360, 109, 36), "STORY"))
+            OrnateGuiSkin.Panel(new Rect(268, 350, 243, 323), "detail_info",
+                RarityFrameColor(hero.rarity), new Color(.08f, .06f, .12f, .94f));
+            if (GUI.Button(new Rect(276, 360, 109, 36), "STORY",
+                OrnateGuiSkin.ButtonStyle()))
                 showHeroSkills = false;
-            if (GUI.Button(new Rect(392, 360, 110, 36), "SKILLS"))
+            if (GUI.Button(new Rect(392, 360, 110, 36), "SKILLS",
+                OrnateGuiSkin.ButtonStyle()))
                 showHeroSkills = true;
             if (showHeroSkills && kit != null)
             {
@@ -994,7 +1012,8 @@ namespace MythicChronicles
                     " • FRAGMENTS " + owned.fragments, subtitle);
             }
             GUI.enabled = owned != null;
-            if (GUI.Button(new Rect(31, 735, 478, 49), "UPGRADE HERO", bigButton))
+            if (GUI.Button(new Rect(31, 735, 478, 49), "UPGRADE HERO",
+                OrnateGuiSkin.ButtonStyle()))
                 notice = progress.UpgradeHero(hero.id) ?
                     "Hero upgraded and saved." : "Gold or level cap reached.";
             if (GUI.Button(new Rect(31, 789, 232, 49), "EQUIPMENT"))
@@ -1334,6 +1353,19 @@ namespace MythicChronicles
                 "STAGE " + stageId, bigButton))
                 BeginBattle();
             GUI.enabled = true;
+        }
+
+        // Rarity-colored frame accents, in the genre's gold/red conventions.
+        private static Color RarityFrameColor(Rarity rarity)
+        {
+            switch (rarity)
+            {
+                case Rarity.UR: return new Color(1f, .85f, .5f);
+                case Rarity.EX: return new Color(.9f, .55f, .9f);
+                case Rarity.SSR: return new Color(.86f, .66f, .28f);
+                case Rarity.SR: return new Color(.72f, .78f, .9f);
+                default: return new Color(.68f, .54f, .36f);
+            }
         }
 
         private void Summon()
