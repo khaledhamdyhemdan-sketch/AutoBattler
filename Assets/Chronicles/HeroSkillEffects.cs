@@ -71,7 +71,8 @@ namespace MythicChronicles
                 case Rarity.SR: return 2;
                 case Rarity.SSR: return 3;
                 case Rarity.UR:
-                case Rarity.EX: return 4;
+                case Rarity.EX:
+                case Rarity.SSRP: return 4;
                 default: return 1;
             }
         }

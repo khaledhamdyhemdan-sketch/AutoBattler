@@ -61,6 +61,7 @@ namespace MythicChronicles
         private string cutInHero;
         private string cutInSkill;
         private float cutInTime = 99f;
+        private bool cutInUltimate;
         private readonly Dictionary<string, Texture2D> cutInPortraits = new Dictionary<string, Texture2D>();
         private GUIStyle cutInNameStyle, cutInSkillStyle, popupBigStyle;
         private Texture2D panelAllyTex, panelEnemyTex;
@@ -865,8 +866,14 @@ namespace MythicChronicles
 
         private void CutIn(Combatant actor, string skillName)
         {
+            CutIn(actor, skillName, false);
+        }
+
+        private void CutIn(Combatant actor, string skillName, bool ultimate)
+        {
             cutInHero = actor.hero.id;
             cutInSkill = skillName;
+            cutInUltimate = ultimate;
             cutInTime = 0f;
             hitStopT = .16f;
             shakeT = .28f;
@@ -892,7 +899,7 @@ namespace MythicChronicles
             HeroKit kit = HeroAbilityCatalog.For(actor.hero.id);
             if (kit == null) { Hit(actor, target, actor.attack * 3f); return; }
             actor.visual.Play(HeroAnimation.Ultimate);
-            CutIn(actor, kit != null ? kit.ultimateName : string.Empty);
+            CutIn(actor, kit != null ? kit.ultimateName : string.Empty, true);
             HeroSkillEffects.Play(actor.hero, true,
                 actor.model.transform, target == null ? null : target.model.transform);
             if (ChroniclesAudioDirector.Instance != null)
@@ -1109,20 +1116,52 @@ namespace MythicChronicles
                 cutInNameStyle.normal.textColor = new Color(1f, .87f, .55f);
                 cutInSkillStyle = new GUIStyle(GUI.skin.label) { fontSize = 17, fontStyle = FontStyle.Bold };
             }
-            if (cutInTime >= 1.15f || string.IsNullOrEmpty(cutInHero)) return;
-            float t = cutInTime / 1.15f;
+            bool takeoverCheck = false;
+            {
+                HeroDefinition checkHero = WorldsCatalog.FindHero(cutInHero);
+                takeoverCheck = checkHero != null && (checkHero.rarity == Rarity.UR ||
+                    checkHero.rarity == Rarity.EX || checkHero.rarity == Rarity.SSRP);
+            }
+            float cutInDuration = (cutInUltimate && takeoverCheck) ? 1.75f : 1.15f;
+            if (cutInTime >= cutInDuration || string.IsNullOrEmpty(cutInHero)) return;
+            float t = cutInTime / cutInDuration;
             float inT = Mathf.Clamp01(t / .18f); inT = inT * inT * (3f - 2f * inT);
             float outT = Mathf.Clamp01((t - .8f) / .2f); outT = outT * outT * (3f - 2f * outT);
             float a = inT * (1f - outT);
             HeroDefinition cutHero = WorldsCatalog.FindHero(cutInHero);
             Color ec = cutHero != null ? HeroSkillEffects.ColorFor(cutHero.element) : new Color(1f, .75f, .3f);
             bool premiumCut = cutHero != null &&
-                (cutHero.rarity == Rarity.UR || cutHero.rarity == Rarity.EX);
-            Color edgeColor = premiumCut ? new Color(1f, .85f, .5f) : ec;
+                (cutHero.rarity == Rarity.UR || cutHero.rarity == Rarity.EX ||
+                cutHero.rarity == Rarity.SSRP);
+            // SSR+ signature: violet-silver; UR: gold; EX: prismatic white-gold
+            Color edgeColor = cutHero != null && cutHero.rarity == Rarity.SSRP ?
+                new Color(.78f, .65f, 1f) :
+                premiumCut ? new Color(1f, .85f, .5f) : ec;
+            bool takeover = cutInUltimate && premiumCut;
             // subtle full-screen flash: gold for premium rarities, element otherwise
             GUI.color = new Color(edgeColor.r, edgeColor.g, edgeColor.b,
-                (premiumCut ? .22f : .16f) * (1f - t));
+                (takeover ? .30f : premiumCut ? .22f : .16f) * (1f - t));
             GUI.DrawTexture(new Rect(0f, 0f, 540f, 960f), Texture2D.whiteTexture);
+            if (takeover)
+            {
+                // Full-screen ultimate takeover: dark veil + expanding tier ring
+                Matrix4x4 ringKeep = GUI.matrix;
+                GUI.color = new Color(0f, 0f, 0f, .55f * a);
+                GUI.DrawTexture(new Rect(0f, 0f, 540f, 960f), Texture2D.whiteTexture);
+                float ringR = 90f + 620f * t;
+                int ringSegs = 28;
+                for (int i = 0; i < ringSegs; i++)
+                {
+                    float ang = i * 6.28318f / ringSegs;
+                    float segFade = .5f + .5f * Mathf.Sin(ang * 3f + t * 9f);
+                    GUI.color = new Color(edgeColor.r, edgeColor.g, edgeColor.b,
+                        .5f * segFade * a);
+                    GUIUtility.RotateAroundPivot(ang * 57.2958f, new Vector2(270f, 480f));
+                    GUI.DrawTexture(new Rect(270f - 2f, 480f - ringR, 4f, 26f + 30f * segFade),
+                        Texture2D.whiteTexture);
+                }
+                GUI.matrix = ringKeep;
+            }
             // diagonal slash band with element edge lines and speed lines
             Matrix4x4 keepMatrix = GUI.matrix;
             GUIUtility.RotateAroundPivot(-9f, new Vector2(270f, 470f));
@@ -1157,7 +1196,7 @@ namespace MythicChronicles
             if (portrait != null)
             {
                 float slide = Mathf.Lerp(-430f, 0f, inT) - 390f * outT;
-                float maxW = 470f, maxH = 700f;
+                float maxW = takeover ? 540f : 470f, maxH = takeover ? 800f : 700f;
                 float ar = (float)portrait.width / portrait.height;
                 float ph = maxH, pw = ph * ar;
                 if (pw > maxW) { pw = maxW; ph = pw / ar; }
@@ -1197,10 +1236,12 @@ namespace MythicChronicles
                     cutInSkillStyle.normal.textColor = Color.white;
                     GUI.color = new Color(0f, 0f, 0f, .9f * a);
                     GUI.Label(new Rect(298f, 396f, 240f, 26f),
-                        cutHero.rarity == Rarity.EX ? "* EXCLUSIVE *" : "* ULTRA RARE *", cutInSkillStyle);
+                        cutHero.rarity == Rarity.EX ? "* EXCLUSIVE *" :
+                        cutHero.rarity == Rarity.SSRP ? "* SSR+ *" : "* ULTRA RARE *", cutInSkillStyle);
                     GUI.color = new Color(1f, .85f, .5f, a);
                     GUI.Label(new Rect(296f, 394f, 240f, 26f),
-                        cutHero.rarity == Rarity.EX ? "* EXCLUSIVE *" : "* ULTRA RARE *", cutInSkillStyle);
+                        cutHero.rarity == Rarity.EX ? "* EXCLUSIVE *" :
+                        cutHero.rarity == Rarity.SSRP ? "* SSR+ *" : "* ULTRA RARE *", cutInSkillStyle);
                 }
                 string cutName = cutHero.name.ToUpperInvariant();
                 GUI.color = new Color(0f, 0f, 0f, .9f * a);
