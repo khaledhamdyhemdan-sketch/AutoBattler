@@ -352,8 +352,26 @@ namespace MythicChronicles
                 Collider backdropCollider = backdrop.GetComponent<Collider>();
                 if (backdropCollider != null) Destroy(backdropCollider);
                 backdrop.transform.SetParent(transform);
-                backdrop.transform.position = new Vector3(0f, -13f, 18f);
-                backdrop.transform.localScale = new Vector3(18f, 33f, 1f);
+                if (PanelLayout)
+                {
+                    // Panel mode: cover the full orthographic frame edge-to-edge
+                    // behind the panels (no empty border), preserving the art's
+                    // aspect like a background crop.
+                    float halfH = cam.orthographicSize;
+                    float halfW = halfH * cam.aspect;
+                    float texAspect = (float)battlefield.width / battlefield.height;
+                    float coverH = halfH * 2f;
+                    float coverW = halfW * 2f;
+                    float scaleW = Mathf.Max(coverW, coverH * texAspect) * 1.02f;
+                    float scaleH = Mathf.Max(coverH, coverW / texAspect) * 1.02f;
+                    backdrop.transform.position = new Vector3(0f, 0f, 18f);
+                    backdrop.transform.localScale = new Vector3(scaleW, scaleH, 1f);
+                }
+                else
+                {
+                    backdrop.transform.position = new Vector3(0f, -13f, 18f);
+                    backdrop.transform.localScale = new Vector3(18f, 33f, 1f);
+                }
                 Shader backdropShader = ChroniclesShaders.FindAny(
                     "Unlit/Texture", "Sprites/Default",
                     "Universal Render Pipeline/Unlit");
