@@ -12,11 +12,11 @@ jobs:
       - name: Install unity-cli
         run: |
           (curl -fsSL https://public-cdn.cloud.unity3d.com/hub/prod/cli/install.sh || (apt-get update -qq && apt-get install -y -qq curl ca-certificates >/dev/null && curl -fsSL https://public-cdn.cloud.unity3d.com/hub/prod/cli/install.sh)) | UNITY_CLI_CHANNEL=beta bash
-          echo "$HOME/.unity/bin" >> "$GITHUB_PATH"
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
           find / -name unity -type f -path "*bin*" 2>/dev/null | head -3
       - name: Start login and publish URL
         run: |
-          export PATH="$HOME/.unity/bin:/root/.unity/bin:$PATH"
+          export PATH="$HOME/.local/bin:$HOME/.unity/bin:/root/.local/bin:$PATH"
           which unity || { find / -name unity -type f -path "*bin*" 2>/dev/null | head -3; exit 1; }
           unity auth login --insecure-storage --no-banner > /tmp/auth.log 2>&1 &
           echo $! > /tmp/login.pid
@@ -41,7 +41,7 @@ jobs:
           TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - name: Wait for sign-in completion
         run: |
-          export PATH="$HOME/.unity/bin:/root/.unity/bin:$PATH"
+          export PATH="$HOME/.local/bin:$HOME/.unity/bin:/root/.local/bin:$PATH"
           PID=$(cat /tmp/login.pid)
           DONE=timeout
           for i in $(seq 1 56); do
@@ -53,7 +53,7 @@ jobs:
           unity auth status || true
       - name: Activate Personal license
         run: |
-          export PATH="$HOME/.unity/bin:/root/.unity/bin:$PATH"
+          export PATH="$HOME/.local/bin:$HOME/.unity/bin:/root/.local/bin:$PATH"
           unity license activate --personal --accept-eula
           unity license status || true
       - name: Locate and artifact the license file
