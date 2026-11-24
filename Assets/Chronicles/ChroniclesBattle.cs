@@ -58,7 +58,7 @@ namespace MythicChronicles
         public bool Complete { get { return ended; } }
         public float SecondsLeft { get { return Mathf.Max(0f, 90f - elapsed); } }
         public float Speed { get; set; } = 1f;
-        private float shakeT, shakeAmp, hitStopT;
+        private float shakeT, shakeAmp, hitStopT, slowMoT;
         private Vector3 camBase = new Vector3(0f, 11.5f, -13f);
         private string cutInHero;
         private string cutInSkill;
@@ -491,6 +491,9 @@ namespace MythicChronicles
             float roleHp = hero.role == CombatRole.Tank ? 1.8f : hero.role == CombatRole.Warrior ? 1.35f : 1f;
             float roleAttack = hero.role == CombatRole.Assassin ? 1.4f : hero.role == CombatRole.Mage ? 1.35f : 1f;
             float chapterScale = side == 1 ? 1f + stage.id * .042f : 1f;
+            if (side == 1 && stage.id <= 6)
+                // Opening stages must be feel-good wins; the curve rejoins at stage 7.
+                chapterScale *= .55f + stage.id * .06f;
             float ascensionScale = 1f + (stars - 1) * .075f;
             Combatant unit = new Combatant
             {
@@ -567,7 +570,20 @@ namespace MythicChronicles
                 hitStopT -= Time.unscaledDeltaTime;
                 dt *= .15f;
             }
-            if (cutInTime < 3f) cutInTime += dt;
+            if (cutInTime < 3f) cutInTime += Time.unscaledDeltaTime;
+            if (slowMoT > 0f)
+            {
+                slowMoT -= Time.unscaledDeltaTime;
+                if (slowMoT <= 0f) Time.timeScale = 1f;
+            }
+            if (PanelLayout && cam != null && cam.orthographic)
+            {
+                // Cinematic zoom-in under an ultimate cut-in, ease back after.
+                float targetSize = cutInUltimate && cutInTime < 1.75f &&
+                    !string.IsNullOrEmpty(cutInHero) ? 4.35f : 5.4f;
+                cam.orthographicSize = Mathf.Lerp(cam.orthographicSize, targetSize,
+                    Mathf.Clamp01(Time.unscaledDeltaTime * 5f));
+            }
             if (shakeT > 0f && cam != null)
             {
                 shakeT -= Time.unscaledDeltaTime;
@@ -652,7 +668,7 @@ namespace MythicChronicles
                         baseCooldown *= 1f - .2f * PassiveScale(f.hero.rarity);
                     f.attackCd = baseCooldown;
                     f.energy = Mathf.Min(100f, f.energy + (kit != null &&
-                        kit.passive == HeroPassive.Enchantress ? 17f + 6f * PassiveScale(f.hero.rarity) : 17f));
+                        kit.passive == HeroPassive.Enchantress ? 12f + 6f * PassiveScale(f.hero.rarity) : 12f));
                 }
                 else f.visual.Play(HeroAnimation.Idle);
             }
@@ -912,7 +928,7 @@ namespace MythicChronicles
                 raidDamage += actualDamage;
             defender.hp = Mathf.Max(0f, defender.hp - actualDamage);
             if (attacker != null) attacker.dealt += actualDamage;
-            defender.energy = Mathf.Min(100f, defender.energy + actualDamage * .12f);
+            defender.energy = Mathf.Min(100f, defender.energy + actualDamage * .09f);
             Floating("-" + Mathf.RoundToInt(damage), defender, new Color(1f, .72f, .54f));
 
             if (attacker != null && attackingKit != null &&
@@ -992,6 +1008,12 @@ namespace MythicChronicles
             cutInUltimate = ultimate;
             cutInTime = 0f;
             hitStopT = .16f;
+            if (ultimate)
+            {
+                // Cinematic beat: the world drops into slow motion under the takeover.
+                slowMoT = .95f;
+                Time.timeScale = .42f;
+            }
             shakeT = .28f;
             shakeAmp = .35f;
         }
@@ -1000,7 +1022,7 @@ namespace MythicChronicles
         {
             HeroKit kit = HeroAbilityCatalog.For(actor.hero.id);
             if (kit == null) { Hit(actor, target, actor.attack * 1.4f); return; }
-            actor.energy = Mathf.Min(100f, actor.energy + 13f);
+            actor.energy = Mathf.Min(100f, actor.energy + 9f);
             if (kit.passive == HeroPassive.Stormborn)
                 actor.rallied = Mathf.Max(actor.rallied, 3.2f);
             actor.visual.Play(HeroAnimation.Skill);
@@ -1506,6 +1528,7 @@ namespace MythicChronicles
 
         private void OnDestroy()
         {
+            Time.timeScale = 1f;
             foreach (var item in materials) if (item.Value != null) Destroy(item.Value);
             if (goldMaterial != null) Destroy(goldMaterial);
             if (groundMaterial != null) Destroy(groundMaterial);
