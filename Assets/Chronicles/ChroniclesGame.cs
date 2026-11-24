@@ -914,7 +914,7 @@ namespace MythicChronicles
                 float x = 22f + i * 83f;
                 if (i == 5)
                 {
-                    GUI.DrawTexture(new Rect(x, 268, 77, 45), Texture2D.blackTexture);
+                    GUI.Box(new Rect(x, 268, 77, 45), "");
                     GUI.Label(new Rect(x, 270, 77, 39), "EX LOCKED", tiny);
                     continue;
                 }
@@ -967,10 +967,20 @@ namespace MythicChronicles
                     new Color(.08f, .06f, .12f, .94f));
                 ChroniclesHeroPortrait.Draw(hero.id,
                     new Rect(x + 4, y + 4, 142, 164), false);
+                Texture2D namePlate = OrnateGuiSkin.Art("bar_plate");
                 Color oldColor = GUI.color;
-                GUI.color = new Color(.035f, .032f, .074f, .96f);
-                GUI.DrawTexture(new Rect(x + 4, y + 156, 142, 53),
-                    Texture2D.whiteTexture);
+                if (namePlate != null)
+                {
+                    GUI.color = new Color(.16f, .14f, .30f, .96f);
+                    GUI.DrawTexture(new Rect(x + 4, y + 156, 142, 53),
+                        namePlate, ScaleMode.StretchToFill);
+                }
+                else
+                {
+                    GUI.color = new Color(.035f, .032f, .074f, .96f);
+                    GUI.DrawTexture(new Rect(x + 4, y + 156, 142, 53),
+                        Texture2D.whiteTexture);
+                }
                 GUI.color = oldColor;
                 GUI.Label(new Rect(x + 7, y + 162, 136, 22),
                     hero.name + "  " + hero.rarity, tiny);
