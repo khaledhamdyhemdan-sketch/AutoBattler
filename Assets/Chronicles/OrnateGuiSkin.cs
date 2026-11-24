@@ -247,6 +247,24 @@ namespace MythicChronicles
             GUI.Label(r, text, TitleStyle(size));
         }
 
+        // Heading plaque: framed dark plate with gold display text and shadow.
+        // Readable over any background art; the genre standard for page titles.
+        public static void TitlePlate(Rect r, string text, int size)
+        {
+            var plate = new GUIStyle(GUI.skin.box);
+            plate.normal.background = Frame("titleplate_frame", gold,
+                new Color(.07f, .055f, .11f, .93f), 64, 4);
+            plate.border = new RectOffset(12, 12, 12, 12);
+            GUI.Box(r, GUIContent.none, plate);
+            GUIStyle shadow = new GUIStyle(TitleStyle(size));
+            shadow.normal.textColor = new Color(0f, 0f, 0f, .9f);
+            shadow.wordWrap = true;
+            GUI.Label(new Rect(r.x + 2, r.y + 2, r.width, r.height), text, shadow);
+            GUIStyle top = new GUIStyle(TitleStyle(size));
+            top.wordWrap = true;
+            GUI.Label(r, text, top);
+        }
+
         // Framed panel draw helper (authored art when present, else 9-slice).
         public static void Panel(Rect r, string key, Color border, Color fill)
         {

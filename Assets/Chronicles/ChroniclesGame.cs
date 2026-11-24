@@ -40,7 +40,7 @@ namespace MythicChronicles
         private readonly List<string> lastSummonBatch = new List<string>();
         private bool lastVictory;
         private Vector2 chapterScroll, rosterScroll, formationScroll, gearScroll, runeScroll;
-        private GUIStyle heading, subtitle, tiny;
+        private GUIStyle heading, subtitle, tiny, pageDesc;
         private GUIStyle rowText, tinyCenter, cellText;
         private GUIStyle bigButton;
         private Texture2D panelTex;
@@ -107,6 +107,10 @@ namespace MythicChronicles
                 padding = new RectOffset(16, 8, 0, 0) };
             tinyCenter = new GUIStyle(tiny) { alignment = TextAnchor.MiddleCenter,
                 padding = new RectOffset(8, 8, 4, 4) };
+            pageDesc = new GUIStyle(tiny) { fontSize = 13, wordWrap = true,
+                alignment = TextAnchor.UpperCenter,
+                padding = new RectOffset(16, 16, 4, 4) };
+            pageDesc.normal.textColor = new Color(.78f, .76f, .88f);
             cellText = new GUIStyle(tiny) { fontSize = 11, wordWrap = true,
                 alignment = TextAnchor.MiddleCenter,
                 padding = new RectOffset(1, 1, 1, 1) };
@@ -332,7 +336,7 @@ namespace MythicChronicles
             currency.normal.textColor = OrnateGuiSkin.GoldBright;
             GUI.Label(new Rect(28, 124, 485, 30), "GOLD " + progress.Data.gold + "   |   GEMS " +
                 progress.Data.gems + "   |   TICKETS " + progress.Data.summonTickets, currency);
-            if (page != Page.Home && GUI.Button(new Rect(20, 183, 105, 42), "HOME")) GoHome();
+            if (page != Page.Home && GUI.Button(new Rect(20, 64, 105, 42), "HOME")) GoHome();
             if (!string.IsNullOrEmpty(notice))
             {
                 // Toast with a dark backing so it never bleeds into panels below.
@@ -464,9 +468,9 @@ namespace MythicChronicles
 
         private void More()
         {
-            GUI.Label(new Rect(30, 215, 478, 61), "MORE ACTIVITIES", heading);
+            OrnateGuiSkin.TitlePlate(new Rect(30, 215, 480, 54), "MORE ACTIVITIES", 24);
             GUI.Label(new Rect(34, 278, 468, 58),
-                "Your training, rewards and progression in one place.", subtitle);
+                "Training, rewards and progression in one place.", pageDesc);
             string[] names =
             {
                 "EVENTS", "FORMATION",
@@ -524,13 +528,13 @@ namespace MythicChronicles
 
         private void Legacy()
         {
-            GUI.Label(new Rect(26, 214, 488, 63), "CHRONICLE LEGACY", heading);
+            OrnateGuiSkin.TitlePlate(new Rect(30, 214, 480, 54), "CHRONICLE LEGACY", 24);
             int earned = ChroniclesGrowth.LegacyPointsEarned(progress.Data);
             int spent = ChroniclesGrowth.LegacyPointsSpent(progress.Data);
             GUI.Label(new Rect(29, 272, 479, 42),
                 "Account-wide blessings. Points: " + (earned - spent) +
                 " available  (" + earned + " earned from story + achievements)",
-                subtitle);
+                pageDesc);
             string[] names = { "WARPATH", "AEGIS", "FORTUNE" };
             int[] levels =
             {
@@ -566,7 +570,7 @@ namespace MythicChronicles
 
         private void ElementalGates()
         {
-            GUI.Label(new Rect(26, 214, 488, 63), "ELEMENTAL GATES", heading);
+            OrnateGuiSkin.TitlePlate(new Rect(30, 214, 480, 54), "ELEMENTAL GATES", 24);
             GUI.Label(new Rect(29, 270, 479, 44),
                 "Element-locked dungeons. Your whole team must share the gate's element." +
                 "\nAttempts left today: " + progress.GateAttemptsRemaining() + "/" +
@@ -615,9 +619,9 @@ namespace MythicChronicles
             var next = ChroniclesEventAdventures.Next(System.DateTime.UtcNow);
             var state = progress.AdventureState(def.id);
             TimeSpan left = ChroniclesEventAdventures.TimeLeft(System.DateTime.UtcNow);
-            GUI.Label(new Rect(26, 214, 488, 63), "EVENT ADVENTURE", heading);
+            OrnateGuiSkin.TitlePlate(new Rect(30, 214, 480, 54), "EVENT ADVENTURE", 24);
             GUI.Label(new Rect(29, 270, 479, 66),
-                def.title + "\n" + def.tagline, subtitle);
+                def.title + "\n" + def.tagline, pageDesc);
             GUI.Label(new Rect(29, 336, 479, 40),
                 "Ends in " + left.Days + "d " + left.Hours + "h  •  Next: " +
                 next.title + "\n" + def.currencyName + ": " + state.currencyEarned,
@@ -682,12 +686,12 @@ namespace MythicChronicles
             int xpInto = ChroniclesBattlePass.XpIntoLevel(progress.Data.passSeasonXp);
             DateTime end = ChroniclesBattlePass.SeasonEnd(System.DateTime.UtcNow);
             TimeSpan left = end - System.DateTime.UtcNow;
-            GUI.Label(new Rect(26, 214, 488, 63), "SEASON PASS", heading);
+            OrnateGuiSkin.TitlePlate(new Rect(30, 214, 480, 54), "SEASON PASS", 24);
             GUI.Label(new Rect(29, 270, 479, 66),
                 "LEVEL " + level + "/" + ChroniclesBattlePass.Levels +
                 "  •  " + xpInto + "/" + ChroniclesBattlePass.XpPerLevel + " XP" +
                 "\nSeason resets in " + left.Days + "d " + left.Hours +
-                "h. Earn XP from battles and quest claims.", subtitle);
+                "h. Earn XP from battles and quest claims.", pageDesc);
             float contentHeight = ChroniclesBattlePass.Levels * 58f;
             gearScroll = GUI.BeginScrollView(new Rect(19, 348, 505, 537),
                 gearScroll, new Rect(0, 0, 471, contentHeight));
@@ -716,7 +720,7 @@ namespace MythicChronicles
 
         private void Leaderboards()
         {
-            GUI.Label(new Rect(26, 214, 488, 63), "RANKINGS", heading);
+            OrnateGuiSkin.TitlePlate(new Rect(30, 214, 480, 54), "RANKINGS", 24);
             GUI.Label(new Rect(29, 270, 479, 40),
                 "Local season rivals - online rankings arrive with the server.",
                 tiny);
@@ -775,12 +779,12 @@ namespace MythicChronicles
                 guild.contributionTotal;
             int bossTotal = guild.guildBossDamageToday +
                 ChroniclesGuild.MemberBossDamageToday(System.DateTime.UtcNow);
-            GUI.Label(new Rect(26, 214, 488, 63), "GUILD", heading);
+            OrnateGuiSkin.TitlePlate(new Rect(30, 214, 480, 54), "GUILD", 24);
             GUI.Label(new Rect(29, 270, 479, 62),
                 ChroniclesGuild.GuildName + "  •  LEVEL " +
                 ChroniclesGuild.GuildLevel(guild.contributionTotal) +
                 "  •  " + (ChroniclesGuild.MemberCount) + " MEMBERS" +
-                "\nOffline prototype - live guilds arrive with the server.", subtitle);
+                "\nOffline prototype - live guilds arrive with the server.", pageDesc);
             GUI.Box(new Rect(26, 348, 488, 108), "");
             GUI.Label(new Rect(44, 358, 300, 88),
                 "WEEKLY ACTIVITY: " + weekly +
@@ -841,7 +845,7 @@ namespace MythicChronicles
         private void Friends()
         {
             string today = System.DateTime.UtcNow.ToString("yyyy-MM-dd");
-            GUI.Label(new Rect(26, 214, 488, 63), "FRIENDS", heading);
+            OrnateGuiSkin.TitlePlate(new Rect(30, 214, 480, 54), "FRIENDS", 24);
             GUI.Label(new Rect(29, 270, 479, 60),
                 "Offline prototype - real friends arrive with the server." +
                 "\nFriend points: " + progress.Data.friends.friendPoints +
@@ -885,11 +889,11 @@ namespace MythicChronicles
                 System.DateTime.UtcNow;
             int won = progress.Data.tournamentRoundsWon;
             bool out_ = progress.Data.tournamentEliminated;
-            GUI.Label(new Rect(26, 214, 488, 63), "TOURNAMENT", heading);
+            OrnateGuiSkin.TitlePlate(new Rect(30, 214, 480, 54), "TOURNAMENT", 24);
             GUI.Label(new Rect(29, 270, 479, 62),
                 "WEEKLY 8-SEAT BRACKET  •  ENDS IN " + left.Days + "D " +
                 left.Hours + "H\nOffline prototype - live brackets arrive " +
-                "with the server.", subtitle);
+                "with the server.", pageDesc);
             GUI.Box(new Rect(26, 350, 488, 130), "");
             GUI.Label(new Rect(44, 362, 440, 106),
                 "STATUS: " + ChroniclesTournament.PlacementLabel(won, out_) +
@@ -930,10 +934,10 @@ namespace MythicChronicles
 
         private void Bounty()
         {
-            GUI.Label(new Rect(26, 214, 488, 63), "BOUNTY BOARD", heading);
+            OrnateGuiSkin.TitlePlate(new Rect(30, 214, 480, 54), "BOUNTY BOARD", 24);
             GUI.Label(new Rect(29, 269, 479, 40),
-                "Dispatch heroes on timed missions. New bounties every UTC day.",
-                subtitle);
+                "Dispatch heroes on timed missions. New bounties daily (UTC).",
+                pageDesc);
             var daily = ChroniclesBounty.DailyBounties(System.DateTime.UtcNow);
             gearScroll = GUI.BeginScrollView(new Rect(19, 330, 505, 550),
                 gearScroll, new Rect(0, 0, 471, daily.Count * 105));
@@ -986,11 +990,11 @@ namespace MythicChronicles
 
         private void Shop()
         {
-            GUI.Label(new Rect(26, 214, 488, 63), "DAILY RESOURCE SHOP", heading);
+            OrnateGuiSkin.TitlePlate(new Rect(30, 214, 480, 54), "DAILY RESOURCE SHOP", 24);
             GUI.Label(new Rect(29, 269, 479, 67),
                 "OFFLINE SHOP • NO REAL-MONEY PURCHASES" +
                 "\nGOLD " + progress.Data.gold + "  •  GEMS " + progress.Data.gems,
-                subtitle);
+                pageDesc);
             gearScroll = GUI.BeginScrollView(new Rect(19, 343, 505, 537),
                 gearScroll, new Rect(0, 0, 471, ChroniclesShop.Offers.Length * 105));
             for (int i = 0; i < ChroniclesShop.Offers.Length; i++)
@@ -1023,10 +1027,10 @@ namespace MythicChronicles
 
         private void Mailbox()
         {
-            GUI.Label(new Rect(26, 215, 488, 62), "MAILBOX", heading);
+            OrnateGuiSkin.TitlePlate(new Rect(30, 215, 480, 54), "MAILBOX", 24);
             GUI.Label(new Rect(31, 279, 477, 58),
                 progress.UnclaimedMailCount() + " UNCLAIMED REWARD MESSAGES" +
-                "\nOffline inbox. Future server notices are not active.", subtitle);
+                "\nOffline inbox. Future server notices are not active.", pageDesc);
             gearScroll = GUI.BeginScrollView(new Rect(19, 353, 505, 529),
                 gearScroll, new Rect(0, 0, 471, Mathf.Max(529,
                     progress.Data.mailbox.Count * 145 + 8)));
@@ -1051,14 +1055,14 @@ namespace MythicChronicles
         private void ArenaTraining()
         {
             ArenaTrainingProgress arena = progress.ArenaTrainingState();
-            GUI.Label(new Rect(29, 220, 487, 58), "ARENA TRAINING", heading);
+            OrnateGuiSkin.TitlePlate(new Rect(30, 220, 480, 54), "ARENA TRAINING", 24);
             string arenaTier = ChroniclesArenaTraining.Tier(arena.seasonBest);
             TimeSpan arenaLeft = ChroniclesArenaTraining.SeasonEnd(System.DateTime.UtcNow) -
                 System.DateTime.UtcNow;
             GUI.Label(new Rect(32, 284, 473, 85),
                 "OFFLINE NPC LADDER • SEASON " + arena.seasonKey +
                 " • ENDS IN " + arenaLeft.Days + "D" +
-                "\n5 matches per UTC day. Online PvP is not available yet.", subtitle);
+                "\n5 matches per UTC day. Online PvP is not available yet.", pageDesc);
             GUI.Box(new Rect(39, 384, 462, 220), "");
             GUI.Label(new Rect(50, 407, 438, 180),
                 "CURRENT TIER: " + ChroniclesArenaTraining.Tier(arena.rating) +
@@ -1110,10 +1114,10 @@ namespace MythicChronicles
         private void Labyrinth()
         {
             LabyrinthProgress run = progress.LabyrinthState();
-            GUI.Label(new Rect(27, 213, 485, 55), "WEEKLY LABYRINTH", heading);
+            OrnateGuiSkin.TitlePlate(new Rect(30, 213, 480, 54), "WEEKLY LABYRINTH", 24);
             GUI.Label(new Rect(29, 270, 475, 75),
                 "12 CHAMBERS • THREE GUARDIANS • BRANCHING PATHS" +
-                "\nA new layout begins each Monday (UTC). Local PvE only.", subtitle);
+                "\nA new layout begins each Monday (UTC). Local PvE only.", pageDesc);
             GUI.Box(new Rect(30, 358, 478, 125), "");
             GUI.Label(new Rect(43, 367, 451, 108),
                 "WEEK OF " + run.weekKey +
@@ -1186,11 +1190,10 @@ namespace MythicChronicles
         {
             int attemptsLeft = progress.RaidAttemptsRemaining();
             StageDefinition today = ChroniclesRaids.StageForDay(DateTime.UtcNow);
-            GUI.Label(new Rect(24, 219, 492, 60), "DAILY WORLD BOSS", heading);
+            OrnateGuiSkin.TitlePlate(new Rect(30, 219, 480, 54), "DAILY WORLD BOSS", 24);
             GUI.Label(new Rect(28, 280, 480, 83),
-                "90-SECOND SOLO DAMAGE CHALLENGE\n" +
-                "Boss rotation changes every UTC day. This is not an online leaderboard.",
-                subtitle);
+                "90-second solo damage challenge. Boss rotates daily (UTC).",
+                pageDesc);
             GUI.Box(new Rect(34, 388, 472, 188), "");
             GUI.Label(new Rect(44, 400, 450, 162),
                 "TODAY'S GUARDIAN\n" + today.name +
@@ -1223,7 +1226,7 @@ namespace MythicChronicles
 
         private void Trials()
         {
-            GUI.Label(new Rect(32, 191, 475, 58), "ELITE & DARK TRIALS", heading);
+            OrnateGuiSkin.TitlePlate(new Rect(30, 191, 480, 54), "ELITE & DARK TRIALS", 24);
             GUI.Label(new Rect(22, 242, 498, 67),
                 "CAMPAIGN RANK: " + ChroniclesTrials.CampaignRank(progress.Data) +
                 "\nClear Normal chapters to unlock Elite; defeat Elite bosses to unlock Dark.",
@@ -1279,7 +1282,7 @@ namespace MythicChronicles
 
         private void Towers()
         {
-            GUI.Label(new Rect(28, 189, 488, 62), "FACTION TOWERS", heading);
+            OrnateGuiSkin.TitlePlate(new Rect(30, 189, 480, 54), "FACTION TOWERS", 24);
             GUI.Label(new Rect(24, 248, 495, 55),
                 "Seven mythological towers • 100 floors each\n" +
                 "A team needs two heroes from the tower's own origin.", subtitle);
@@ -1325,7 +1328,7 @@ namespace MythicChronicles
 
         private void Chapters()
         {
-            GUI.Label(new Rect(130, 177, 380, 54), "STORY CAMPAIGN", heading);
+            OrnateGuiSkin.TitlePlate(new Rect(30, 177, 480, 54), "STORY CAMPAIGN", 24);
             GUI.Label(new Rect(27, 236, 481, 32), "CAMPAIGN MILESTONE CHESTS", tiny);
             for (int i = 0; i < ChroniclesMilestones.All.Length; i++)
             {
@@ -1635,9 +1638,9 @@ namespace MythicChronicles
             HeroDefinition hero = WorldsCatalog.FindHero(selectedHero);
             if (hero == null) { page = Page.Heroes; return; }
             OwnedHero owned = progress.FindOwnedHero(hero.id);
-            GUI.Label(new Rect(30, 245, 480, 72), hero.name.ToUpperInvariant() + " SKINS", heading);
+            OrnateGuiSkin.TitlePlate(new Rect(30, 245, 480, 54), hero.name.ToUpperInvariant() + " SKINS", 24);
             GUI.Label(new Rect(30, 315, 480, 53),
-                "Costumes must be unlocked before equipping. Real artwork is loaded from Unity Resources.", subtitle);
+                "Unlock a costume before equipping it.", pageDesc);
             IList<HeroSkin> skins = HeroSkinCatalog.For(hero.id);
             for (int i = 0; i < skins.Count; i++)
             {
@@ -1676,7 +1679,7 @@ namespace MythicChronicles
             HeroDefinition hero = WorldsCatalog.FindHero(selectedHero);
             if (hero == null) { page = Page.Heroes; return; }
             EquipmentBonuses bonus = progress.GearBonus(hero.id);
-            GUI.Label(new Rect(30, 236, 480, 55), hero.name.ToUpperInvariant() + " EQUIPMENT", heading);
+            OrnateGuiSkin.TitlePlate(new Rect(30, 236, 480, 54), hero.name.ToUpperInvariant() + " EQUIPMENT", 24);
             GUI.Label(new Rect(30, 283, 480, 87),
                 "SLOTS " + bonus.equippedCount + "/6  •  DUST " + progress.Data.forgeDust +
                 "\nATK +" + Mathf.RoundToInt(bonus.attack) +
@@ -1729,7 +1732,7 @@ namespace MythicChronicles
 
         private void Forge()
         {
-            GUI.Label(new Rect(25, 238, 490, 57), "FORGE WORKSHOP", heading);
+            OrnateGuiSkin.TitlePlate(new Rect(30, 238, 480, 54), "FORGE WORKSHOP", 24);
             GUI.Label(new Rect(35, 291, 470, 55),
                 "Dust: " + progress.Data.forgeDust +
                 " • Dismantle unwanted unequipped gear to make new equipment.", subtitle);
@@ -1758,7 +1761,7 @@ namespace MythicChronicles
         {
             OwnedHero hero = progress.FindOwnedHero(selectedHero);
             if (hero == null) { page = Page.Heroes; return; }
-            GUI.Label(new Rect(24, 244, 490, 60), "HERO TRAINING", heading);
+            OrnateGuiSkin.TitlePlate(new Rect(30, 244, 480, 54), "HERO TRAINING", 24);
             GUI.Label(new Rect(22, 303, 495, 56),
                 "Resonance LV " + progress.ResonanceLevel() +
                 " • Effective LV " + ChroniclesGrowth.EffectiveLevel(progress.Data, hero), subtitle);
@@ -1800,7 +1803,7 @@ namespace MythicChronicles
             OwnedHero hero = progress.FindOwnedHero(selectedHero);
             HeroDefinition definition = WorldsCatalog.FindHero(selectedHero);
             if (hero == null || definition == null) { page = Page.Heroes; return; }
-            GUI.Label(new Rect(30, 245, 480, 68), "SIGNATURE WEAPON", heading);
+            OrnateGuiSkin.TitlePlate(new Rect(30, 245, 480, 54), "SIGNATURE WEAPON", 24);
             GUI.Label(new Rect(35, 331, 470, 74),
                 definition.name + " • Ancient Soulbound Weapon", subtitle);
             GUI.Box(new Rect(45, 423, 450, 192), "");
@@ -1820,10 +1823,10 @@ namespace MythicChronicles
 
         private void RelicVault()
         {
-            GUI.Label(new Rect(30, 244, 480, 58), "RELIC VAULT", heading);
+            OrnateGuiSkin.TitlePlate(new Rect(30, 244, 480, 54), "RELIC VAULT", 24);
             GUI.Label(new Rect(35, 305, 471, 59),
                 "Earn an original artifact by defeating each chapter guardian." +
-                "\nRelic dust: " + progress.Data.relicDust, subtitle);
+                "\nRelic dust: " + progress.Data.relicDust, pageDesc);
             gearScroll = GUI.BeginScrollView(new Rect(18, 376, 502, 448), gearScroll,
                 new Rect(0, 0, 477, ChroniclesRelics.All.Length * 102));
             for (int i = 0; i < ChroniclesRelics.All.Length; i++)
@@ -1855,9 +1858,9 @@ namespace MythicChronicles
         {
             HeroDefinition hero = WorldsCatalog.FindHero(selectedHero);
             if (hero == null) { page = Page.Heroes; return; }
-            GUI.Label(new Rect(30, 244, 480, 59), hero.name.ToUpperInvariant() + " RUNES", heading);
+            OrnateGuiSkin.TitlePlate(new Rect(30, 244, 480, 54), hero.name.ToUpperInvariant() + " RUNES", 24);
             GUI.Label(new Rect(35, 304, 465, 66),
-                "One rune of each type per hero. Earn a rune every five first-clear campaign stages.", subtitle);
+                "One rune of each type per hero. Earn one every five first-clear stages.", pageDesc);
             runeScroll = GUI.BeginScrollView(new Rect(18, 376, 504, 442), runeScroll,
                 new Rect(0, 0, 478, Mathf.Max(445, progress.Data.runes.Count * 101)));
             for (int i = 0; i < progress.Data.runes.Count; i++)
@@ -1890,8 +1893,8 @@ namespace MythicChronicles
 
         private void Formation()
         {
-            GUI.Label(new Rect(125, 182, 360, 50), "TEAM FORMATION", heading);
-            GUI.Label(new Rect(35, 235, 466, 66),
+            OrnateGuiSkin.TitlePlate(new Rect(30, 182, 480, 54), "TEAM FORMATION", 24);
+            GUI.Label(new Rect(30, 242, 480, 62),
                 inArenaTraining ? "ARENA TRAINING - NPC MATCH" +
                     "\nThe ladder here is local practice, not online PvP." :
                 inLabyrinth ? "WEEKLY LABYRINTH - ROOM " +
@@ -1899,8 +1902,8 @@ namespace MythicChronicles
                     "\nChoose five heroes and carry your blessings into battle." :
                 inTower ? "TOWER: " + ChroniclesTowers.DisplayName(selectedTowerOrigin) +
                     "\nPick 5 heroes, including at least 2 from this mythology." :
-                    "Select five owned heroes. Order is used to place your team in front and back rows.", subtitle);
-            formationScroll = GUI.BeginScrollView(new Rect(20, 317, 500, 413), formationScroll,
+                    "Pick five heroes. Order sets your front and back rows.", pageDesc);
+            formationScroll = GUI.BeginScrollView(new Rect(20, 317, 500, 398), formationScroll,
                 new Rect(0, 0, 473, progress.Data.heroes.Count * 74));
             for (int i = 0; i < progress.Data.heroes.Count; i++)
             {
@@ -1930,6 +1933,7 @@ namespace MythicChronicles
                 }
             }
             GUI.EndScrollView();
+            GUI.Box(new Rect(26, 720, 488, 80), "");
             var synergyHeroes = new List<HeroDefinition>();
             foreach (string id in progress.Data.selectedTeam)
             {
@@ -1938,7 +1942,7 @@ namespace MythicChronicles
             }
             TeamSynergyBonus bonus = TeamSynergy.Calculate(synergyHeroes);
             ElementalTeamBonus elemental = HeroElements.Calculate(synergyHeroes);
-            GUI.Label(new Rect(30, 728, 480, 76),
+            GUI.Label(new Rect(34, 726, 472, 72),
                 "Selected " + progress.Data.selectedTeam.Count + "/5  |  " +
                 elemental.description + "\nOrigin: " + bonus.description +
                 "\nElement ATK/HP +" +
@@ -1985,9 +1989,9 @@ namespace MythicChronicles
                     OrnateGuiSkin.Backdrop("summon_shade",
                         new Color(0f, 0f, 0f, 0f), new Color(0f, 0f, 0f, .85f)));
 
-            OrnateGuiSkin.Title(new Rect(20, 226, 500, 42),
+            OrnateGuiSkin.TitlePlate(new Rect(30, 226, 480, 48),
                 ChroniclesSummonRules.DisplayName(activeSummonBanner)
-                    .ToUpperInvariant(), 29);
+                    .ToUpperInvariant(), 24);
 
             if (GUI.Button(new Rect(58, 276, 200, 44), "STANDARD",
                 OrnateGuiSkin.ButtonStyle()))
@@ -2158,7 +2162,7 @@ namespace MythicChronicles
 
         private void Quests(bool weekly)
         {
-            GUI.Label(new Rect(22, 249, 490, 60), weekly ? "WEEKLY MISSIONS" : "DAILY MISSIONS", heading);
+            OrnateGuiSkin.TitlePlate(new Rect(30, 249, 480, 54), weekly ? "WEEKLY MISSIONS" : "DAILY MISSIONS", 24);
             if (GUI.Button(new Rect(25, 306, 153, 40), "DAILY")) page = Page.Quests;
             if (GUI.Button(new Rect(193, 306, 154, 40), "WEEKLY")) page = Page.WeeklyQuests;
             if (GUI.Button(new Rect(360, 306, 160, 40), "ACHIEVEMENTS"))
@@ -2185,7 +2189,7 @@ namespace MythicChronicles
 
                 private void Achievements()
         {
-            GUI.Label(new Rect(22, 244, 490, 60), "ACHIEVEMENTS", heading);
+            OrnateGuiSkin.TitlePlate(new Rect(30, 244, 480, 54), "ACHIEVEMENTS", 24);
             if (GUI.Button(new Rect(25, 306, 153, 40), "DAILY")) page = Page.Quests;
             if (GUI.Button(new Rect(193, 306, 154, 40), "WEEKLY")) page = Page.WeeklyQuests;
             if (GUI.Button(new Rect(360, 306, 160, 40), "ACHIEVEMENTS"))
@@ -2221,7 +2225,7 @@ namespace MythicChronicles
 
         private void Idle()
         {
-            GUI.Label(new Rect(30, 275, 480, 76), "AFK TREASURY", heading);
+            OrnateGuiSkin.TitlePlate(new Rect(30, 275, 480, 54), "AFK TREASURY", 24);
             GUI.Box(new Rect(41, 388, 459, 177), "Your adventurers gather resources while you are away.");
             GUI.Label(new Rect(26, 582, 492, 98),
                 "Elapsed: " + progress.IdleAvailableMinutes() + " / 720 minutes\n" +
@@ -2247,10 +2251,10 @@ namespace MythicChronicles
 
         private void Login()
         {
-            GUI.Label(new Rect(25, 228, 490, 62), "28-DAY LOGIN REWARDS", heading);
+            OrnateGuiSkin.TitlePlate(new Rect(30, 228, 480, 54), "28-DAY LOGIN REWARDS", 24);
             GUI.Label(new Rect(25, 283, 490, 56),
-                "Claim one reward per UTC day. Missing a day never resets your progress.",
-                subtitle);
+                "Claim one reward daily (UTC). Missed days never reset progress.",
+                pageDesc);
             int next = progress.NextLoginRewardDay();
             for (int i = 0; i < ChroniclesLoginRewards.Days; i++)
             {
@@ -2390,7 +2394,7 @@ namespace MythicChronicles
 
         private void Settings()
         {
-            GUI.Label(new Rect(25, 254, 490, 67), "GAME SETTINGS", heading);
+            OrnateGuiSkin.TitlePlate(new Rect(30, 254, 480, 54), "GAME SETTINGS", 24);
             GUI.Box(new Rect(35, 350, 470, 428), "");
             GUI.Label(new Rect(53, 375, 440, 48),
                 "MUSIC: " + Mathf.RoundToInt(draftMusic * 100f) + "%", subtitle);
