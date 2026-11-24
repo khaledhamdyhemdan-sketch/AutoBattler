@@ -1408,7 +1408,7 @@ namespace MythicChronicles
         }
 
         // Rarity-colored frame accents, in the genre's gold/red conventions.
-        private static Color RarityFrameColor(Rarity rarity)
+        public static Color RarityFrameColor(Rarity rarity)
         {
             switch (rarity)
             {

@@ -935,8 +935,10 @@ namespace MythicChronicles
                 float x = point.x / uiScale - 38f;
                 float y = (Screen.height - point.y) / uiScale - 15f;
                 GUI.Box(new Rect(x, y, 76, 30), "");
+                GUI.color = ChroniclesGame.RarityFrameColor(unit.hero.rarity);
                 GUI.Label(new Rect(x + 3f, y + 2f, 73f, 16f),
                     unit.hero.name.Length > 11 ? unit.hero.name.Substring(0, 11) : unit.hero.name);
+                GUI.color = Color.white;
                 GUI.color = Color.green;
                 GUI.DrawTexture(new Rect(x + 2f, y + 19f, 72f * unit.hp / unit.maxHp, 4f), Texture2D.whiteTexture);
                 GUI.color = Color.cyan;
@@ -976,17 +978,27 @@ namespace MythicChronicles
             float a = inT * (1f - outT);
             HeroDefinition cutHero = WorldsCatalog.FindHero(cutInHero);
             Color ec = cutHero != null ? HeroSkillEffects.ColorFor(cutHero.element) : new Color(1f, .75f, .3f);
-            // subtle full-screen element flash
-            GUI.color = new Color(ec.r, ec.g, ec.b, .16f * (1f - t));
+            bool premiumCut = cutHero != null &&
+                (cutHero.rarity == Rarity.UR || cutHero.rarity == Rarity.EX);
+            Color edgeColor = premiumCut ? new Color(1f, .85f, .5f) : ec;
+            // subtle full-screen flash: gold for premium rarities, element otherwise
+            GUI.color = new Color(edgeColor.r, edgeColor.g, edgeColor.b,
+                (premiumCut ? .22f : .16f) * (1f - t));
             GUI.DrawTexture(new Rect(0f, 0f, 540f, 960f), Texture2D.whiteTexture);
             // diagonal slash band with element edge lines and speed lines
             Matrix4x4 keepMatrix = GUI.matrix;
             GUIUtility.RotateAroundPivot(-9f, new Vector2(270f, 470f));
             GUI.color = new Color(0f, 0f, 0f, .8f * a);
             GUI.DrawTexture(new Rect(-60f, 392f, 660f, 196f), Texture2D.whiteTexture);
-            GUI.color = new Color(ec.r, ec.g, ec.b, .85f * a);
+            GUI.color = new Color(edgeColor.r, edgeColor.g, edgeColor.b, .85f * a);
             GUI.DrawTexture(new Rect(-60f, 392f, 660f, 4f), Texture2D.whiteTexture);
             GUI.DrawTexture(new Rect(-60f, 584f, 660f, 4f), Texture2D.whiteTexture);
+            if (premiumCut)
+            {
+                GUI.color = new Color(1f, .85f, .5f, .5f * a);
+                GUI.DrawTexture(new Rect(-60f, 399f, 660f, 2f), Texture2D.whiteTexture);
+                GUI.DrawTexture(new Rect(-60f, 579f, 660f, 2f), Texture2D.whiteTexture);
+            }
             for (int i = 0; i < 4; i++)
             {
                 float lineY = 412f + i * 42f + 14f * Mathf.Sin(i * 2.1f);
@@ -1042,6 +1054,16 @@ namespace MythicChronicles
             }
             if (cutHero != null)
             {
+                if (premiumCut)
+                {
+                    cutInSkillStyle.normal.textColor = Color.white;
+                    GUI.color = new Color(0f, 0f, 0f, .9f * a);
+                    GUI.Label(new Rect(298f, 396f, 240f, 26f),
+                        cutHero.rarity == Rarity.EX ? "* EXCLUSIVE *" : "* ULTRA RARE *", cutInSkillStyle);
+                    GUI.color = new Color(1f, .85f, .5f, a);
+                    GUI.Label(new Rect(296f, 394f, 240f, 26f),
+                        cutHero.rarity == Rarity.EX ? "* EXCLUSIVE *" : "* ULTRA RARE *", cutInSkillStyle);
+                }
                 string cutName = cutHero.name.ToUpperInvariant();
                 GUI.color = new Color(0f, 0f, 0f, .9f * a);
                 GUI.Label(new Rect(298f, 426f, 240f, 52f), cutName, cutInNameStyle);
