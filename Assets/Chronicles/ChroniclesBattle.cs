@@ -305,10 +305,12 @@ namespace MythicChronicles
             cam = cameraObject.AddComponent<Camera>();
             cam.clearFlags = CameraClearFlags.SolidColor;
             cam.backgroundColor = new Color(.055f, .05f, .10f);
-            cam.fieldOfView = 52f;
-            cameraObject.transform.position = new Vector3(0f, 11.5f, -13f);
+            cam.fieldOfView = 50f;
+            // Lower, more side-on view: heroes read upright with visible depth
+            // between front and back rows (AFK Arena/Omniheroes battle framing).
+            cameraObject.transform.position = new Vector3(0f, 9.2f, -13.8f);
             camBase = cameraObject.transform.position;
-            cameraObject.transform.LookAt(new Vector3(0f, 0f, 0f));
+            cameraObject.transform.LookAt(new Vector3(0f, .8f, .2f));
             AudioListener activeListener = FindFirstObjectByType<AudioListener>();
             if (activeListener == null || !activeListener.isActiveAndEnabled)
                 cameraObject.AddComponent<AudioListener>();

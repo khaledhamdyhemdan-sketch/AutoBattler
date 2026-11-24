@@ -58,14 +58,17 @@ namespace MythicChronicles
         private readonly List<Part> parts = new List<Part>();
         private readonly Dictionary<string, Transform> bonesByName =
             new Dictionary<string, Transform>(StringComparer.Ordinal);
-        private Transform motion, billboard, body;
+        private Transform motion, billboard, body, shadow;
+        private Material shadowMaterial;
+        private float shadowBaseScale = 1.4f;
         private Camera cachedCamera;
         private Material material;
         private Color elementColor = Color.white;
         private HeroAnimation loop = HeroAnimation.Idle;
         private HeroAnimation action = HeroAnimation.Idle;
         private bool hasAction, dead, actionIsLooping, hidden;
-        private float actionTime, time, alpha = 1f;
+        private float actionTime, time, alpha = 1f, idlePhase;
+        private static Texture2D shadowTexture;
 
         public static HeroBattleVisual2D Create(HeroDefinition hero, string skinId)
         {
@@ -89,6 +92,9 @@ namespace MythicChronicles
         private void Build(HeroDefinition hero, Texture2D art, RigData rig)
         {
             elementColor = HeroSkillEffects.ColorFor(hero.element);
+            // Desync idle bobbing between heroes so the line never pumps in unison.
+            idlePhase = (hero.id == null ? 0 : hero.id.GetHashCode() & 1023) / 1023f *
+                Mathf.PI * 2f;
             Shader shader = ChroniclesShaders.FindAny(
                 "Sprites/Default", "Unlit/Transparent", "Standard");
             if (shader != null)
@@ -166,6 +172,49 @@ namespace MythicChronicles
                     restRotation = bone.localRotation
                 });
             }
+            BuildShadow(width);
+        }
+
+        // Soft contact shadow: the single biggest depth cue for 2D characters on a
+        // 3D floor (AFK Arena/Omniheroes style). Lies flat under the character,
+        // follows attack lunges horizontally but stays on the ground during jumps.
+        private void BuildShadow(float width)
+        {
+            if (shadowTexture == null)
+            {
+                const int size = 64;
+                shadowTexture = new Texture2D(size, size, TextureFormat.RGBA32, false);
+                for (int py = 0; py < size; py++)
+                    for (int px = 0; px < size; px++)
+                    {
+                        float dx = (px - size / 2f) / (size / 2f);
+                        float dy = (py - size / 2f) / (size / 2f);
+                        float d = Mathf.Sqrt(dx * dx + dy * dy);
+                        float a = Mathf.Clamp01(1f - d);
+                        a = a * a * .55f;
+                        shadowTexture.SetPixel(px, py, new Color(0f, 0f, 0f, a));
+                    }
+                shadowTexture.Apply();
+            }
+            Shader shader = ChroniclesShaders.FindAny(
+                "Sprites/Default", "Unlit/Transparent", "Standard");
+            if (shader == null) return;
+            shadowMaterial = new Material(shader);
+            shadowMaterial.mainTexture = shadowTexture;
+            GameObject quad = GameObject.CreatePrimitive(PrimitiveType.Quad);
+            quad.name = "contact shadow";
+            Collider collider = quad.GetComponent<Collider>();
+            if (collider != null) Destroy(collider);
+            MeshRenderer renderer = quad.GetComponent<MeshRenderer>();
+            renderer.sharedMaterial = shadowMaterial;
+            renderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+            renderer.receiveShadows = false;
+            shadow = quad.transform;
+            shadow.SetParent(motion, false);
+            shadow.localRotation = Quaternion.Euler(90f, 0f, 0f);
+            shadowBaseScale = Mathf.Max(.8f, width * 1.45f);
+            shadow.localScale = new Vector3(shadowBaseScale, shadowBaseScale * .8f, 1f);
+            shadow.localPosition = new Vector3(0f, .04f, 0f);
         }
 
         private static RigData LoadRig(string heroId, out bool hasRig)
@@ -210,6 +259,14 @@ namespace MythicChronicles
             {
                 new Vector3(0f, 0f, -1f), new Vector3(0f, 0f, -1f),
                 new Vector3(0f, 0f, -1f), new Vector3(0f, 0f, -1f)
+            };
+            // Grounding gradient: feet sit slightly darker/cooler than the head,
+            // which reads as ambient occlusion on unlit sprite shaders that
+            // multiply vertex color (Sprites/Default does; ignored otherwise).
+            mesh.colors = new[]
+            {
+                new Color(.72f, .72f, .80f), new Color(.72f, .72f, .80f),
+                Color.white, Color.white
             };
             // Both windings: the billboard must stay visible whichever way it turns.
             mesh.triangles = new[] { 0, 2, 1, 1, 2, 3, 0, 1, 2, 1, 3, 2 };
@@ -290,8 +347,8 @@ namespace MythicChronicles
                 }
                 else
                 {
-                    punch = Mathf.Sin(time * 2.3f) * .015f;
-                    roll = Mathf.Sin(time * 1.1f) * 1.1f;
+                    punch = Mathf.Sin((time + idlePhase) * 2.3f) * .015f;
+                    roll = Mathf.Sin((time + idlePhase) * 1.1f) * 1.1f;
                 }
             }
 
@@ -311,10 +368,17 @@ namespace MythicChronicles
                         break;
                     case HeroAnimation.Attack:
                     {
-                        float lunge = t < .38f ? Smooth(t / .38f) :
-                            1f - Smooth((t - .38f) / .62f);
-                        motionOffset.z += lunge * .55f;
-                        tilt += lunge * 10f;
+                        // Genre timing: brief anticipation pull-back, overshooting
+                        // strike, then recovery. Contact frame squashes the body.
+                        float lunge;
+                        if (t < .18f) lunge = -.14f * Smooth(t / .18f);
+                        else if (t < .48f)
+                            lunge = Mathf.Lerp(-.14f, 1.06f, Smooth((t - .18f) / .30f));
+                        else lunge = 1.06f * (1f - Smooth((t - .48f) / .52f));
+                        motionOffset.z += lunge * .6f;
+                        tilt += Mathf.Max(0f, lunge) * 12f + Mathf.Min(0f, lunge) * 20f;
+                        float contact = Mathf.Clamp01(1f - Mathf.Abs(t - .48f) / .1f);
+                        punch -= contact * .09f;
                         break;
                     }
                     case HeroAnimation.Skill:
@@ -330,7 +394,9 @@ namespace MythicChronicles
                         flashColor = elementColor;
                         break;
                     case HeroAnimation.Hit:
-                        motionOffset.z -= Mathf.Sin(t * Mathf.PI) * .2f;
+                        motionOffset.z -= Mathf.Sin(t * Mathf.PI) * .38f;
+                        motionOffset.y += Mathf.Sin(t * Mathf.PI) * .07f;
+                        tilt -= Mathf.Sin(t * Mathf.PI) * 9f;
                         flash = Mathf.Sin(t * Mathf.PI);
                         flashColor = new Color(1f, .25f, .2f);
                         break;
@@ -367,10 +433,23 @@ namespace MythicChronicles
                 else if (part.role == "armBack")
                     extra = Quaternion.Euler(0f, 0f, 40f * swing);
                 else if (part.role == "head")
-                    extra = Quaternion.Euler(Mathf.Sin(time * 2.1f) * 3f, 0f, 0f);
+                    extra = Quaternion.Euler(Mathf.Sin((time + idlePhase) * 2.1f) * 3f, 0f, 0f);
                 else if (part.role == "cape")
-                    extra = Quaternion.Euler(Mathf.Sin(time * 3.1f) * 5f, 0f, 0f);
+                    extra = Quaternion.Euler(Mathf.Sin((time + idlePhase) * 3.1f) * 5f, 0f, 0f);
                 part.bone.localRotation = part.restRotation * extra;
+            }
+
+            if (shadow != null)
+            {
+                shadow.localPosition = new Vector3(0f, .04f - motionOffset.y, 0f);
+                float ground = Mathf.Clamp01(1f - motionOffset.y * 1.6f);
+                float s = shadowBaseScale * Mathf.Lerp(.82f, 1f, ground);
+                shadow.localScale = new Vector3(s, s * .8f, 1f);
+                if (shadowMaterial != null)
+                {
+                    Color sc = new Color(1f, 1f, 1f, alpha * Mathf.Lerp(.45f, 1f, ground));
+                    shadowMaterial.color = sc;
+                }
             }
 
             Color tinted = Color.Lerp(Color.white, flashColor, flash);
@@ -387,6 +466,7 @@ namespace MythicChronicles
         private void OnDestroy()
         {
             if (material != null) Destroy(material);
+            if (shadowMaterial != null) Destroy(shadowMaterial);
         }
     }
 }
