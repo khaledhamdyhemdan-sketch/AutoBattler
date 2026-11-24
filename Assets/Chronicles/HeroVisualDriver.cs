@@ -55,7 +55,20 @@ namespace MythicChronicles
                 view = GameObject.CreatePrimitive(PrimitiveType.Capsule);
                 view.name = hero.name + " - ART PLACEHOLDER";
                 Renderer renderer = view.GetComponent<Renderer>();
-                if (renderer != null && fallbackMaterial != null) renderer.sharedMaterial = fallbackMaterial;
+                if (renderer != null)
+                {
+                    // Unlit, dark placeholder: the lit fallback under the arena
+                    // light blew out to a white ghost on device (Khalid's video).
+                    Shader flat = ChroniclesShaders.FindAny(
+                        "Sprites/Default", "Unlit/Transparent");
+                    if (flat != null)
+                    {
+                        Material ph = new Material(flat);
+                        ph.color = new Color(.38f, .20f, .24f, 1f);
+                        renderer.sharedMaterial = ph;
+                    }
+                    else if (fallbackMaterial != null) renderer.sharedMaterial = fallbackMaterial;
+                }
                 Collider collider = view.GetComponent<Collider>();
                 if (collider != null) Destroy(collider);
             }

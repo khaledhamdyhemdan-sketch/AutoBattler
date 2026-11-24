@@ -461,7 +461,7 @@ namespace MythicChronicles
             GameObject lightObject = new GameObject("Chronicles Arena Light");
             lightObject.transform.SetParent(transform);
             Light light = lightObject.AddComponent<Light>();
-            light.type = LightType.Directional; light.intensity = 1.7f;
+            light.type = LightType.Directional; light.intensity = 1.15f;
             lightObject.transform.rotation = Quaternion.Euler(60f, -35f, 0f);
         }
 
