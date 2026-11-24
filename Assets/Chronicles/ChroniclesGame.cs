@@ -403,7 +403,7 @@ namespace MythicChronicles
                 page = Page.Home;
             if (GUI.Button(new Rect(102, 813, 80, 61), "HEROES", navStyle))
                 page = Page.Heroes;
-            if (GUI.Button(new Rect(186, 813, 80, 61), "QUEST", navStyle))
+            if (GUI.Button(new Rect(186, 813, 80, 61), "STORY", navStyle))
             {
                 inTower = false; activeTrialMode = TrialMode.Normal;
                 page = Page.Chapters;
