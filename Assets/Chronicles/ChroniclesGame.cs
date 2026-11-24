@@ -385,6 +385,8 @@ namespace MythicChronicles
             ChapterDefinition chapter = WorldsCatalog.Chapters[
                 Mathf.Clamp(progress.Data.lastClearedStage / 10, 0,
                     WorldsCatalog.Chapters.Length - 1)];
+            OrnateGuiSkin.Embers(new Rect(0, 180, 540, 300), 10, .04f,
+                new Color(1f, .85f, .5f, .8f));
             OrnateGuiSkin.Bar(new Rect(34, 650, 472, 42));
             GUIStyle storyStyle = new GUIStyle(subtitle) {
                 alignment = TextAnchor.MiddleCenter };
@@ -392,6 +394,8 @@ namespace MythicChronicles
             GUI.Label(new Rect(42, 656, 456, 30),
                 "STORY " + progress.Data.lastClearedStage +
                 "/60  •  " + chapter.title, storyStyle);
+            OrnateGuiSkin.PulseGlow(new Rect(35, 696, 471, 96),
+                new Color(1f, .82f, .42f, .8f));
             if (GUI.Button(new Rect(49, 708, 443, 72),
                 "CONTINUE ADVENTURE", OrnateGuiSkin.ButtonStyle()))
             {
@@ -1493,8 +1497,22 @@ namespace MythicChronicles
                         "  -  TICKETS " + progress.Data.summonTickets,
                 goldCenter);
 
+            OrnateGuiSkin.Embers(new Rect(30, 300, 480, 380), 14, .05f,
+                new Color(1f, .8f, .45f, .9f));
             int cost = ChroniclesSummonRules.GemCost(activeSummonBanner);
             string type = astral ? "SEAL" : "TICKET";
+            bool canOne = astral ? progress.Data.astralSeals >= 1 ||
+                progress.Data.gems >= cost :
+                progress.Data.summonTickets >= 1 || progress.Data.gems >= cost;
+            bool canTen = astral ? progress.Data.astralSeals >= 10 ||
+                progress.Data.gems >= cost * 10 :
+                progress.Data.summonTickets >= 10 || progress.Data.gems >= cost * 10;
+            if (canOne)
+                OrnateGuiSkin.PulseGlow(new Rect(20, 742, 258, 90),
+                    new Color(1f, .8f, .4f, .8f));
+            if (canTen)
+                OrnateGuiSkin.PulseGlow(new Rect(262, 742, 258, 90),
+                    new Color(1f, .8f, .4f, .8f));
             if (GUI.Button(new Rect(34, 756, 230, 62),
                 "SUMMON x1\n1 " + type + " / " + cost + " GEMS",
                 OrnateGuiSkin.ButtonStyle()))

@@ -262,6 +262,37 @@ namespace MythicChronicles
             GUI.Box(r, GUIContent.none, s);
         }
 
+        // Pulsing warm glow behind a call-to-action control.
+        public static void PulseGlow(Rect r, Color color, float speed = 2.2f)
+        {
+            Color old = GUI.color;
+            GUI.color = new Color(1f, 1f, 1f,
+                .55f + .45f * Mathf.Sin(Time.time * speed));
+            GUI.DrawTexture(r, Glow("pulse_glow", color));
+            GUI.color = old;
+        }
+
+        // Lightweight drifting ember particles for IMGUI screens.
+        public static void Embers(Rect r, int count, float speed, Color tint)
+        {
+            Texture2D dot = Glow("ember_dot", new Color(1f, .8f, .4f, .8f), 32);
+            Color old = GUI.color;
+            for (int i = 0; i < count; i++)
+            {
+                float seed = i * 37.31f;
+                float t = (Time.time * speed + seed) % 1f;
+                float drift = Mathf.Sin(Time.time * .7f + seed) * .04f;
+                float x = r.x + ((Mathf.Sin(seed * 12.9f) * .5f + .5f) + drift) *
+                    r.width;
+                float y = r.y + r.height - t * r.height;
+                float size = 4f + (Mathf.Sin(seed * 7.7f) * .5f + .5f) * 7f;
+                GUI.color = new Color(tint.r, tint.g, tint.b,
+                    tint.a * Mathf.Clamp01((1f - t) * t * 4f));
+                GUI.DrawTexture(new Rect(x, y, size, size), dot);
+            }
+            GUI.color = old;
+        }
+
         // Standard modal backdrop: dark gradient + vignette.
         public static void ModalBackdrop(float width, float height)
         {
