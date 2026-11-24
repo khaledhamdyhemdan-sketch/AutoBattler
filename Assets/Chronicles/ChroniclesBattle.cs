@@ -1066,12 +1066,23 @@ namespace MythicChronicles
                         unit.panelAnchor + new Vector3(0f, -1.02f, 0f));
                     if (anchor.z <= 0f) continue;
                     float px = anchor.x / uiScale, py = (Screen.height - anchor.y) / uiScale;
-                    GUI.color = unit.side == 0 ? new Color(1f, .85f, .4f) : new Color(1f, .5f, .45f);
-                    GUI.Label(new Rect(px - 58f, py - 12f, 22f, 20f), unit.level.ToString());
+                    // Illustrated plate behind the bars (Khalid: art, not flat plates)
+                    Texture2D plate = OrnateGuiSkin.Art("bar_plate");
+                    if (plate != null)
+                        GUI.DrawTexture(new Rect(px - 64f, py - 18f, 130f, 34f), plate);
+                    // level badge: rarity-colored ring circle + number
+                    Color rarity = ChroniclesGame.RarityFrameColor(unit.hero.rarity);
+                    Texture2D badgeRing = OrnateGuiSkin.Frame(
+                        "panel-badge-" + unit.side + "-" + (int)unit.hero.rarity,
+                        rarity, new Color(.08f, .06f, .12f, .95f), 28, 3);
+                    if (badgeRing != null)
+                        GUI.DrawTexture(new Rect(px - 62f, py - 26f, 30f, 30f), badgeRing);
+                    GUI.color = new Color(1f, .95f, .8f);
+                    GUI.Label(new Rect(px - 62f, py - 21f, 30f, 20f), unit.level.ToString());
                     GUI.color = unit.side == 0 ? Color.green : new Color(1f, .3f, .3f);
-                    GUI.DrawTexture(new Rect(px - 34f, py - 10f, 92f * unit.hp / unit.maxHp, 6f), Texture2D.whiteTexture);
+                    GUI.DrawTexture(new Rect(px - 28f, py - 10f, 88f * unit.hp / unit.maxHp, 6f), Texture2D.whiteTexture);
                     GUI.color = new Color(1f, .8f, .25f);
-                    GUI.DrawTexture(new Rect(px - 34f, py - 2f, 92f * unit.energy / 100f, 4f), Texture2D.whiteTexture);
+                    GUI.DrawTexture(new Rect(px - 28f, py - 2f, 88f * unit.energy / 100f, 4f), Texture2D.whiteTexture);
                     GUI.color = Color.white;
                     continue;
                 }
