@@ -70,6 +70,8 @@ namespace MythicChronicles
         private readonly Dictionary<string, Texture2D> cutInPortraits = new Dictionary<string, Texture2D>();
         private GUIStyle cutInNameStyle, cutInSkillStyle, popupBigStyle, bannerStyle, bubbleStyle;
         private Texture2D panelAllyTex, panelEnemyTex;
+        private readonly Dictionary<string, Texture2D[]> cutInAnimFrames =
+            new Dictionary<string, Texture2D[]>();
 
         public void Initialize(StageDefinition chosen, IList<OwnedHero> squad,
             PlayerSave savedProgress, Action<bool> onFinished,
@@ -1302,6 +1304,40 @@ namespace MythicChronicles
                         Texture2D.whiteTexture);
                 }
                 GUI.matrix = ringKeep;
+                // Short animated ultimate clip for heroes with frame art
+                // (charge -> strike): plays full-screen over the veil.
+                Texture2D[] frames;
+                if (!cutInAnimFrames.TryGetValue(cutInHero, out frames))
+                {
+                    frames = ChroniclesPortraitAssets.AnimatedFrames(cutInHero);
+                    cutInAnimFrames[cutInHero] = frames;
+                }
+                if (frames != null && frames.Length > 1)
+                {
+                    int fi = Mathf.Clamp((int)(t * frames.Length * .92f),
+                        0, frames.Length - 1);
+                    Texture2D frame = frames[fi];
+                    if (frame != null)
+                    {
+                        // cover-crop to the full screen, preserving aspect
+                        float scrAr = 540f / 960f;
+                        float texAr = (float)frame.width / frame.height;
+                        Rect uv = new Rect(0f, 0f, 1f, 1f);
+                        if (texAr > scrAr)
+                        {
+                            float w = scrAr / texAr;
+                            uv = new Rect((1f - w) * .5f, 0f, w, 1f);
+                        }
+                        else
+                        {
+                            float h = texAr / scrAr;
+                            uv = new Rect(0f, (1f - h) * .5f, 1f, h);
+                        }
+                        GUI.color = new Color(1f, 1f, 1f, a);
+                        GUI.DrawTextureWithTexCoords(
+                            new Rect(0f, 0f, 540f, 960f), frame, uv);
+                    }
+                }
             }
             // diagonal slash band with element edge lines and speed lines
             Matrix4x4 keepMatrix = GUI.matrix;
