@@ -6,33 +6,83 @@ on:
         description: Branch or ref to build
         default: feature/chronicles-battle-2d-rigs
         required: true
+      vfx_captures:
+        description: Also render VFX capture frames
+        default: "true"
+        required: false
 jobs:
   build:
     name: Android APK
     runs-on: ubuntu-latest
+    container: unityci/editor:ubuntu-6000.3.0f1-android-4.0.0
+    timeout-minutes: 90
     steps:
       - uses: actions/checkout@v4
         with:
           ref: ${{ inputs.ref }}
-      - uses: jlumbroso/free-disk-space@v1.3.1
       - uses: actions/cache@v4
         with:
           path: Library
           key: Library-Android-${{ hashFiles('Assets/**', 'Packages/**', 'ProjectSettings/**') }}
           restore-keys: Library-Android-
-      - uses: game-ci/unity-builder@v4
+      - name: Fixed machine-id
+        run: echo "9f1c7a2b4d3e5f608192a4b6c8d0e2f4" > /etc/machine-id
+      - name: Restore Unity license state
+        run: |
+          echo "${{ secrets.UNITY_LICENSE_STATE }}" | base64 -d > /tmp/state.tgz
+          tar xzf /tmp/state.tgz -C /
+          ls /github/home/.config/unity3d/Unity/licenses/ || echo "LICENSE STATE MISSING"
+      - name: Restore keystore
+        run: |
+          echo "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" | base64 -d > /tmp/autobattler.keystore
+          ls -la /tmp/autobattler.keystore
+      - name: Build APK
         env:
-          UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
-          UNITY_EMAIL: ${{ secrets.UNITY_EMAIL }}
-          UNITY_PASSWORD: ${{ secrets.UNITY_PASSWORD }}
-        with:
-          targetPlatform: Android
-          androidKeystoreBase64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
-          androidKeystorePass: ${{ secrets.ANDROID_KEYSTORE_PASS }}
-          androidKeyaliasName: ${{ secrets.ANDROID_KEYALIAS_NAME }}
-          androidKeyaliasPass: ${{ secrets.ANDROID_KEYALIAS_PASS }}
-      - uses: actions/upload-artifact@v4
+          KEYSTORE_PATH: /tmp/autobattler.keystore
+          KEYSTORE_PASS: ${{ secrets.ANDROID_KEYSTORE_PASS }}
+          KEYALIAS_NAME: ${{ secrets.ANDROID_KEYALIAS_NAME }}
+          KEYALIAS_PASS: ${{ secrets.ANDROID_KEYALIAS_PASS }}
+        run: |
+          /opt/unity/Editor/Unity -batchmode -nographics -quit \
+            -projectPath "$GITHUB_WORKSPACE" -buildTarget Android \
+            -executeMethod MythicChronicles.Editor.ChroniclesAndroidBuild.BuildApkFromCi \
+            -logFile "$GITHUB_WORKSPACE/build-editor.log"
+          echo "exit=$?"
+          tail -40 "$GITHUB_WORKSPACE/build-editor.log" || true
+      - name: VFX captures
+        if: ${{ inputs.vfx_captures == 'true' }}
+        run: |
+          if command -v xvfb-run >/dev/null 2>&1; then
+            xvfb-run -a /opt/unity/Editor/Unity -batchmode -quit \
+              -projectPath "$GITHUB_WORKSPACE" \
+              -executeMethod MythicChronicles.EditorTools.ChroniclesVfxScreenshotRig.Capture \
+              -logFile "$GITHUB_WORKSPACE/vfx-editor.log" || true
+          else
+            /opt/unity/Editor/Unity -batchmode -quit \
+              -projectPath "$GITHUB_WORKSPACE" \
+              -executeMethod MythicChronicles.EditorTools.ChroniclesVfxScreenshotRig.Capture \
+              -logFile "$GITHUB_WORKSPACE/vfx-editor.log" || true
+          fi
+          ls vfx-captures/ 2>/dev/null || echo "no captures produced"
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
         with:
           name: AutoBattler-Android-APK
-          path: build/Android/*.apk
+          path: Builds/Chronicles/*.apk
           if-no-files-found: error
+      - name: Upload VFX captures
+        if: ${{ inputs.vfx_captures == 'true' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: vfx-captures
+          path: vfx-captures/*.png
+          if-no-files-found: warn
+      - name: Upload editor logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: editor-logs
+          path: |
+            build-editor.log
+            vfx-editor.log
+          if-no-files-found: ignore
