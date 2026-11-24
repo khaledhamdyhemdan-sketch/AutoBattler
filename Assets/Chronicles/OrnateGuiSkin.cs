@@ -188,7 +188,7 @@ namespace MythicChronicles
                     new Color(.87f, .92f, 1f);
                 sa.hover.textColor = Color.white;
                 sa.active.textColor = Color.white;
-                sa.fontSize = 16;
+                sa.fontSize = 15;
                 sa.fontStyle = FontStyle.Bold;
                 sa.wordWrap = true;
                 return sa;
@@ -236,7 +236,9 @@ namespace MythicChronicles
                 GUI.DrawTexture(rr, ribbon, ScaleMode.StretchToFill, true);
                 GUIStyle onRibbon = new GUIStyle(TitleStyle(size));
                 onRibbon.normal.textColor = new Color(.16f, .07f, .01f);
-                GUI.Label(r, text, onRibbon);
+                // Inset the text so the ribbon's end ornaments never clip it.
+                GUI.Label(new Rect(r.x + r.width * .1f, r.y,
+                    r.width * .8f, r.height), text, onRibbon);
                 return;
             }
             GUIStyle shadow = new GUIStyle(TitleStyle(size));

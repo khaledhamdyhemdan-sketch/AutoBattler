@@ -280,8 +280,11 @@ namespace MythicChronicles
 
         private void Header()
         {
-            OrnateGuiSkin.Title(new Rect(20, 18, 500, 50), "CHRONICLES OF THE LOOM", 27);
-            GUI.Label(new Rect(25, 66, 490, 34), "An original crossover of myths, legends and histories", subtitle);
+            OrnateGuiSkin.Title(new Rect(20, 12, 500, 48), "CHRONICLES OF THE LOOM", 26);
+            GUIStyle subtitleShadow = new GUIStyle(subtitle);
+            subtitleShadow.normal.textColor = new Color(0f, 0f, 0f, .8f);
+            GUI.Label(new Rect(26, 87, 490, 34), "An original crossover of myths, legends and histories", subtitleShadow);
+            GUI.Label(new Rect(25, 85, 490, 34), "An original crossover of myths, legends and histories", subtitle);
             OrnateGuiSkin.Bar(new Rect(15, 112, 510, 55));
             GUIStyle currency = new GUIStyle(tiny) {
                 alignment = TextAnchor.MiddleCenter, fontSize = 15 };
@@ -301,6 +304,11 @@ namespace MythicChronicles
                 progress.Data.selectedTeam[0] : WorldsCatalog.StartingHeroes[0];
             HeroDefinition featured = WorldsCatalog.FindHero(featuredId);
             if (featured == null) featured = WorldsCatalog.Heroes[0];
+            GUI.DrawTexture(new Rect(96, 172, 350, 440),
+                OrnateGuiSkin.Glow("home_hero_glow",
+                    new Color(1f, .85f, .45f, .45f)));
+            OrnateGuiSkin.Panel(new Rect(126, 202, 289, 380), "home_hero_frame",
+                OrnateGuiSkin.Gold, new Color(.08f, .06f, .12f, .6f));
             ChroniclesHeroPortrait.Draw(featured.id,
                 new Rect(138, 214, 265, 356),
                 !progress.Data.reducePortraitMotion);
@@ -844,7 +852,8 @@ namespace MythicChronicles
 
         private void Heroes()
         {
-            GUI.Label(new Rect(110, 181, 320, 48), "HERO COLLECTION", heading);
+            OrnateGuiSkin.Title(new Rect(110, 179, 320, 44),
+                "HERO COLLECTION", 22);
             GUI.Label(new Rect(30, 226, 480, 36),
                 progress.Data.heroes.Count + " / " + WorldsCatalog.Heroes.Length +
                 " owned  •  STATIC PORTRAITS", subtitle);
@@ -858,30 +867,23 @@ namespace MythicChronicles
                     GUI.Label(new Rect(x, 270, 77, 39), "EX LOCKED", tiny);
                     continue;
                 }
-                Color old = GUI.backgroundColor;
-                if (galleryTierFilter == i - 1)
-                    GUI.backgroundColor = new Color(.86f, .73f, .46f);
-                if (GUI.Button(new Rect(x, 268, 77, 45), tabs[i]))
+                if (GUI.Button(new Rect(x, 268, 77, 45), tabs[i],
+                    OrnateGuiSkin.ButtonStyle(galleryTierFilter != i - 1)))
                 {
                     galleryTierFilter = i - 1;
                     rosterScroll = Vector2.zero;
                 }
-                GUI.backgroundColor = old;
             }
 
             string[] elementTabs = { "ALL", "FIRE", "WATER", "NATURE", "WIND", "LIGHT", "DARK" };
             for (int i = 0; i < elementTabs.Length; i++)
-            {
-                Color beforeTab = GUI.backgroundColor;
-                if (galleryElementFilter == i - 1)
-                    GUI.backgroundColor = new Color(.78f, .82f, .91f);
-                if (GUI.Button(new Rect(22f + i * 71f, 319f, 67f, 40f), elementTabs[i]))
+                if (GUI.Button(new Rect(22f + i * 71f, 319f, 67f, 40f),
+                    elementTabs[i],
+                    OrnateGuiSkin.ButtonStyle(galleryElementFilter != i - 1)))
                 {
                     galleryElementFilter = i - 1;
                     rosterScroll = Vector2.zero;
                 }
-                GUI.backgroundColor = beforeTab;
-            }
 
             var visible = new List<HeroDefinition>();
             foreach (HeroDefinition hero in WorldsCatalog.Heroes)
@@ -961,11 +963,13 @@ namespace MythicChronicles
                 showHeroMotion && !progress.Data.reducePortraitMotion);
             GUI.enabled = !progress.Data.reducePortraitMotion;
             if (GUI.Button(new Rect(30, 636, 109, 37),
-                showHeroMotion ? "● MOTION" : "MOTION"))
+                showHeroMotion ? "● MOTION" : "MOTION",
+                OrnateGuiSkin.ButtonStyle(!showHeroMotion)))
                 showHeroMotion = true;
             GUI.enabled = true;
             if (GUI.Button(new Rect(146, 636, 112, 37),
-                !showHeroMotion ? "● STATIC" : "STATIC"))
+                !showHeroMotion ? "● STATIC" : "STATIC",
+                OrnateGuiSkin.ButtonStyle(showHeroMotion)))
                 showHeroMotion = false;
 
             OrnateGuiSkin.Panel(new Rect(268, 350, 243, 323), "detail_info",
@@ -1015,17 +1019,22 @@ namespace MythicChronicles
                 OrnateGuiSkin.ButtonStyle()))
                 notice = progress.UpgradeHero(hero.id) ?
                     "Hero upgraded and saved." : "Gold or level cap reached.";
-            if (GUI.Button(new Rect(31, 789, 232, 49), "EQUIPMENT"))
+            if (GUI.Button(new Rect(31, 789, 232, 49), "EQUIPMENT",
+                OrnateGuiSkin.ButtonStyle(false)))
                 page = Page.Gear;
-            if (GUI.Button(new Rect(275, 789, 234, 49), "SKILL TRAINING"))
+            if (GUI.Button(new Rect(275, 789, 234, 49), "SKILL TRAINING",
+                OrnateGuiSkin.ButtonStyle(false)))
                 page = Page.Training;
-            if (GUI.Button(new Rect(31, 843, 232, 46), "ASCEND"))
+            if (GUI.Button(new Rect(31, 843, 232, 46), "ASCEND",
+                OrnateGuiSkin.ButtonStyle()))
                 notice = progress.AscendHero(hero.id) ?
                     "Star rank increased!" : "Not enough fragments.";
             GUI.enabled = true;
-            if (GUI.Button(new Rect(275, 843, 234, 46), "SKINS"))
+            if (GUI.Button(new Rect(275, 843, 234, 46), "SKINS",
+                OrnateGuiSkin.ButtonStyle(false)))
                 page = Page.Skins;
-            if (GUI.Button(new Rect(31, 897, 478, 39), "BACK TO COLLECTION"))
+            if (GUI.Button(new Rect(31, 897, 478, 39), "BACK TO COLLECTION",
+                OrnateGuiSkin.ButtonStyle(false)))
                 page = Page.Heroes;
         }
 
@@ -1452,7 +1461,7 @@ namespace MythicChronicles
                 goldCenter);
 
             int cost = ChroniclesSummonRules.GemCost(activeSummonBanner);
-            string type = astral ? "ASTRAL SEAL" : "TICKET";
+            string type = astral ? "SEAL" : "TICKET";
             if (GUI.Button(new Rect(34, 756, 230, 62),
                 "SUMMON x1\n1 " + type + " / " + cost + " GEMS",
                 OrnateGuiSkin.ButtonStyle()))
@@ -1474,7 +1483,7 @@ namespace MythicChronicles
                 HeroDefinition hero = WorldsCatalog.FindHero(record.heroId);
                 if (hero == null) continue;
                 int index = i - first;
-                GUI.Label(new Rect(48, 862 + index * 20, 444, 22),
+                GUI.Label(new Rect(72, 862 + index * 20, 420, 22),
                     hero.name + "  -  " + hero.rarity + "  -  " +
                     record.banner + (record.guaranteed ? "  [PITY]" : ""), tiny);
             }
