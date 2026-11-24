@@ -622,7 +622,7 @@ namespace MythicChronicles
                 {
                     f.skillCd = kit == null ? 6f : kit.cooldown;
                     if (kit != null && (kit.passive == HeroPassive.Sage || kit.passive == HeroPassive.Oracle))
-                        f.skillCd *= .85f;
+                        f.skillCd *= 1f - .15f * PassiveScale(f.hero.rarity);
                     CastSkill(f, target);
                     continue;
                 }
@@ -649,10 +649,10 @@ namespace MythicChronicles
                     float baseCooldown = f.hero.role == CombatRole.Assassin ? .85f : 1.25f;
                     if (f.frozen > 0f) baseCooldown *= 1.45f;
                     if (kit != null && kit.passive == HeroPassive.Stormborn && f.rallied > 0f)
-                        baseCooldown *= .8f;
+                        baseCooldown *= 1f - .2f * PassiveScale(f.hero.rarity);
                     f.attackCd = baseCooldown;
                     f.energy = Mathf.Min(100f, f.energy + (kit != null &&
-                        kit.passive == HeroPassive.Enchantress ? 23f : 17f));
+                        kit.passive == HeroPassive.Enchantress ? 17f + 6f * PassiveScale(f.hero.rarity) : 17f));
                 }
                 else f.visual.Play(HeroAnimation.Idle);
             }
@@ -726,12 +726,12 @@ namespace MythicChronicles
             if (kit.passive == HeroPassive.Rebirth && hero.passiveTimer >= 4f)
             {
                 hero.passiveTimer = 0f;
-                Heal(hero, hero.maxHp * .03f);
+                Heal(hero, hero.maxHp * .03f * PassiveScale(hero.hero.rarity));
             }
             else if (kit.passive == HeroPassive.Equilibrium && hero.passiveTimer >= 8f)
             {
                 hero.passiveTimer = 0f;
-                Shield(LowestFriend(hero), hero.attack * 2f);
+                Shield(LowestFriend(hero), hero.attack * 2f * PassiveScale(hero.hero.rarity));
             }
         }
 
@@ -827,6 +827,19 @@ namespace MythicChronicles
                 world = target.model.transform.position + Vector3.up * 1.6f });
         }
 
+        // Passive strength scales with rarity: SR is baseline, R weaker,
+        // SSR and UR stronger, so higher-tier heroes feel better per tier.
+        private static float PassiveScale(Rarity rarity)
+        {
+            switch (rarity)
+            {
+                case Rarity.UR: case Rarity.EX: case Rarity.SSRP: return 1.45f;
+                case Rarity.SSR: return 1.2f;
+                case Rarity.SR: return 1f;
+                default: return .8f;
+            }
+        }
+
         private void Hit(Combatant attacker, Combatant defender, float raw)
         {
             if (defender == null || !defender.Alive) return;
@@ -845,27 +858,27 @@ namespace MythicChronicles
                 switch (attackingKit.passive)
                 {
                     case HeroPassive.Executioner:
-                        if (defender.hp < defender.maxHp * .4f) raw *= 1.4f;
+                        if (defender.hp < defender.maxHp * .4f) raw *= 1f + .4f * PassiveScale(attacker.hero.rarity);
                         break;
                     case HeroPassive.SolarFlame:
-                        defender.burn = Mathf.Max(defender.burn, 3.5f);
+                        defender.burn = Mathf.Max(defender.burn, 3.5f * PassiveScale(attacker.hero.rarity));
                         break;
                     case HeroPassive.Fury:
-                        raw *= 1f + .45f * (1f - attacker.hp / attacker.maxHp);
+                        raw *= 1f + .45f * PassiveScale(attacker.hero.rarity) * (1f - attacker.hp / attacker.maxHp);
                         break;
                     case HeroPassive.NightHunter:
                     case HeroPassive.DeathChill:
-                        if (defender.cursed > 0f) raw *= 1.28f;
+                        if (defender.cursed > 0f) raw *= 1f + .28f * PassiveScale(attacker.hero.rarity);
                         break;
                     case HeroPassive.Winterborn:
-                        if (defender.frozen > 0f) raw *= 1.3f;
+                        if (defender.frozen > 0f) raw *= 1f + .3f * PassiveScale(attacker.hero.rarity);
                         break;
                     case HeroPassive.Hunter:
-                        if (UnityEngine.Random.value < .22f) raw *= 1.65f;
+                        if (UnityEngine.Random.value < .22f) raw *= 1f + .65f * PassiveScale(attacker.hero.rarity);
                         break;
                     case HeroPassive.Thunderlord:
                         if (UnityEngine.Random.value < .12f)
-                            defender.stunned = Mathf.Max(defender.stunned, .65f);
+                            defender.stunned = Mathf.Max(defender.stunned, .65f * PassiveScale(attacker.hero.rarity));
                         break;
                 }
 
@@ -875,7 +888,7 @@ namespace MythicChronicles
                     HeroKit allyKit = HeroAbilityCatalog.For(ally.hero.id);
                     if (allyKit != null && (allyKit.passive == HeroPassive.Banner ||
                         allyKit.passive == HeroPassive.Tactician))
-                        { raw *= 1.06f; break; }
+                        { raw *= 1f + .06f * PassiveScale(ally.hero.rarity); break; }
                 }
                 if (attacker.rallied > 0f) raw *= 1.22f;
             }
@@ -889,7 +902,7 @@ namespace MythicChronicles
             if (defender.cursed > 0f) damage *= 1.2f;
             if (defendingKit != null && (defendingKit.passive == HeroPassive.Guardian ||
                 defendingKit.passive == HeroPassive.Ironhide || defendingKit.passive == HeroPassive.Knight))
-                damage *= .87f;
+                damage *= 1f - .13f * PassiveScale(defender.hero.rarity);
             float absorbed = Mathf.Min(defender.shield, damage);
             defender.shield -= absorbed;
             damage = Mathf.Max(0f, damage - absorbed);
@@ -904,7 +917,7 @@ namespace MythicChronicles
 
             if (attacker != null && attackingKit != null &&
                 attackingKit.passive == HeroPassive.Bloodthirst && attacker.Alive)
-                Heal(attacker, damage * .12f);
+                Heal(attacker, damage * .12f * PassiveScale(attacker.hero.rarity));
 
             if (defender.Alive) return;
             if (defendingKit != null &&
@@ -912,8 +925,8 @@ namespace MythicChronicles
                 !defender.savedOnce)
             {
                 defender.savedOnce = true;
-                defender.hp = Mathf.Max(1f, defender.maxHp * .16f);
-                Shield(defender, defender.maxHp * .13f);
+                defender.hp = Mathf.Max(1f, defender.maxHp * .16f * PassiveScale(defender.hero.rarity));
+                Shield(defender, defender.maxHp * .13f * PassiveScale(defender.hero.rarity));
                 Floating("LAST STAND", defender, Color.yellow);
                 return;
             }
@@ -924,8 +937,8 @@ namespace MythicChronicles
                 if (allyKit != null && allyKit.passive == HeroPassive.GuardianAngel)
                 {
                     ally.savedOnce = true;
-                    defender.hp = defender.maxHp * .23f;
-                    Shield(defender, defender.maxHp * .15f);
+                    defender.hp = defender.maxHp * .23f * PassiveScale(ally.hero.rarity);
+                    Shield(defender, defender.maxHp * .15f * PassiveScale(ally.hero.rarity));
                     Floating("RESCUED", defender, Color.green);
                     return;
                 }
@@ -938,7 +951,7 @@ namespace MythicChronicles
                 if (!unit.Alive || unit.side == defender.side) continue;
                 HeroKit kit = HeroAbilityCatalog.For(unit.hero.id);
                 if (kit != null && kit.passive == HeroPassive.Gravekeeper)
-                    Shield(unit, unit.attack * .8f);
+                    Shield(unit, unit.attack * .8f * PassiveScale(unit.hero.rarity));
             }
         }
 
@@ -949,7 +962,7 @@ namespace MythicChronicles
             {
                 if (teammate.side != target.side || !teammate.Alive) continue;
                 HeroKit kit = HeroAbilityCatalog.For(teammate.hero.id);
-                if (kit != null && kit.passive == HeroPassive.Dawnborn) { value *= 1.10f; break; }
+                if (kit != null && kit.passive == HeroPassive.Dawnborn) { value *= 1f + .10f * PassiveScale(teammate.hero.rarity); break; }
             }
             float actual = Mathf.Min(value, target.maxHp - target.hp);
             if (actual <= 0f) return;
@@ -957,7 +970,7 @@ namespace MythicChronicles
             Floating("+" + Mathf.RoundToInt(actual), target, Color.green);
             HeroKit healerKit = healer == null ? null : HeroAbilityCatalog.For(healer.hero.id);
             if (healerKit != null && healerKit.passive == HeroPassive.Compassion)
-                Shield(target, actual * .16f);
+                Shield(target, actual * .16f * PassiveScale(healer.hero.rarity));
         }
 
         private void Shield(Combatant target, float value)
@@ -1066,7 +1079,7 @@ namespace MythicChronicles
                             HeroKit curseKit = HeroAbilityCatalog.For(actor.hero.id);
                             float curseDuration = ultimate ? 6f : 4.5f;
                             if (curseKit != null && curseKit.passive == HeroPassive.Sorcery)
-                                curseDuration *= 1.3f;
+                                curseDuration *= 1f + .3f * PassiveScale(actor.hero.rarity);
                             enemy.cursed = Mathf.Max(enemy.cursed, curseDuration);
                         }
                     }
