@@ -125,8 +125,74 @@ namespace MythicChronicles
             return found != null ? found : tex;
         }
 
+        // ---- Authored UI art (Assets/Resources/Chronicles/UI) ----
+        // Original, generated-for-this-game art; loaded when present, with the
+        // procedural skin above as the fallback when an asset is missing.
+        private static readonly Dictionary<string, Texture2D> artCache =
+            new Dictionary<string, Texture2D>();
+
+        public static Texture2D Art(string name)
+        {
+            Texture2D t;
+            if (artCache.TryGetValue(name, out t)) return t;
+            t = Resources.Load<Texture2D>("Chronicles/UI/" + name);
+            artCache[name] = t;
+            return t;
+        }
+
+        // Full-screen scene backdrop, cropped to fill the 540x960 canvas.
+        public static void ScreenBackground(string name)
+        {
+            Texture2D art = Art(name);
+            if (art != null)
+                GUI.DrawTexture(new Rect(0, 0, 540, 960), art,
+                    ScaleMode.ScaleAndCrop);
+        }
+
+        private static GUIStyle ArtBox(Texture2D art)
+        {
+            var s = new GUIStyle(GUI.skin.box);
+            s.normal.background = art;
+            s.border = new RectOffset(0, 0, 0, 0);
+            return s;
+        }
+
+        // Thin ornate bar plate for currency strips, name plates and nav bars.
+        public static void Bar(Rect r)
+        {
+            Texture2D art = Art("bar_plate");
+            if (art != null)
+            {
+                GUI.Box(r, GUIContent.none, ArtBox(art));
+                return;
+            }
+            Panel(r, "bar_fallback", gold, panelFill);
+        }
+
         public static GUIStyle ButtonStyle()
         {
+            return ButtonStyle(true);
+        }
+
+        public static GUIStyle ButtonStyle(bool primary)
+        {
+            Texture2D art = Art(primary ? "btn_primary" : "btn_secondary");
+            if (art != null)
+            {
+                var sa = new GUIStyle(GUI.skin.button);
+                sa.normal.background = art;
+                sa.hover.background = art;
+                sa.active.background = art;
+                sa.border = new RectOffset(0, 0, 0, 0);
+                sa.normal.textColor = primary ? goldBright :
+                    new Color(.87f, .92f, 1f);
+                sa.hover.textColor = Color.white;
+                sa.active.textColor = Color.white;
+                sa.fontSize = 16;
+                sa.fontStyle = FontStyle.Bold;
+                sa.wordWrap = true;
+                return sa;
+            }
             if (cachedButton != null) return cachedButton;
             var s = new GUIStyle(GUI.skin.button);
             s.normal.background = Frame("btn_n", gold,
@@ -162,15 +228,32 @@ namespace MythicChronicles
         // gold titles used by polished hero-collector UI.
         public static void Title(Rect r, string text, int size)
         {
+            Texture2D ribbon = Art("title_ribbon");
+            if (ribbon != null)
+            {
+                Rect rr = new Rect(r.x - r.width * .05f, r.y - r.height * .3f,
+                    r.width * 1.1f, r.height * 1.6f);
+                GUI.DrawTexture(rr, ribbon, ScaleMode.StretchToFill, true);
+                GUIStyle onRibbon = new GUIStyle(TitleStyle(size));
+                onRibbon.normal.textColor = new Color(.16f, .07f, .01f);
+                GUI.Label(r, text, onRibbon);
+                return;
+            }
             GUIStyle shadow = new GUIStyle(TitleStyle(size));
             shadow.normal.textColor = new Color(0f, 0f, 0f, .85f);
             GUI.Label(new Rect(r.x + 2, r.y + 2, r.width, r.height), text, shadow);
             GUI.Label(r, text, TitleStyle(size));
         }
 
-        // Framed panel draw helper (9-slice via a bordered style).
+        // Framed panel draw helper (authored art when present, else 9-slice).
         public static void Panel(Rect r, string key, Color border, Color fill)
         {
+            Texture2D art = Art("panel_frame");
+            if (art != null)
+            {
+                GUI.Box(r, GUIContent.none, ArtBox(art));
+                return;
+            }
             var s = new GUIStyle(GUI.skin.box);
             s.normal.background = Frame(key, border, fill);
             s.border = new RectOffset(12, 12, 12, 12);

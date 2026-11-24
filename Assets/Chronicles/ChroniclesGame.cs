@@ -200,6 +200,9 @@ namespace MythicChronicles
             if (page != Page.Battle && page != Page.Results)
             {
                 GUI.DrawTexture(new Rect(0, 0, 540, 960), panelTex);
+                OrnateGuiSkin.ScreenBackground(
+                    page == Page.Home ? "bg_home" :
+                    page == Page.Summon ? "bg_summon" : "bg_menu");
                 Header();
             }
             switch (page)
@@ -279,8 +282,7 @@ namespace MythicChronicles
         {
             OrnateGuiSkin.Title(new Rect(20, 18, 500, 50), "CHRONICLES OF THE LOOM", 27);
             GUI.Label(new Rect(25, 66, 490, 34), "An original crossover of myths, legends and histories", subtitle);
-            OrnateGuiSkin.Panel(new Rect(15, 112, 510, 55), "hdr_bar",
-                OrnateGuiSkin.Gold, new Color(.10f, .08f, .14f, .92f));
+            OrnateGuiSkin.Bar(new Rect(15, 112, 510, 55));
             GUIStyle currency = new GUIStyle(tiny) {
                 alignment = TextAnchor.MiddleCenter, fontSize = 15 };
             currency.normal.textColor = OrnateGuiSkin.GoldBright;
@@ -299,18 +301,10 @@ namespace MythicChronicles
                 progress.Data.selectedTeam[0] : WorldsCatalog.StartingHeroes[0];
             HeroDefinition featured = WorldsCatalog.FindHero(featuredId);
             if (featured == null) featured = WorldsCatalog.Heroes[0];
-            Texture2D background = ChroniclesStageArt.Background(featured.origin);
-            if (background != null)
-                GUI.DrawTexture(new Rect(20, 200, 500, 428), background,
-                    ScaleMode.ScaleAndCrop);
-            else
-                GUI.Box(new Rect(28, 201, 484, 416), "");
-
             ChroniclesHeroPortrait.Draw(featured.id,
                 new Rect(138, 214, 265, 356),
                 !progress.Data.reducePortraitMotion);
-            OrnateGuiSkin.Panel(new Rect(118, 563, 305, 51), "home_plate",
-                OrnateGuiSkin.Gold, new Color(.08f, .06f, .12f, .94f));
+            OrnateGuiSkin.Bar(new Rect(118, 563, 305, 51));
             GUIStyle plateStyle = new GUIStyle(subtitle) {
                 alignment = TextAnchor.MiddleCenter };
             plateStyle.normal.textColor = OrnateGuiSkin.GoldBright;
@@ -319,30 +313,36 @@ namespace MythicChronicles
                 " • " + featured.element, plateStyle);
 
             // A few contextual side doors, not a wall of oversized offer banners.
-            if (GUI.Button(new Rect(29, 249, 108, 60), "ELITE\nDARK"))
+            if (GUI.Button(new Rect(29, 249, 108, 60), "ELITE\nDARK",
+                OrnateGuiSkin.ButtonStyle(false)))
             {
                 inTower = false; activeTrialMode = TrialMode.Normal;
                 chapterScroll = Vector2.zero; page = Page.Trials;
             }
-            if (GUI.Button(new Rect(29, 337, 108, 58), "TOWERS"))
+            if (GUI.Button(new Rect(29, 337, 108, 58), "TOWERS",
+                OrnateGuiSkin.ButtonStyle(false)))
             {
                 inTower = false; chapterScroll = Vector2.zero;
                 page = Page.Towers;
             }
-            if (GUI.Button(new Rect(29, 425, 108, 58), "LABYRINTH"))
+            if (GUI.Button(new Rect(29, 425, 108, 58), "LABYRINTH",
+                OrnateGuiSkin.ButtonStyle(false)))
             {
                 inLabyrinth = false; page = Page.Labyrinth;
             }
-            if (GUI.Button(new Rect(404, 249, 108, 60), "ARENA"))
+            if (GUI.Button(new Rect(404, 249, 108, 60), "ARENA",
+                OrnateGuiSkin.ButtonStyle(false)))
             {
                 inArenaTraining = false; page = Page.ArenaTraining;
             }
-            if (GUI.Button(new Rect(404, 337, 108, 58), "WORLD\nBOSS"))
+            if (GUI.Button(new Rect(404, 337, 108, 58), "WORLD\nBOSS",
+                OrnateGuiSkin.ButtonStyle(false)))
             {
                 inRaid = false; page = Page.Raid;
             }
             if (GUI.Button(new Rect(404, 425, 108, 58),
-                progress.CanClaimDailyLogin() ? "FREE GIFT!" : "DAILY GIFT"))
+                progress.CanClaimDailyLogin() ? "FREE GIFT!" : "DAILY GIFT",
+                OrnateGuiSkin.ButtonStyle(false)))
                 page = Page.Login;
 
             ChapterDefinition chapter = WorldsCatalog.Chapters[
@@ -365,8 +365,7 @@ namespace MythicChronicles
 
             // Bottom navigation follows common mobile hero-RPG conventions.
             GUIStyle navStyle = OrnateGuiSkin.ButtonStyle();
-            OrnateGuiSkin.Panel(new Rect(12, 802, 516, 85), "home_nav",
-                OrnateGuiSkin.Gold, new Color(.09f, .07f, .12f, .95f));
+            OrnateGuiSkin.Bar(new Rect(12, 802, 516, 85));
             if (GUI.Button(new Rect(18, 813, 96, 61), "HOME", navStyle))
                 page = Page.Home;
             if (GUI.Button(new Rect(118, 813, 96, 61), "HEROES", navStyle))
@@ -1378,20 +1377,12 @@ namespace MythicChronicles
             GUIStyle plainCenter = new GUIStyle(tiny) {
                 alignment = TextAnchor.MiddleCenter };
 
-            // Full-bleed featured hero art behind the controls, with a warm
-            // glow and a bottom shade so text stays readable over the art.
+            // The temple altar scene is drawn as the page background (OnGUI);
+            // keep only a soft bottom shade so text stays readable over it.
             if (lastSummonBatch.Count == 0)
-            {
-                GUI.DrawTexture(new Rect(30, 240, 480, 460),
-                    OrnateGuiSkin.Glow("summon_glow",
-                        new Color(.95f, .75f, .35f, .42f)));
-                ChroniclesHeroPortrait.Draw(FeaturedBannerHero(astral),
-                    new Rect(115, 258, 310, 400),
-                    !progress.Data.reducePortraitMotion);
                 GUI.DrawTexture(new Rect(20, 520, 500, 190),
                     OrnateGuiSkin.Backdrop("summon_shade",
                         new Color(0f, 0f, 0f, 0f), new Color(0f, 0f, 0f, .85f)));
-            }
 
             OrnateGuiSkin.Title(new Rect(20, 226, 500, 42),
                 ChroniclesSummonRules.DisplayName(activeSummonBanner)
@@ -1449,9 +1440,7 @@ namespace MythicChronicles
                 }
             }
 
-            OrnateGuiSkin.Panel(new Rect(58, 700, 424, 42),
-                "summon_pity", OrnateGuiSkin.Gold,
-                new Color(.10f, .08f, .14f, .94f));
+            OrnateGuiSkin.Bar(new Rect(58, 700, 424, 42));
             GUI.Label(new Rect(66, 708, 408, 26),
                 astral ?
                     "UR PITY " + progress.Data.astralPity + "/" +
