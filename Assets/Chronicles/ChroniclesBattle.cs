@@ -1340,6 +1340,17 @@ namespace MythicChronicles
                 if (!cutInAnimFrames.TryGetValue(cutInHero, out frames))
                 {
                     frames = ChroniclesPortraitAssets.AnimatedFrames(cutInHero);
+                    // End the clip on the hero's ultimate splash art when it exists
+                    Texture2D ultArt = Resources.Load<Texture2D>(
+                        "Chronicles/Poses/" + cutInHero + "_ultimate");
+                    if (ultArt != null)
+                    {
+                        int n = frames != null ? frames.Length : 0;
+                        Texture2D[] withUlt = new Texture2D[n + 3];
+                        if (n > 0) frames.CopyTo(withUlt, 0);
+                        withUlt[n] = ultArt; withUlt[n + 1] = ultArt; withUlt[n + 2] = ultArt;
+                        frames = withUlt;
+                    }
                     cutInAnimFrames[cutInHero] = frames;
                 }
                 if (frames != null && frames.Length > 1)
@@ -1416,12 +1427,17 @@ namespace MythicChronicles
                 }
             }
             Texture2D portrait;
-            if (!cutInPortraits.TryGetValue(cutInHero, out portrait))
+            string portraitKey = cutInHero + (cutInUltimate ? "_u" : "_s");
+            if (!cutInPortraits.TryGetValue(portraitKey, out portrait))
             {
-                portrait = Resources.Load<Texture2D>("Chronicles/HomeCutouts/" + cutInHero);
+                // Prefer the hero's generated skill/ultimate splash pose
+                portrait = Resources.Load<Texture2D>("Chronicles/Poses/" + cutInHero +
+                    (cutInUltimate ? "_ultimate" : "_skill"));
+                if (portrait == null)
+                    portrait = Resources.Load<Texture2D>("Chronicles/HomeCutouts/" + cutInHero);
                 if (portrait == null)
                     portrait = Resources.Load<Texture2D>("Chronicles/Portraits/Static/" + cutInHero);
-                cutInPortraits[cutInHero] = portrait;
+                cutInPortraits[portraitKey] = portrait;
             }
             if (portrait != null)
             {
