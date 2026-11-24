@@ -8,7 +8,7 @@ namespace MythicChronicles
     // to be replaced by production UI Toolkit art without changing progression logic.
     public sealed class ChroniclesGame : MonoBehaviour
     {
-        private enum Page { Home, More, Events, Shop, Mailbox, Chapters, Trials, Towers, Raid, Labyrinth, ArenaTraining, Bounty, Legacy, ElementalGates, StageStory, Heroes, HeroDetails, Formation, Skins, Gear, Forge, Training, Runes, SignatureWeapon, RelicVault, Summon, Quests, WeeklyQuests, Achievements, Idle, Login, Settings, Battle, Results }
+        private enum Page { Home, More, Events, Shop, Mailbox, Chapters, Trials, Towers, Raid, Labyrinth, ArenaTraining, Bounty, Legacy, ElementalGates, EventAdventure, StageStory, Heroes, HeroDetails, Formation, Skins, Gear, Forge, Training, Runes, SignatureWeapon, RelicVault, Summon, Quests, WeeklyQuests, Achievements, Idle, Login, Settings, Battle, Results }
         private Page page = Page.Home;
         private PlayerProgressService progress;
         private ChroniclesAudioDirector audio;
@@ -20,9 +20,10 @@ namespace MythicChronicles
         private AudioListener menuAudio;
         private int stageId = 1;
         private TrialMode activeTrialMode = TrialMode.Normal;
-        private bool inTower, inRaid, inLabyrinth, inArenaTraining, inElementalGate;
-        private string raidRunId = "", labyrinthRunId = "", arenaRunId = "", gateRunId = "";
+        private bool inTower, inRaid, inLabyrinth, inArenaTraining, inElementalGate, inEventAdventure;
+        private string raidRunId = "", labyrinthRunId = "", arenaRunId = "", gateRunId = "", adventureRunId = "";
         private HeroElement selectedGateElement = HeroElement.Fire;
+        private int selectedAdventureStage = 1;
         private int selectedLabyrinthChoice;
         private int lastRaidDamage;
         private Origin selectedTowerOrigin = Origin.Egypt;
@@ -233,6 +234,7 @@ namespace MythicChronicles
                 case Page.Bounty: Bounty(); break;
                 case Page.Legacy: Legacy(); break;
                 case Page.ElementalGates: ElementalGates(); break;
+                case Page.EventAdventure: EventAdventure(); break;
                 case Page.Events: Events(); break;
                 case Page.Shop: Shop(); break;
                 case Page.Mailbox: Mailbox(); break;
@@ -457,7 +459,8 @@ namespace MythicChronicles
                 "LABYRINTH", "ARENA TRAINING",
                 "SHOP", "MAILBOX",
                 "BOUNTY BOARD", "CHRONICLE LEGACY",
-                "ELEMENTAL GATES", "SETTINGS"
+                "ELEMENTAL GATES", "EVENT ADVENTURE",
+                "SETTINGS"
             };
             int rows = (names.Length + 1) / 2;
             chapterScroll = GUI.BeginScrollView(new Rect(19, 340, 505, 545),
@@ -487,7 +490,8 @@ namespace MythicChronicles
                     case 14: page = Page.Bounty; break;
                     case 15: page = Page.Legacy; break;
                     case 16: page = Page.ElementalGates; break;
-                    case 17: page = Page.Settings; break;
+                    case 17: page = Page.EventAdventure; break;
+                    case 18: page = Page.Settings; break;
                 }
             }
             GUI.EndScrollView();
@@ -570,7 +574,7 @@ namespace MythicChronicles
                 {
                     inElementalGate = true;
                     inTower = false; inRaid = false; inLabyrinth = false;
-                    inArenaTraining = false;
+                    inArenaTraining = false; inEventAdventure = false;
                     activeTrialMode = TrialMode.Normal;
                     selectedGateElement = element;
                     stageId = ChroniclesElementalGates.StageTemplateFor(level);
@@ -578,6 +582,73 @@ namespace MythicChronicles
                 }
                 GUI.enabled = true;
             }
+        }
+
+        private void EventAdventure()
+        {
+            var def = ChroniclesEventAdventures.Active(System.DateTime.UtcNow);
+            var next = ChroniclesEventAdventures.Next(System.DateTime.UtcNow);
+            var state = progress.AdventureState(def.id);
+            TimeSpan left = ChroniclesEventAdventures.TimeLeft(System.DateTime.UtcNow);
+            GUI.Label(new Rect(26, 214, 488, 63), "EVENT ADVENTURE", heading);
+            GUI.Label(new Rect(29, 270, 479, 66),
+                def.title + "\n" + def.tagline, subtitle);
+            GUI.Label(new Rect(29, 336, 479, 40),
+                "Ends in " + left.Days + "d " + left.Hours + "h  •  Next: " +
+                next.title + "\n" + def.currencyName + ": " + state.currencyEarned,
+                tiny);
+            float contentHeight = ChroniclesEventAdventures.Stages * 62f + 44f +
+                ChroniclesEventAdventures.MilestoneThresholds.Length * 58f;
+            gearScroll = GUI.BeginScrollView(new Rect(19, 392, 505, 493),
+                gearScroll, new Rect(0, 0, 471, contentHeight));
+            float y = 8f;
+            for (int stage = 1; stage <= ChroniclesEventAdventures.Stages; stage++)
+            {
+                bool cleared = stage <= state.highestCleared;
+                bool playable = progress.CanEnterAdventureStage(def.id, stage);
+                GUI.Box(new Rect(26, y, 488, 56), "");
+                GUI.Label(new Rect(44, y + 6, 250, 24),
+                    "STAGE " + stage + (cleared ? "  •  CLEARED" : ""), subtitle);
+                GUI.Label(new Rect(44, y + 30, 320, 22),
+                    ChroniclesEventAdventures.CurrencyReward(stage, !cleared) + " " +
+                    def.currencyName + "  •  " +
+                    ChroniclesEventAdventures.GoldReward(stage) + " gold", tiny);
+                GUI.enabled = playable;
+                if (GUI.Button(new Rect(402, y + 8, 96, 40), cleared ? "REPLAY" : "FIGHT"))
+                {
+                    inEventAdventure = true;
+                    inTower = false; inRaid = false; inLabyrinth = false;
+                    inArenaTraining = false; inElementalGate = false;
+                    activeTrialMode = TrialMode.Normal;
+                    selectedAdventureStage = stage;
+                    stageId = ChroniclesEventAdventures.StageTemplateFor(stage);
+                    BeginBattle();
+                }
+                GUI.enabled = true;
+                y += 62f;
+            }
+            y += 8f;
+            GUI.Label(new Rect(44, y, 400, 30), "MILESTONE REWARDS", subtitle);
+            y += 36f;
+            foreach (int threshold in ChroniclesEventAdventures.MilestoneThresholds)
+            {
+                bool claimed = state.milestonesClaimed.Contains(threshold);
+                bool ready = state.currencyEarned >= threshold && !claimed;
+                GUI.Box(new Rect(26, y, 488, 52), "");
+                GUI.Label(new Rect(44, y + 6, 300, 40),
+                    threshold + " " + def.currencyName + "\n" +
+                    ChroniclesEventAdventures.MilestoneRewardLabel(threshold), tiny);
+                GUI.enabled = ready;
+                if (GUI.Button(new Rect(402, y + 8, 96, 36),
+                    claimed ? "TAKEN" : "CLAIM"))
+                    notice = progress.ClaimAdventureMilestone(threshold) ?
+                        "Milestone claimed: " +
+                        ChroniclesEventAdventures.MilestoneRewardLabel(threshold) :
+                        "Not enough " + def.currencyName + " yet.";
+                GUI.enabled = true;
+                y += 58f;
+            }
+            GUI.EndScrollView();
         }
 
         private void Bounty()
@@ -733,6 +804,7 @@ namespace MythicChronicles
                 inLabyrinth = false;
                 inRaid = false;
                 inTower = false;
+                inElementalGate = false; inEventAdventure = false;
                 activeTrialMode = TrialMode.Normal;
                 notice = "Choose five heroes for the NPC duel.";
                 page = Page.Formation;
@@ -799,6 +871,7 @@ namespace MythicChronicles
                         inLabyrinth = true;
                         inRaid = false;
                         inTower = false;
+                        inElementalGate = false; inEventAdventure = false;
                         stageId = option.stageId;
                         activeTrialMode = TrialMode.Normal;
                         page = Page.Formation;
@@ -844,6 +917,7 @@ namespace MythicChronicles
             {
                 inRaid = true;
                 inTower = false;
+                inElementalGate = false; inEventAdventure = false;
                 activeTrialMode = TrialMode.Normal;
                 stageId = today.id;
                 notice = "Attempt is consumed when the battle starts.";
@@ -950,6 +1024,7 @@ namespace MythicChronicles
             selectedTowerOrigin = origin;
             selectedTowerFloor = floor;
             inTower = true;
+            inElementalGate = false; inEventAdventure = false;
             activeTrialMode = TrialMode.Normal;
             stageId = stage.id;
             notice = "Select five heroes, including two from " + origin + ".";
@@ -2015,6 +2090,7 @@ namespace MythicChronicles
             {
                 inTower = false; inRaid = false; inLabyrinth = false;
                 inArenaTraining = false;
+                inElementalGate = false; inEventAdventure = false;
                 activeTrialMode = TrialMode.Normal;
                 page = Page.Chapters;
             }
@@ -2092,6 +2168,11 @@ namespace MythicChronicles
                 inElementalGate ? progress.CanEnterGate(selectedGateElement) &&
                     stageId == ChroniclesElementalGates.StageTemplateFor(
                         progress.GateState(selectedGateElement).unlockedLevel) :
+                inEventAdventure ? progress.CanEnterAdventureStage(
+                    ChroniclesEventAdventures.Active(DateTime.UtcNow).id,
+                    selectedAdventureStage) &&
+                    stageId == ChroniclesEventAdventures.StageTemplateFor(
+                        selectedAdventureStage) :
                 inTower ?
                     progress.CanEnterTower(selectedTowerOrigin, selectedTowerFloor,
                         progress.Data.selectedTeam) :
@@ -2124,6 +2205,14 @@ namespace MythicChronicles
                 if (string.IsNullOrEmpty(gateRunId))
                 { notice = "No gate attempts remain, or the team does not match."; return; }
             }
+            if (inEventAdventure)
+            {
+                adventureRunId = progress.BeginAdventureStage(
+                    ChroniclesEventAdventures.Active(DateTime.UtcNow).id,
+                    selectedAdventureStage);
+                if (string.IsNullOrEmpty(adventureRunId))
+                { notice = "That adventure stage is not available."; return; }
+            }
             if (battle != null) Destroy(battle.gameObject);
             battle = new GameObject("Chronicles - Battle").AddComponent<ChroniclesBattle>();
             try
@@ -2149,6 +2238,9 @@ namespace MythicChronicles
                 if (inElementalGate && !string.IsNullOrEmpty(gateRunId))
                     progress.AbandonGate(selectedGateElement);
                 gateRunId = "";
+                if (inEventAdventure && !string.IsNullOrEmpty(adventureRunId))
+                    progress.AbandonAdventure();
+                adventureRunId = "";
                 CleanupBattle();
                 notice = "Failed to create battle: " + ex.Message;
                 return;
@@ -2188,6 +2280,16 @@ namespace MythicChronicles
                     "The gate holds. Try a stronger " +
                     selectedGateElement.ToString().ToUpperInvariant() + " team.";
             }
+            else if (inEventAdventure)
+            {
+                string adventureReward;
+                bool savedAdventure = progress.CompleteAdventureStage(
+                    adventureRunId, victory, out adventureReward);
+                adventureRunId = "";
+                if (!savedAdventure) notice = "Adventure result could not be saved.";
+                else notice = victory ? "Stage cleared: " + adventureReward :
+                    "The adventure party falls. Power up and retry.";
+            }
             else if (inRaid)
             {
                 lastRaidDamage = battle == null ? 0 : battle.RaidDamageScore;
@@ -2221,6 +2323,7 @@ namespace MythicChronicles
                 inLabyrinth ? "WEEKLY LABYRINTH • ROOM " +
                     progress.LabyrinthState().nextRoom :
                 inRaid ? "DAILY WORLD BOSS" :
+                inEventAdventure ? "EVENT ADVENTURE • STAGE " + selectedAdventureStage :
                 inElementalGate ? ChroniclesElementalGates.GateName(selectedGateElement).ToUpperInvariant() +
                     " • LEVEL " + progress.GateState(selectedGateElement).unlockedLevel :
                 inTower ? ChroniclesTowers.DisplayName(selectedTowerOrigin) +
@@ -2356,6 +2459,9 @@ namespace MythicChronicles
             }
             StageDefinition stage = WorldsCatalog.GetStage(stageId);
             GUI.Label(new Rect(35, 362, 470, 100),
+                inEventAdventure ?
+                    ChroniclesEventAdventures.Active(DateTime.UtcNow).title +
+                    "\nEvent adventure - stage " + selectedAdventureStage :
                 inElementalGate ? ChroniclesElementalGates.GateName(selectedGateElement) +
                     "\nElemental gate challenge" :
                 inTower ? ChroniclesTowers.DisplayName(selectedTowerOrigin) +
@@ -2431,6 +2537,11 @@ namespace MythicChronicles
                 progress.AbandonGate(selectedGateElement);
                 gateRunId = "";
             }
+            if (inEventAdventure && !string.IsNullOrEmpty(adventureRunId))
+            {
+                progress.AbandonAdventure();
+                adventureRunId = "";
+            }
             if (menuCamera != null) menuCamera.enabled = true;
             if (menuAudio != null) menuAudio.enabled = true;
         }
@@ -2453,11 +2564,13 @@ namespace MythicChronicles
             inTower = false;
             inRaid = false;
             inElementalGate = false;
+            inEventAdventure = false;
             inLabyrinth = false;
             inArenaTraining = false;
             raidRunId = "";
             labyrinthRunId = "";
             arenaRunId = "";
+            adventureRunId = "";
             page = Page.Home;
             if (audio != null) audio.SetState(AudioScene.Menu);
         }

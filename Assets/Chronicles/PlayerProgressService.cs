@@ -45,6 +45,8 @@ namespace MythicChronicles
         public List<ElementalGateProgress> elementalGates = new List<ElementalGateProgress>();
         public string gateUtcDay = "";
         public int gateAttemptsUsed;
+        public List<EventAdventureProgress> eventAdventures = new List<EventAdventureProgress>();
+        public string adventurePendingRunId = "";
         public string bountyUtcDay = "";
         public List<ActiveBounty> activeBounties = new List<ActiveBounty>();
         public List<string> claimedBountyIds = new List<string>();
@@ -100,7 +102,8 @@ namespace MythicChronicles
             new QuestInfo("upgrade_1", "Upgrade any hero", 1, 180, 15),
             new QuestInfo("summon_1", "Summon a hero", 1, 180, 15),
             new QuestInfo("idle_1", "Collect idle earnings", 1, 120, 10),
-            new QuestInfo("gates_1", "Clear an Elemental Gate", 1, 220, 20)
+            new QuestInfo("gates_1", "Clear an Elemental Gate", 1, 220, 20),
+            new QuestInfo("adventure_1", "Clear an Event Adventure stage", 1, 220, 20)
         };
         public static readonly QuestInfo[] WeeklyQuests =
         {
@@ -1746,6 +1749,86 @@ namespace MythicChronicles
             if (gate.unlockedLevel < ChroniclesElementalGates.Levels)
                 gate.unlockedLevel++;
             IncrementQuest("gates_1");
+            Save();
+            return true;
+        }
+
+        public EventAdventureProgress AdventureState(string adventureId)
+        {
+            foreach (EventAdventureProgress saved in Data.eventAdventures)
+                if (saved.adventureId == adventureId) return saved;
+            var created = new EventAdventureProgress { adventureId = adventureId };
+            Data.eventAdventures.Add(created);
+            return created;
+        }
+
+        // Stage 1..Stages; entry allowed for the next uncleared stage or a replay.
+        public bool CanEnterAdventureStage(string adventureId, int stage)
+        {
+            if (stage < 1 || stage > ChroniclesEventAdventures.Stages) return false;
+            if (ChroniclesEventAdventures.Active(DateTime.UtcNow).id != adventureId)
+                return false; // only the live adventure is playable
+            return stage <= AdventureState(adventureId).highestCleared + 1;
+        }
+
+        public string BeginAdventureStage(string adventureId, int stage)
+        {
+            if (!CanEnterAdventureStage(adventureId, stage)) return "";
+            string runId = adventureId + ":" + stage;
+            Data.adventurePendingRunId = runId;
+            Save();
+            return runId;
+        }
+
+        public void AbandonAdventure()
+        {
+            Data.adventurePendingRunId = "";
+            Save();
+        }
+
+        public bool CompleteAdventureStage(string runId, bool victory,
+            out string rewardLabel)
+        {
+            rewardLabel = "";
+            if (string.IsNullOrEmpty(runId) || runId != Data.adventurePendingRunId)
+                return false;
+            Data.adventurePendingRunId = "";
+            string[] parts = runId.Split(':');
+            int stage;
+            if (parts.Length != 2 || !int.TryParse(parts[1], out stage)) { Save(); return false; }
+            var def = ChroniclesEventAdventures.Active(DateTime.UtcNow);
+            if (def.id != parts[0]) { Save(); return false; }
+            EventAdventureProgress state = AdventureState(def.id);
+            if (!victory) { Save(); return true; }
+            bool firstClear = stage > state.highestCleared;
+            if (firstClear) state.highestCleared = stage;
+            int currency = ChroniclesEventAdventures.CurrencyReward(stage, firstClear);
+            int gold = ChroniclesEventAdventures.GoldReward(stage);
+            state.currencyEarned += currency;
+            Data.gold += gold;
+            rewardLabel = gold + " gold + " + currency + " " + def.currencyName;
+            IncrementQuest("adventure_1");
+            Save();
+            return true;
+        }
+
+        public bool ClaimAdventureMilestone(int threshold)
+        {
+            var def = ChroniclesEventAdventures.Active(DateTime.UtcNow);
+            EventAdventureProgress state = AdventureState(def.id);
+            if (state.currencyEarned < threshold ||
+                state.milestonesClaimed.Contains(threshold)) return false;
+            state.milestonesClaimed.Add(threshold);
+            switch (threshold)
+            {
+                case 100: Data.gold += 1000; break;
+                case 250: Data.gems += 60; break;
+                case 500: Data.summonTickets += 1; break;
+                case 900: Data.gold += 3000; Data.forgeDust += 80; break;
+                case 1400: Data.gems += 120; Data.relicDust += 50; break;
+                case 2000: Data.summonTickets += 2; Data.gems += 200; break;
+                default: return false;
+            }
             Save();
             return true;
         }
