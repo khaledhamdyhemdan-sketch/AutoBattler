@@ -2431,7 +2431,12 @@ namespace MythicChronicles
             if (newReduce != oldReduce)
                 notice = progress.SetReducedPortraitMotion(newReduce) ?
                     "Motion preference saved." : "Could not save motion preference.";
-            if (GUI.Button(new Rect(58, 682, 425, 64), "SAVE AUDIO SETTINGS", bigButton))
+            bool oldPanel = PanelBattleEnabled;
+            bool newPanel = GUI.Toggle(new Rect(66, 660, 413, 40),
+                oldPanel, "COMIC-PANEL BATTLE VIEW (BETA)");
+            if (newPanel != oldPanel)
+            { PanelBattleEnabled = newPanel; notice = "Battle view preference saved."; }
+            if (GUI.Button(new Rect(58, 706, 425, 64), "SAVE AUDIO SETTINGS", bigButton))
             {
                 bool saved = progress.SetAudioLevels(draftMusic, draftEffects);
                 if (audio != null) audio.SetVolumes(draftMusic, draftEffects);
@@ -2452,6 +2457,15 @@ namespace MythicChronicles
             GUI.enabled = true;
             if (GUI.Button(new Rect(40, 845, 460, 54), "RETURN HOME", bigButton))
                 GoHome();
+        }
+
+        // Comic-panel battle presentation (Khalid-approved layout experiment).
+        // Second presentation mode: the arena stays the default until the panel
+        // mode is verified in an internal build. Toggle persists in PlayerPrefs.
+        private bool PanelBattleEnabled
+        {
+            get { return PlayerPrefs.GetInt("panel_battle", 0) == 1; }
+            set { PlayerPrefs.SetInt("panel_battle", value ? 1 : 0); PlayerPrefs.Save(); }
         }
 
         private void BeginBattle()
@@ -2550,6 +2564,7 @@ namespace MythicChronicles
             }
             if (battle != null) Destroy(battle.gameObject);
             battle = new GameObject("Chronicles - Battle").AddComponent<ChroniclesBattle>();
+            battle.PanelLayout = PanelBattleEnabled;
             try
             {
                 battle.Initialize(stage, chosen, progress.Data, OnBattleFinished,
@@ -2678,10 +2693,19 @@ namespace MythicChronicles
             page = Page.Results;
         }
 
+        private readonly System.Collections.Generic.List<ChroniclesBattle.DamageEntry>
+            damageMeterScratch = new System.Collections.Generic.List<ChroniclesBattle.DamageEntry>();
+
         private void BattleHud(float scale)
         {
             if (battle == null) return;
             battle.DrawWorldLabels(scale);
+            if (battle.PanelLayout)
+            {
+                // Panel mode keeps the stage title off the panel wall.
+            }
+            else
+            {
             OrnateGuiSkin.Bar(new Rect(12, 22, 516, 106));
             GUI.Label(new Rect(20, 29, 500, 45),
                 inArenaTraining ? "ARENA TRAINING • NPC OPPONENT" :
@@ -2704,6 +2728,41 @@ namespace MythicChronicles
                 "TIME " + Mathf.CeilToInt(battle.SecondsLeft) + " s" +
                 (inRaid ? "   •   BOSS DAMAGE " + battle.RaidDamageScore : ""),
                 subtitle);
+            }
+            if (battle.PanelLayout)
+            {
+                // Right rail: speed, fast-forward, timer, damage meter (panel layout).
+                if (GUI.Button(new Rect(486, 66, 52, 46), "x" + battle.Speed,
+                    OrnateGuiSkin.ButtonStyle(false)))
+                    battle.Speed = battle.Speed >= 2f ? 1f : 2f;
+                if (GUI.Button(new Rect(486, 150, 52, 46), ">>",
+                    OrnateGuiSkin.ButtonStyle(false)))
+                    battle.Speed = 8f;
+                GUI.Label(new Rect(482, 240, 58, 40),
+                    Mathf.CeilToInt(battle.SecondsLeft) + "s", subtitle);
+                GUI.Label(new Rect(482, 330, 58, 30), "DMG", subtitle);
+                battle.FillDamageMeter(damageMeterScratch);
+                int shown = 0;
+                foreach (var entry in damageMeterScratch)
+                {
+                    if (shown >= 4) break;
+                    GUI.Label(new Rect(482, 356 + shown * 30, 58, 28),
+                        (entry.amount >= 1000 ?
+                            (entry.amount / 1000).ToString() + "K" :
+                            entry.amount.ToString()), subtitle);
+                    shown++;
+                }
+                if (GUI.Button(new Rect(486, 560, 52, 46),
+                    battle.Paused ? ">" : "||", OrnateGuiSkin.ButtonStyle(false)))
+                    battle.Paused = !battle.Paused;
+                if (GUI.Button(new Rect(486, 614, 52, 46), "X",
+                    OrnateGuiSkin.ButtonStyle(false)))
+                {
+                    CleanupBattle();
+                    page = Page.Formation;
+                }
+                return;
+            }
             if (GUI.Button(new Rect(20, 837, 153, 65), battle.Paused ? "RESUME" : "PAUSE",
                 OrnateGuiSkin.ButtonStyle(false)))
                 battle.Paused = !battle.Paused;

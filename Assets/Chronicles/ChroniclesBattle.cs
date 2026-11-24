@@ -23,6 +23,10 @@ namespace MythicChronicles
             public bool boss;
             public float bossSpecialTimer = 9f;
             public Vector3 formationPosition, arrivalPosition, displayScale;
+            public Vector3 panelAnchor;
+            public GameObject panelQuad;
+            public float lungeT, dealt;
+            public Combatant lungeTarget;
             public bool Alive { get { return hp > 0f; } }
         }
         private sealed class FloatingText
@@ -48,6 +52,7 @@ namespace MythicChronicles
         public int RaidDamageScore { get { return Mathf.FloorToInt(
             Mathf.Clamp(raidDamage, 0f, 2000000f)); } }
         public bool Paused { get; set; }
+        public bool PanelLayout { get; set; }
         public bool Complete { get { return ended; } }
         public float SecondsLeft { get { return Mathf.Max(0f, 90f - elapsed); } }
         public float Speed { get; set; } = 1f;
@@ -58,6 +63,7 @@ namespace MythicChronicles
         private float cutInTime = 99f;
         private readonly Dictionary<string, Texture2D> cutInPortraits = new Dictionary<string, Texture2D>();
         private GUIStyle cutInNameStyle, cutInSkillStyle, popupBigStyle;
+        private Texture2D panelAllyTex, panelEnemyTex;
 
         public void Initialize(StageDefinition chosen, IList<OwnedHero> squad,
             PlayerSave savedProgress, Action<bool> onFinished,
@@ -305,12 +311,23 @@ namespace MythicChronicles
             cam = cameraObject.AddComponent<Camera>();
             cam.clearFlags = CameraClearFlags.SolidColor;
             cam.backgroundColor = new Color(.055f, .05f, .10f);
+            if (PanelLayout)
+            {
+                cam.orthographic = true;
+                cam.orthographicSize = 5.4f;
+                cameraObject.transform.position = new Vector3(0f, 0f, -13.8f);
+                camBase = cameraObject.transform.position;
+                cameraObject.transform.LookAt(new Vector3(0f, 0f, 0f));
+            }
+            else
+            {
             cam.fieldOfView = 50f;
             // Lower, more side-on view: heroes read upright with visible depth
             // between front and back rows (AFK Arena/Omniheroes battle framing).
             cameraObject.transform.position = new Vector3(0f, 9.2f, -13.8f);
             camBase = cameraObject.transform.position;
             cameraObject.transform.LookAt(new Vector3(0f, .8f, .2f));
+            }
             AudioListener activeListener = FindFirstObjectByType<AudioListener>();
             if (activeListener == null || !activeListener.isActiveAndEnabled)
                 cameraObject.AddComponent<AudioListener>();
@@ -351,9 +368,22 @@ namespace MythicChronicles
             int weaponLevel = 0, int armorLevel = 0, int stars = 1, string skin = "default")
         {
             bool front = slot < 2;
+            Vector3 destination;
+            if (PanelLayout)
+            {
+                // Comic-panel wall: 3 top slots, 2 centered bottom slots per side.
+                int col = slot % 3, row = slot / 3;
+                float px = row == 0 ? (col - 1) * 2.0f : (slot == 3 ? -1.0f : 1.0f);
+                float py = (side == 1 ? 4.15f : -1.75f) - row * 2.5f * (side == 1 ? 1f : -1f);
+                if (side == 1) py = 4.15f - row * 2.5f; else py = -1.75f - row * 2.5f;
+                destination = new Vector3(px, py, -0.4f);
+            }
+            else
+            {
             float x = front ? (slot == 0 ? -1.55f : 1.55f) : (slot - 3) * 2.45f;
             float z = (front ? 1.6f : 3.9f) * (side == 0 ? -1f : 1f);
-            Vector3 destination = new Vector3(x, 1.0f, z);
+            destination = new Vector3(x, 1.0f, z);
+            }
             float tier = hero.rarity == Rarity.UR ? 1.30f :
                 hero.rarity == Rarity.SSR ? 1.20f :
                 hero.rarity == Rarity.SR ? 1.08f : 1f;
@@ -369,7 +399,10 @@ namespace MythicChronicles
                 armor = 9f + level * 1.3f + armorLevel * 2f + (hero.role == CombatRole.Tank ? 18f : 0f),
                 attackCd = .5f + slot * .09f, skillCd = 2.6f + slot * .4f,
                 formationPosition = destination,
-                arrivalPosition = destination + new Vector3(0f, 0f, side == 0 ? -5f : 5f)
+                arrivalPosition = destination + (PanelLayout ?
+                    new Vector3(0f, side == 0 ? -4f : 4f, 0f) :
+                    new Vector3(0f, 0f, side == 0 ? -5f : 5f)),
+                panelAnchor = destination
             };
             unit.hp = unit.maxHp;
             unit.visual = HeroVisualDriver.Spawn(hero, skin, transform,
@@ -391,6 +424,36 @@ namespace MythicChronicles
             }
             unit.visual.Play(HeroAnimation.Entrance);
             unit.visual.EntranceFX(hero.id);
+            if (PanelLayout)
+            {
+                if (panelAllyTex == null)
+                    panelAllyTex = Resources.Load<Texture2D>("Chronicles/UI/panel_battle_ally");
+                if (panelEnemyTex == null)
+                    panelEnemyTex = Resources.Load<Texture2D>("Chronicles/UI/panel_battle_enemy");
+                Texture2D panelTex = side == 0 ? panelAllyTex : panelEnemyTex;
+                if (panelTex != null)
+                {
+                    GameObject quad = GameObject.CreatePrimitive(PrimitiveType.Quad);
+                    quad.name = "Panel - " + hero.name;
+                    Collider quadCollider = quad.GetComponent<Collider>();
+                    if (quadCollider != null) Destroy(quadCollider);
+                    quad.transform.SetParent(transform);
+                    quad.transform.position = new Vector3(
+                        unit.panelAnchor.x, unit.panelAnchor.y, 0.6f);
+                    quad.transform.localScale = new Vector3(2.35f, 2.35f, 1f);
+                    Shader panelShader = ChroniclesShaders.FindAny(
+                        "Unlit/Texture", "Sprites/Default",
+                        "Universal Render Pipeline/Unlit");
+                    MeshRenderer panelRenderer = quad.GetComponent<MeshRenderer>();
+                    if (panelShader != null && panelRenderer != null)
+                    {
+                        var panelMaterial = new Material(panelShader);
+                        panelMaterial.mainTexture = panelTex;
+                        panelRenderer.material = panelMaterial;
+                    }
+                    unit.panelQuad = quad;
+                }
+            }
             units.Add(unit);
         }
 
@@ -462,9 +525,10 @@ namespace MythicChronicles
 
                 float range = f.hero.role == CombatRole.Mage || f.hero.role == CombatRole.Healer ||
                     f.hero.role == CombatRole.Support || f.hero.role == CombatRole.Controller ? 4.5f : 1.6f;
+                if (PanelLayout) range = 999f;
                 Vector3 direction = target.model.transform.position - f.model.transform.position;
-                direction.y = 0f;
-                if (direction.magnitude > range)
+                direction.y = PanelLayout ? direction.y : 0f;
+                if (!PanelLayout && direction.magnitude > range)
                 {
                     float moveSpeed = f.frozen > 0f ? 1.0f : 2.1f;
                     f.visual.Play(HeroAnimation.Run);
@@ -476,6 +540,7 @@ namespace MythicChronicles
                 else if (f.attackCd <= 0f)
                 {
                     f.visual.Play(HeroAnimation.Attack);
+                    if (PanelLayout) { f.lungeT = .34f; f.lungeTarget = target; }
                     Hit(f, target, f.attack);
                     float baseCooldown = f.hero.role == CombatRole.Assassin ? .85f : 1.25f;
                     if (f.frozen > 0f) baseCooldown *= 1.45f;
@@ -486,6 +551,25 @@ namespace MythicChronicles
                         kit.passive == HeroPassive.Enchantress ? 23f : 17f));
                 }
                 else f.visual.Play(HeroAnimation.Idle);
+            }
+
+            if (PanelLayout)
+            {
+                foreach (Combatant f in units)
+                {
+                    if (f.model == null) continue;
+                    if (!f.Alive) continue;
+                    Vector3 home = f.panelAnchor;
+                    if (f.lungeT > 0f && f.lungeTarget != null)
+                    {
+                        f.lungeT -= dt;
+                        float phase = 1f - Mathf.Max(0f, f.lungeT) / .34f;
+                        float swing = Mathf.Sin(phase * Mathf.PI);
+                        Vector3 dir = f.lungeTarget.panelAnchor - f.panelAnchor;
+                        f.model.transform.position = home + dir.normalized * swing * .7f;
+                    }
+                    else f.model.transform.position = home;
+                }
             }
 
             for (int i = popups.Count - 1; i >= 0; i--)
@@ -710,6 +794,7 @@ namespace MythicChronicles
                 attacker != null && attacker.side == 0)
                 raidDamage += actualDamage;
             defender.hp = Mathf.Max(0f, defender.hp - actualDamage);
+            if (attacker != null) attacker.dealt += actualDamage;
             defender.energy = Mathf.Min(100f, defender.energy + actualDamage * .12f);
             Floating("-" + Mathf.RoundToInt(damage), defender, new Color(1f, .72f, .54f));
 
@@ -947,12 +1032,42 @@ namespace MythicChronicles
             }
         }
 
+        public struct DamageEntry { public string heroId; public int amount; public bool ally; }
+
+        public void FillDamageMeter(List<DamageEntry> output)
+        {
+            output.Clear();
+            foreach (Combatant u in units)
+            {
+                if (u.dealt <= 0f) continue;
+                output.Add(new DamageEntry {
+                    heroId = u.hero.id, amount = Mathf.RoundToInt(u.dealt),
+                    ally = u.side == 0 });
+            }
+            output.Sort((a, b) => b.amount.CompareTo(a.amount));
+        }
+
         public void DrawWorldLabels(float uiScale)
         {
             if (cam == null || introTime > 0) return;
             foreach (var unit in units)
             {
                 if (!unit.Alive) continue;
+                if (PanelLayout)
+                {
+                    Vector3 anchor = cam.WorldToScreenPoint(
+                        unit.panelAnchor + new Vector3(0f, -1.02f, 0f));
+                    if (anchor.z <= 0f) continue;
+                    float px = anchor.x / uiScale, py = (Screen.height - anchor.y) / uiScale;
+                    GUI.color = unit.side == 0 ? new Color(1f, .85f, .4f) : new Color(1f, .5f, .45f);
+                    GUI.Label(new Rect(px - 58f, py - 12f, 22f, 20f), unit.level.ToString());
+                    GUI.color = unit.side == 0 ? Color.green : new Color(1f, .3f, .3f);
+                    GUI.DrawTexture(new Rect(px - 34f, py - 10f, 92f * unit.hp / unit.maxHp, 6f), Texture2D.whiteTexture);
+                    GUI.color = new Color(1f, .8f, .25f);
+                    GUI.DrawTexture(new Rect(px - 34f, py - 2f, 92f * unit.energy / 100f, 4f), Texture2D.whiteTexture);
+                    GUI.color = Color.white;
+                    continue;
+                }
                 Vector3 point = cam.WorldToScreenPoint(unit.model.transform.position + Vector3.up * 2f);
                 if (point.z <= 0f) continue;
                 float x = point.x / uiScale - 38f;
