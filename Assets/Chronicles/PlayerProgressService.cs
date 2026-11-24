@@ -50,6 +50,7 @@ namespace MythicChronicles
         public string passSeasonKey = "";
         public int passSeasonXp;
         public List<int> passLevelsClaimed = new List<int>();
+        public string leaderboardWeekClaimed = "";
         public string bountyUtcDay = "";
         public List<ActiveBounty> activeBounties = new List<ActiveBounty>();
         public List<string> claimedBountyIds = new List<string>();
@@ -1916,6 +1917,31 @@ namespace MythicChronicles
                 Data.passLevelsClaimed.Contains(level)) return false;
             Data.passLevelsClaimed.Add(level);
             ChroniclesBattlePass.GrantReward(Data, level);
+            Save();
+            return true;
+        }
+
+        public int TowerHighestTotal()
+        {
+            int total = 0;
+            foreach (TowerProgressRecord record in Data.towerProgress)
+                total = Math.Max(total, record.highestFloor);
+            return total;
+        }
+
+        // Weekly leaderboard reward, once per UTC week, based on current rank.
+        public bool ClaimLeaderboardReward(int rank, out string label)
+        {
+            label = "";
+            DateTime today = DateTime.UtcNow.Date;
+            int daysSinceMonday = ((int)today.DayOfWeek + 6) % 7;
+            string week = today.AddDays(-daysSinceMonday).ToString("yyyy-MM-dd");
+            if (Data.leaderboardWeekClaimed == week) return false;
+            int gems = rank == 1 ? 500 : rank <= 3 ? 300 : rank <= 10 ? 150 :
+                rank <= 25 ? 75 : 25;
+            Data.leaderboardWeekClaimed = week;
+            Data.gems += gems;
+            label = gems + " gems";
             Save();
             return true;
         }

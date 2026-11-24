@@ -8,7 +8,7 @@ namespace MythicChronicles
     // to be replaced by production UI Toolkit art without changing progression logic.
     public sealed class ChroniclesGame : MonoBehaviour
     {
-        private enum Page { Home, More, Events, Shop, Mailbox, Chapters, Trials, Towers, Raid, Labyrinth, ArenaTraining, Bounty, Legacy, ElementalGates, EventAdventure, SeasonPass, StageStory, Heroes, HeroDetails, Formation, Skins, Gear, Forge, Training, Runes, SignatureWeapon, RelicVault, Summon, Quests, WeeklyQuests, Achievements, Idle, Login, Settings, Battle, Results }
+        private enum Page { Home, More, Events, Shop, Mailbox, Chapters, Trials, Towers, Raid, Labyrinth, ArenaTraining, Bounty, Legacy, ElementalGates, EventAdventure, SeasonPass, Leaderboards, StageStory, Heroes, HeroDetails, Formation, Skins, Gear, Forge, Training, Runes, SignatureWeapon, RelicVault, Summon, Quests, WeeklyQuests, Achievements, Idle, Login, Settings, Battle, Results }
         private Page page = Page.Home;
         private PlayerProgressService progress;
         private ChroniclesAudioDirector audio;
@@ -236,6 +236,7 @@ namespace MythicChronicles
                 case Page.ElementalGates: ElementalGates(); break;
                 case Page.EventAdventure: EventAdventure(); break;
                 case Page.SeasonPass: SeasonPass(); break;
+                case Page.Leaderboards: Leaderboards(); break;
                 case Page.Events: Events(); break;
                 case Page.Shop: Shop(); break;
                 case Page.Mailbox: Mailbox(); break;
@@ -461,7 +462,8 @@ namespace MythicChronicles
                 "SHOP", "MAILBOX",
                 "BOUNTY BOARD", "CHRONICLE LEGACY",
                 "ELEMENTAL GATES", "EVENT ADVENTURE",
-                "SEASON PASS", "SETTINGS"
+                "SEASON PASS", "RANKINGS",
+                "SETTINGS"
             };
             int rows = (names.Length + 1) / 2;
             chapterScroll = GUI.BeginScrollView(new Rect(19, 340, 505, 545),
@@ -493,7 +495,8 @@ namespace MythicChronicles
                     case 16: page = Page.ElementalGates; break;
                     case 17: page = Page.EventAdventure; break;
                     case 18: page = Page.SeasonPass; break;
-                    case 19: page = Page.Settings; break;
+                    case 19: page = Page.Leaderboards; break;
+                    case 20: page = Page.Settings; break;
                 }
             }
             GUI.EndScrollView();
@@ -685,6 +688,62 @@ namespace MythicChronicles
                         ChroniclesBattlePass.RewardLabel(i) :
                         "Reach level " + i + " first.";
                 GUI.enabled = true;
+            }
+            GUI.EndScrollView();
+        }
+
+        private int leaderboardTab;
+
+        private void Leaderboards()
+        {
+            GUI.Label(new Rect(26, 214, 488, 63), "RANKINGS", heading);
+            GUI.Label(new Rect(29, 270, 479, 40),
+                "Local season rivals - online rankings arrive with the server.",
+                tiny);
+            string[] tabs = { "ARENA", "STORY", "TOWER" };
+            for (int i = 0; i < tabs.Length; i++)
+            {
+                if (GUI.Button(new Rect(26 + i * 168, 316, 160, 52), tabs[i],
+                    OrnateGuiSkin.ButtonStyle(i == leaderboardTab)))
+                    leaderboardTab = i;
+            }
+            string boardId;
+            int playerScore;
+            if (leaderboardTab == 0)
+            { boardId = "arena"; playerScore = progress.ArenaTrainingState().rating; }
+            else if (leaderboardTab == 1)
+            { boardId = "story"; playerScore = progress.Data.lastClearedStage; }
+            else
+            { boardId = "tower"; playerScore = progress.TowerHighestTotal(); }
+            var board = ChroniclesLeaderboards.Build(boardId, "YOU", playerScore,
+                System.DateTime.UtcNow);
+            int rank = ChroniclesLeaderboards.PlayerRank(board);
+            GUI.Label(new Rect(29, 376, 479, 30),
+                "YOUR RANK: #" + rank + " / " + board.Count +
+                "  •  Weekly reward: " + ChroniclesLeaderboards.RankRewardLabel(rank),
+                subtitle);
+            GUI.enabled = true;
+            if (GUI.Button(new Rect(330, 372, 180, 40), "CLAIM WEEKLY"))
+            {
+                string lbLabel;
+                notice = progress.ClaimLeaderboardReward(rank, out lbLabel) ?
+                    "Weekly ranking reward: " + lbLabel :
+                    "Weekly reward already claimed.";
+            }
+            gearScroll = GUI.BeginScrollView(new Rect(19, 420, 505, 465),
+                gearScroll, new Rect(0, 0, 471, board.Count * 44f));
+            for (int i = 0; i < board.Count; i++)
+            {
+                var entry = board[i];
+                float y = i * 44f;
+                if (entry.isPlayer)
+                    GUI.Box(new Rect(6, y, 460, 40), "");
+                GUI.Label(new Rect(16, y + 8, 60, 26), "#" + (i + 1),
+                    entry.isPlayer ? subtitle : tiny);
+                GUI.Label(new Rect(80, y + 8, 240, 26), entry.name,
+                    entry.isPlayer ? subtitle : tiny);
+                GUI.Label(new Rect(330, y + 8, 130, 26),
+                    entry.score.ToString(), entry.isPlayer ? subtitle : tiny);
             }
             GUI.EndScrollView();
         }
