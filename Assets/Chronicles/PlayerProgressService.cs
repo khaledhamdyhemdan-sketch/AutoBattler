@@ -1296,7 +1296,51 @@ namespace MythicChronicles
         public ArenaTrainingProgress ArenaTrainingState()
         {
             RefreshArenaDay();
+            RefreshArenaSeason();
             return Data.arenaTraining;
+        }
+
+        // Season flip: archive last season, soft-reset the ladder.
+        private void RefreshArenaSeason()
+        {
+            ArenaTrainingProgress arena = Data.arenaTraining;
+            string season = ChroniclesArenaTraining.SeasonKey(DateTime.UtcNow);
+            if (arena.seasonKey == season) return;
+            if (!string.IsNullOrEmpty(arena.seasonKey))
+            {
+                string finalTier = ChroniclesArenaTraining.Tier(
+                    Math.Max(arena.seasonBest, arena.rating));
+                arena.prevSeasonSummary = arena.seasonKey + ": " + finalTier +
+                    " (best " + Math.Max(arena.seasonBest, arena.rating) + ")";
+                arena.rating = ChroniclesArenaTraining.SoftResetRating(arena.rating);
+            }
+            arena.seasonKey = season;
+            arena.seasonBest = arena.rating;
+            arena.seasonTierClaimed = "";
+            Save();
+        }
+
+        public bool ClaimArenaSeasonReward()
+        {
+            RefreshArenaSeason();
+            ArenaTrainingProgress arena = Data.arenaTraining;
+            string tier = ChroniclesArenaTraining.Tier(arena.seasonBest);
+            if (arena.seasonTierClaimed == tier) return false;
+            arena.seasonTierClaimed = tier;
+            switch (tier)
+            {
+                case "MYTHIC": Data.gems += 2800; Data.summonTickets += 10; break;
+                case "LEGEND": Data.gems += 2000; Data.summonTickets += 6; break;
+                case "GRANDMASTER": Data.gems += 1500; Data.summonTickets += 5; break;
+                case "MASTER": Data.gems += 1100; Data.summonTickets += 4; break;
+                case "DIAMOND": Data.gems += 800; Data.summonTickets += 3; break;
+                case "PLATINUM": Data.gems += 550; Data.summonTickets += 2; break;
+                case "GOLD": Data.gems += 350; Data.summonTickets += 1; break;
+                case "SILVER": Data.gems += 200; break;
+                default: Data.gems += 100; break;
+            }
+            Save();
+            return true;
         }
 
         public int ArenaAttemptsRemaining()
@@ -1333,6 +1377,8 @@ namespace MythicChronicles
                     (victory ? ChroniclesArenaTraining.VictoryRating :
                         -ChroniclesArenaTraining.DefeatRating), 0, 5000);
                 arena.bestRating = Math.Max(arena.bestRating, arena.rating);
+                arena.seasonBest = Math.Max(arena.seasonBest, arena.rating);
+                AddPassXp(4);
                 if (victory) arena.wins++;
                 else arena.losses++;
                 Data.gold = checked(Data.gold + ChroniclesArenaTraining.Gold(victory));

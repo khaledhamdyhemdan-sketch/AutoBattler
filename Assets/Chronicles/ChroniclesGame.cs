@@ -813,23 +813,38 @@ namespace MythicChronicles
         {
             ArenaTrainingProgress arena = progress.ArenaTrainingState();
             GUI.Label(new Rect(29, 220, 487, 58), "ARENA TRAINING", heading);
+            string arenaTier = ChroniclesArenaTraining.Tier(arena.seasonBest);
+            TimeSpan arenaLeft = ChroniclesArenaTraining.SeasonEnd(System.DateTime.UtcNow) -
+                System.DateTime.UtcNow;
             GUI.Label(new Rect(32, 284, 473, 85),
-                "OFFLINE NPC LADDER • 5 MATCHES PER UTC DAY" +
-                "\nPractice your formation. Online PvP is not available yet.", subtitle);
+                "OFFLINE NPC LADDER • SEASON " + arena.seasonKey +
+                " • ENDS IN " + arenaLeft.Days + "D" +
+                "\n5 matches per UTC day. Online PvP is not available yet.", subtitle);
             GUI.Box(new Rect(39, 384, 462, 220), "");
             GUI.Label(new Rect(50, 407, 438, 180),
                 "CURRENT TIER: " + ChroniclesArenaTraining.Tier(arena.rating) +
                 "\nRATING: " + arena.rating +
                 "  •  PERSONAL BEST: " + arena.bestRating +
+                "\nSEASON BEST: " + arena.seasonBest + " (" + arenaTier + ")" +
                 "\nMATCH RECORD: " + arena.wins + " W / " + arena.losses + " L" +
                 "\nATTEMPTS LEFT: " + progress.ArenaAttemptsRemaining() +
                 "/" + ChroniclesArenaTraining.DailyAttempts, subtitle);
             GUI.Box(new Rect(39, 619, 463, 126), "");
-            GUI.Label(new Rect(49, 630, 442, 101),
-                "WIN: +22 RATING, 260 GOLD, 12 GEMS" +
-                "\nLOSS: -12 RATING, 70 GOLD" +
-                "\nRanks: Bronze • Silver • Gold • Platinum" +
-                "\nDiamond • Master • Grandmaster • Legend • Mythic", tiny);
+            GUI.Label(new Rect(49, 630, 300, 101),
+                "SEASON REWARD: " +
+                ChroniclesArenaTraining.SeasonRewardLabel(arenaTier) +
+                (string.IsNullOrEmpty(arena.prevSeasonSummary) ? "" :
+                    "\nLast season: " + arena.prevSeasonSummary) +
+                "\nWIN: +22 RATING, 260 GOLD, 12 GEMS" +
+                "\nLOSS: -12 RATING, 70 GOLD", tiny);
+            GUI.enabled = arena.seasonTierClaimed != arenaTier;
+            if (GUI.Button(new Rect(362, 658, 130, 50),
+                arena.seasonTierClaimed == arenaTier ? "CLAIMED" : "CLAIM"))
+                notice = progress.ClaimArenaSeasonReward() ?
+                    "Season reward claimed: " +
+                    ChroniclesArenaTraining.SeasonRewardLabel(arenaTier) :
+                    "Season reward already claimed at this tier.";
+            GUI.enabled = true;
             GUI.enabled = progress.Data.lastClearedStage >= 10 &&
                 progress.ArenaAttemptsRemaining() > 0 &&
                 string.IsNullOrEmpty(arena.pendingMatchToken);
