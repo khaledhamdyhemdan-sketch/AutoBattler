@@ -1710,74 +1710,94 @@ namespace MythicChronicles
         private void Events()
         {
             OrnateGuiSkin.Title(new Rect(24, 224, 492, 64), "LIMITED-TIME EVENTS", 34);
-            GUI.Label(new Rect(30, 292, 480, 40),
-                "Live events rotate. Bonuses apply automatically while active.",
-                subtitle);
             System.DateTime now = System.DateTime.UtcNow;
-            float y = 350f;
+            float y = 306f;
             foreach (ChroniclesEventInfo info in ChroniclesEvents.All)
             {
-                bool active = ChroniclesEvents.IsActive(info, now);
-                bool upcoming = ChroniclesEvents.IsUpcoming(info, now);
-                OrnateGuiSkin.Bar(new Rect(24, y, 492, 142));
-                // slim accent edge in the event's theme color, no heavy frame
-                Color accent = info.kind == ChroniclesEventKind.AstralRateUp ?
-                    new Color(.8f, .6f, 1f) : new Color(1f, .82f, .42f);
-                GUI.color = new Color(accent.r, accent.g, accent.b, active ? .95f : .45f);
-                GUI.DrawTexture(new Rect(24, y, 5, 142), Texture2D.whiteTexture);
-                GUI.color = Color.white;
-                if (active)
-                    OrnateGuiSkin.PulseGlow(new Rect(24, y, 492, 142),
-                        new Color(accent.r, accent.g, accent.b, .28f), 1.8f);
-                GUIStyle cardTitle = new GUIStyle(subtitle) {
-                    fontStyle = FontStyle.Bold, fontSize = 22 };
-                cardTitle.normal.textColor = OrnateGuiSkin.GoldBright;
-                GUI.Label(new Rect(44, y + 12, 330, 34), info.title, cardTitle);
-                GUIStyle status = new GUIStyle(tiny) {
-                    fontStyle = FontStyle.Bold, alignment = TextAnchor.MiddleRight };
-                status.normal.textColor = active ? new Color(.45f, 1f, .55f) :
-                    upcoming ? new Color(1f, .85f, .4f) : Color.gray;
-                GUI.Label(new Rect(376, y + 16, 126, 26),
-                    active ? "ACTIVE" : upcoming ? "SOON" : "ENDED", status);
-                GUI.Label(new Rect(44, y + 48, 456, 52), info.description, subtitle);
-                GUI.Label(new Rect(44, y + 102, 280, 28),
-                    ChroniclesEvents.Countdown(info, now), tiny);
-                GUI.enabled = active;
-                if (GUI.Button(new Rect(338, y + 92, 164, 40),
+                bool tapped = EventCard(new Rect(24, y, 492, 160),
+                    "Chronicles/UI/event_" + info.id,
+                    info.title, info.description,
+                    ChroniclesEvents.IsActive(info, now),
+                    ChroniclesEvents.IsUpcoming(info, now),
+                    ChroniclesEvents.Countdown(info, now),
                     info.kind == ChroniclesEventKind.AstralRateUp ?
-                        "GO TO SUMMON" : "FIGHT NOW", OrnateGuiSkin.ButtonStyle()))
-                {
-                    if (info.kind == ChroniclesEventKind.AstralRateUp)
-                        page = Page.Summon;
-                    else
-                    {
-                        inTower = false; inRaid = false; inLabyrinth = false;
-                        inArenaTraining = false;
-                        activeTrialMode = TrialMode.Normal;
-                        page = Page.Chapters;
-                    }
-                }
-                GUI.enabled = true;
-                y += 158f;
+                        "GO TO SUMMON" : "FIGHT NOW");
+                if (tapped) EventGo(info);
+                y += 174f;
             }
-            OrnateGuiSkin.Bar(new Rect(24, y, 492, 142));
-            GUI.color = new Color(1f, .82f, .42f, .95f);
-            GUI.DrawTexture(new Rect(24, y, 5, 142), Texture2D.whiteTexture);
-            GUI.color = Color.white;
-            GUIStyle permTitle = new GUIStyle(subtitle) {
-                fontStyle = FontStyle.Bold, fontSize = 22 };
-            permTitle.normal.textColor = OrnateGuiSkin.GoldBright;
-            GUI.Label(new Rect(44, y + 12, 340, 34), "28-DAY LOGIN REWARDS", permTitle);
-            GUIStyle permStatus = new GUIStyle(tiny) {
-                fontStyle = FontStyle.Bold, alignment = TextAnchor.MiddleRight };
-            permStatus.normal.textColor = new Color(.45f, 1f, .55f);
-            GUI.Label(new Rect(376, y + 16, 126, 26), "ALWAYS", permStatus);
-            GUI.Label(new Rect(44, y + 48, 456, 52),
+            if (EventCard(new Rect(24, y, 492, 160),
+                "Chronicles/UI/event_login_rewards",
+                "28-DAY LOGIN REWARDS",
                 "Claim one gift every UTC day. Missing a day never resets progress.",
-                subtitle);
-            if (GUI.Button(new Rect(338, y + 92, 164, 40), "OPEN",
-                OrnateGuiSkin.ButtonStyle()))
+                true, false, "", "OPEN"))
                 page = Page.Login;
+        }
+
+        // One illustrated event banner: full-bleed art, a soft scrim for the
+        // text, status and countdown over the art, and a clear tap button.
+        // Returns true when its action button was tapped.
+        private bool EventCard(Rect r, string artPath, string title,
+            string description, bool active, bool upcoming, string countdown,
+            string buttonLabel)
+        {
+            Texture2D art = Resources.Load<Texture2D>(artPath);
+            if (art != null)
+                GUI.DrawTexture(r, art, ScaleMode.ScaleAndCrop);
+            else
+                OrnateGuiSkin.Bar(r);
+            // dim the whole card a little, then a stronger scrim at the
+            // bottom, so text stays readable over bright artwork
+            GUI.color = new Color(0f, 0f, 0f, .28f);
+            GUI.DrawTexture(r, Texture2D.whiteTexture);
+            GUI.color = Color.white;
+            GUI.DrawTexture(new Rect(r.x, r.y + r.height - 74f, r.width, 74f),
+                OrnateGuiSkin.Glow("event_scrim", new Color(0f, 0f, 0f, .82f)));
+            GUI.DrawTexture(new Rect(r.x, r.y, r.width, 46f),
+                OrnateGuiSkin.Glow("event_scrim_top", new Color(0f, 0f, 0f, .6f)));
+            if (active)
+                OrnateGuiSkin.PulseGlow(r, new Color(1f, .82f, .42f, .22f), 1.8f);
+            GUIStyle cardTitle = new GUIStyle(subtitle) {
+                fontStyle = FontStyle.Bold, fontSize = 22 };
+            cardTitle.normal.textColor = Color.black;
+            GUI.Label(new Rect(r.x + 22, r.y + 13, r.width - 160, 32), title, cardTitle);
+            cardTitle.normal.textColor = OrnateGuiSkin.GoldBright;
+            GUI.Label(new Rect(r.x + 20, r.y + 11, r.width - 160, 32), title, cardTitle);
+            GUIStyle status = new GUIStyle(tiny) {
+                fontStyle = FontStyle.Bold, alignment = TextAnchor.MiddleRight };
+            status.normal.textColor = active ? new Color(.55f, 1f, .6f) :
+                upcoming ? new Color(1f, .9f, .5f) : Color.gray;
+            GUI.Label(new Rect(r.x + r.width - 146, r.y + 14, 126, 26),
+                active ? "ACTIVE" : upcoming ? "SOON" : "ENDED", status);
+            GUIStyle desc = new GUIStyle(tiny);
+            desc.normal.textColor = new Color(1f, .96f, .88f);
+            GUI.Label(new Rect(r.x + 20, r.y + 44, r.width - 190, 44),
+                description, desc);
+            if (!string.IsNullOrEmpty(countdown))
+            {
+                GUIStyle timer = new GUIStyle(tiny) { fontStyle = FontStyle.Bold };
+                timer.normal.textColor = new Color(1f, .9f, .6f);
+                GUI.Label(new Rect(r.x + 20, r.y + r.height - 34, 260, 26),
+                    countdown, timer);
+            }
+            GUI.enabled = active;
+            bool tapped = GUI.Button(
+                new Rect(r.x + r.width - 174, r.y + r.height - 62, 158, 46),
+                buttonLabel, OrnateGuiSkin.ButtonStyle());
+            GUI.enabled = true;
+            return tapped;
+        }
+
+        private void EventGo(ChroniclesEventInfo info)
+        {
+            if (info.kind == ChroniclesEventKind.AstralRateUp)
+                page = Page.Summon;
+            else
+            {
+                inTower = false; inRaid = false; inLabyrinth = false;
+                inArenaTraining = false;
+                activeTrialMode = TrialMode.Normal;
+                page = Page.Chapters;
+            }
         }
 
         private void Settings()
