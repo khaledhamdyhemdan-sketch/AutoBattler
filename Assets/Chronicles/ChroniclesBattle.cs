@@ -1370,7 +1370,7 @@ namespace MythicChronicles
                 if (bubbleStyle == null)
                 {
                     bubbleStyle = new GUIStyle(GUI.skin.label) {
-                        fontSize = 17, fontStyle = FontStyle.BoldItalic,
+                        fontSize = 17, fontStyle = FontStyle.BoldAndItalic,
                         alignment = TextAnchor.MiddleCenter };
                     bubbleStyle.normal.textColor = new Color(.1f, .08f, .14f);
                 }
