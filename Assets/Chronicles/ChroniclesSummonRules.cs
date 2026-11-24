@@ -46,11 +46,18 @@ namespace MythicChronicles
                 "ASTRAL COVENANT - LIGHT & DARK UR" : "STANDARD SUMMON";
         }
 
+        public static float EffectiveAstralUrRate(System.DateTime utcNow)
+        {
+            return AstralUrRate * (ChroniclesEvents.AstralRateUpActive(utcNow) ? 2f : 1f);
+        }
+
         public static string Rates(SummonBannerType banner)
         {
-            return banner == SummonBannerType.AstralCovenant ?
-                "SR 70.0% | SSR 28.5% | UR 1.5% | 70-pull UR pity" :
-                "R 20% | SR 65% | SSR 15% | 40-pull SSR pity";
+            if (banner == SummonBannerType.AstralCovenant)
+                return ChroniclesEvents.AstralRateUpActive(System.DateTime.UtcNow) ?
+                    "SR 70.0% | SSR 28.5% | UR 3.0% FESTIVAL | 70-pull UR pity" :
+                    "SR 70.0% | SSR 28.5% | UR 1.5% | 70-pull UR pity";
+            return "R 20% | SR 65% | SSR 15% | 40-pull SSR pity";
         }
 
         public static int GemCost(SummonBannerType banner)

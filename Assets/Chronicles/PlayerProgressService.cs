@@ -966,9 +966,10 @@ namespace MythicChronicles
                     }
                     else
                     {
-                        tier = guaranteed || roll <
-                            ChroniclesSummonRules.AstralUrRate ? Rarity.UR :
-                            roll < ChroniclesSummonRules.AstralUrRate +
+                        float urRate = ChroniclesSummonRules.EffectiveAstralUrRate(
+                            DateTime.UtcNow);
+                        tier = guaranteed || roll < urRate ? Rarity.UR :
+                            roll < urRate +
                             ChroniclesSummonRules.AstralSsrRate ? Rarity.SSR : Rarity.SR;
                         Data.astralPity = tier == Rarity.UR ?
                             0 : previousPity + 1;
@@ -1606,7 +1607,8 @@ namespace MythicChronicles
                     if (string.IsNullOrEmpty(Data.equippedRelicId))
                         Data.equippedRelicId = rewardRelic.id;
                 }
-                Data.gold += stage.gold;
+                Data.gold += stage.gold *
+                    (ChroniclesEvents.DoubleGoldActive(DateTime.UtcNow) ? 2 : 1);
                 Data.gems += stage.gems;
             }
             if (stageId > Data.lastClearedStage) Data.lastClearedStage = stageId;

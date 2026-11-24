@@ -8,7 +8,7 @@ namespace MythicChronicles
     // to be replaced by production UI Toolkit art without changing progression logic.
     public sealed class ChroniclesGame : MonoBehaviour
     {
-        private enum Page { Home, More, Shop, Mailbox, Chapters, Trials, Towers, Raid, Labyrinth, ArenaTraining, StageStory, Heroes, HeroDetails, Formation, Skins, Gear, Forge, Training, Runes, SignatureWeapon, RelicVault, Summon, Quests, WeeklyQuests, Achievements, Idle, Login, Settings, Battle, Results }
+        private enum Page { Home, More, Events, Shop, Mailbox, Chapters, Trials, Towers, Raid, Labyrinth, ArenaTraining, StageStory, Heroes, HeroDetails, Formation, Skins, Gear, Forge, Training, Runes, SignatureWeapon, RelicVault, Summon, Quests, WeeklyQuests, Achievements, Idle, Login, Settings, Battle, Results }
         private Page page = Page.Home;
         private PlayerProgressService progress;
         private ChroniclesAudioDirector audio;
@@ -227,6 +227,7 @@ namespace MythicChronicles
             {
                 case Page.Home: Home(); break;
                 case Page.More: More(); break;
+                case Page.Events: Events(); break;
                 case Page.Shop: Shop(); break;
                 case Page.Mailbox: Mailbox(); break;
                 case Page.Chapters: Chapters(); break;
@@ -398,18 +399,20 @@ namespace MythicChronicles
             // Bottom navigation follows common mobile hero-RPG conventions.
             GUIStyle navStyle = OrnateGuiSkin.ButtonStyle();
             OrnateGuiSkin.Bar(new Rect(12, 802, 516, 85));
-            if (GUI.Button(new Rect(18, 813, 96, 61), "HOME", navStyle))
+            if (GUI.Button(new Rect(18, 813, 80, 61), "HOME", navStyle))
                 page = Page.Home;
-            if (GUI.Button(new Rect(118, 813, 96, 61), "HEROES", navStyle))
+            if (GUI.Button(new Rect(102, 813, 80, 61), "HEROES", navStyle))
                 page = Page.Heroes;
-            if (GUI.Button(new Rect(218, 813, 101, 61), "ADVENTURE", navStyle))
+            if (GUI.Button(new Rect(186, 813, 80, 61), "QUEST", navStyle))
             {
                 inTower = false; activeTrialMode = TrialMode.Normal;
                 page = Page.Chapters;
             }
-            if (GUI.Button(new Rect(323, 813, 96, 61), "SUMMON", navStyle))
+            if (GUI.Button(new Rect(270, 813, 80, 61), "SUMMON", navStyle))
                 page = Page.Summon;
-            if (GUI.Button(new Rect(423, 813, 96, 61), "MORE", navStyle))
+            if (GUI.Button(new Rect(354, 813, 80, 61), "EVENTS", navStyle))
+                page = Page.Events;
+            if (GUI.Button(new Rect(438, 813, 80, 61), "MORE", navStyle))
                 page = Page.More;
         }
 
@@ -440,13 +443,14 @@ namespace MythicChronicles
                 "Your training, rewards and progression in one place.", subtitle);
             string[] names =
             {
-                "FORMATION", "DAILY MISSIONS",
-                "WEEKLY MISSIONS", "ACHIEVEMENTS",
-                "AFK REWARDS", "LOGIN REWARDS",
-                "RELIC VAULT", "FACTION TOWERS",
-                "WORLD BOSS", "LABYRINTH",
-                "ARENA TRAINING", "SHOP",
-                "MAILBOX", "SETTINGS"
+                "EVENTS", "FORMATION",
+                "DAILY MISSIONS", "WEEKLY MISSIONS",
+                "ACHIEVEMENTS", "AFK REWARDS",
+                "LOGIN REWARDS", "RELIC VAULT",
+                "FACTION TOWERS", "WORLD BOSS",
+                "LABYRINTH", "ARENA TRAINING",
+                "SHOP", "MAILBOX",
+                "SETTINGS"
             };
             for (int i = 0; i < names.Length; i++)
             {
@@ -456,20 +460,21 @@ namespace MythicChronicles
                     continue;
                 switch (i)
                 {
-                    case 0: page = Page.Formation; break;
-                    case 1: page = Page.Quests; break;
-                    case 2: page = Page.WeeklyQuests; break;
-                    case 3: page = Page.Achievements; break;
-                    case 4: page = Page.Idle; break;
-                    case 5: page = Page.Login; break;
-                    case 6: page = Page.RelicVault; break;
-                    case 7: page = Page.Towers; break;
-                    case 8: inRaid = false; page = Page.Raid; break;
-                    case 9: inLabyrinth = false; page = Page.Labyrinth; break;
-                    case 10: inArenaTraining = false; page = Page.ArenaTraining; break;
-                    case 11: page = Page.Shop; break;
-                    case 12: page = Page.Mailbox; break;
-                    case 13: page = Page.Settings; break;
+                    case 0: page = Page.Events; break;
+                    case 1: page = Page.Formation; break;
+                    case 2: page = Page.Quests; break;
+                    case 3: page = Page.WeeklyQuests; break;
+                    case 4: page = Page.Achievements; break;
+                    case 5: page = Page.Idle; break;
+                    case 6: page = Page.Login; break;
+                    case 7: page = Page.RelicVault; break;
+                    case 8: page = Page.Towers; break;
+                    case 9: inRaid = false; page = Page.Raid; break;
+                    case 10: inLabyrinth = false; page = Page.Labyrinth; break;
+                    case 11: inArenaTraining = false; page = Page.ArenaTraining; break;
+                    case 12: page = Page.Shop; break;
+                    case 13: page = Page.Mailbox; break;
+                    case 14: page = Page.Settings; break;
                 }
             }
         }
@@ -1700,6 +1705,66 @@ namespace MythicChronicles
                     "Claimed Day " + claimed.day + ": " + claimed.Label;
             }
             GUI.enabled = true;
+        }
+
+        private void Events()
+        {
+            GUI.Label(new Rect(25, 228, 490, 62), "LIMITED-TIME EVENTS", heading);
+            GUI.Label(new Rect(25, 283, 490, 44),
+                "Live events rotate. Their bonuses apply automatically while active.",
+                subtitle);
+            System.DateTime now = System.DateTime.UtcNow;
+            float y = 348f;
+            foreach (ChroniclesEventInfo info in ChroniclesEvents.All)
+            {
+                bool active = ChroniclesEvents.IsActive(info, now);
+                bool upcoming = ChroniclesEvents.IsUpcoming(info, now);
+                GUI.Box(new Rect(24, y, 492, 148), "");
+                if (active)
+                    OrnateGuiSkin.PulseGlow(new Rect(24, y, 492, 148),
+                        new Color(1f, .82f, .42f, .35f), 1.8f);
+                GUIStyle cardTitle = new GUIStyle(subtitle) { fontStyle = FontStyle.Bold };
+                cardTitle.normal.textColor = OrnateGuiSkin.GoldBright;
+                GUI.Label(new Rect(40, y + 10, 340, 34), info.title, cardTitle);
+                GUI.color = active ? new Color(.45f, 1f, .55f) :
+                    upcoming ? new Color(1f, .85f, .4f) : Color.gray;
+                GUI.Label(new Rect(382, y + 12, 126, 30),
+                    active ? "ACTIVE" : upcoming ? "SOON" : "ENDED", cardTitle);
+                GUI.color = Color.white;
+                GUI.Label(new Rect(40, y + 44, 460, 56), info.description, subtitle);
+                GUI.Label(new Rect(40, y + 100, 300, 30),
+                    ChroniclesEvents.Countdown(info, now), tiny);
+                GUI.enabled = active;
+                if (GUI.Button(new Rect(330, y + 94, 172, 42),
+                    info.kind == ChroniclesEventKind.AstralRateUp ?
+                        "GO TO SUMMON" : "FIGHT NOW", OrnateGuiSkin.ButtonStyle()))
+                {
+                    if (info.kind == ChroniclesEventKind.AstralRateUp)
+                        page = Page.Summon;
+                    else
+                    {
+                        inTower = false; inRaid = false; inLabyrinth = false;
+                        inArenaTraining = false;
+                        activeTrialMode = TrialMode.Normal;
+                        page = Page.Chapters;
+                    }
+                }
+                GUI.enabled = true;
+                y += 164f;
+            }
+            GUI.Box(new Rect(24, y, 492, 148), "");
+            GUIStyle permTitle = new GUIStyle(subtitle) { fontStyle = FontStyle.Bold };
+            permTitle.normal.textColor = OrnateGuiSkin.GoldBright;
+            GUI.Label(new Rect(40, y + 10, 340, 34), "28-DAY LOGIN REWARDS", permTitle);
+            GUI.color = new Color(.45f, 1f, .55f);
+            GUI.Label(new Rect(382, y + 12, 126, 30), "ALWAYS", permTitle);
+            GUI.color = Color.white;
+            GUI.Label(new Rect(40, y + 44, 460, 56),
+                "Claim one gift every UTC day. Missing a day never resets progress.",
+                subtitle);
+            if (GUI.Button(new Rect(330, y + 94, 172, 42), "OPEN",
+                OrnateGuiSkin.ButtonStyle()))
+                page = Page.Login;
         }
 
         private void Settings()
