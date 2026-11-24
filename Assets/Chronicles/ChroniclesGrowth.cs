@@ -58,6 +58,25 @@ namespace MythicChronicles
             return total;
         }
 
+        // Gallery collection buff: every owned hero and every star above the
+        // first adds a small account-wide bonus, so every pull stays valuable.
+        public const float CollectionPerOwned = .005f;
+        public const float CollectionPerExtraStar = .005f;
+        public const float CollectionCap = .60f;
+
+        public static float CollectionBonus(PlayerSave data)
+        {
+            if (data == null || data.heroes == null) return 0f;
+            float bonus = 0f;
+            foreach (OwnedHero owned in data.heroes)
+            {
+                if (owned == null) continue;
+                bonus += CollectionPerOwned;
+                bonus += Mathf.Clamp(owned.stars - 1, 0, 5) * CollectionPerExtraStar;
+            }
+            return Math.Min(CollectionCap, bonus);
+        }
+
         public static HeroGrowthStats Calculate(PlayerSave data, OwnedHero hero)
         {
             HeroGrowthStats stats = new HeroGrowthStats
@@ -71,6 +90,10 @@ namespace MythicChronicles
                 passiveMultiplier = 1f
             };
             if (hero == null) return stats;
+            float collection = CollectionBonus(data);
+            stats.attackMultiplier += collection;
+            stats.hpMultiplier += collection;
+            stats.defenseMultiplier += collection * .5f;
             stats.attackMultiplier += hero.attackTalents * .012f;
             stats.hpMultiplier += hero.defenseTalents * .017f;
             stats.skillMultiplier += (Math.Max(1, hero.activeSkillLevel) - 1) * .075f;

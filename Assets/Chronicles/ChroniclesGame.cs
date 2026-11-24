@@ -496,8 +496,15 @@ namespace MythicChronicles
                 int left = progress.ShopRemaining(offer.id);
                 float y = i * 105f;
                 GUI.Box(new Rect(6, y, 460, 99), "");
-                GUI.Label(new Rect(16, y + 7, 287, 27), offer.name, subtitle);
-                GUI.Label(new Rect(16, y + 36, 289, 57),
+                // Illustrated item icon per offer when the art exists.
+                Texture2D offerIcon = OrnateGuiSkin.Art("icon_" + offer.id);
+                if (offerIcon != null)
+                    GUI.DrawTexture(new Rect(14, y + 17, 66, 66), offerIcon,
+                        ScaleMode.ScaleToFit);
+                float textX = offerIcon != null ? 92f : 16f;
+                float textW = 460f - textX - 160f;
+                GUI.Label(new Rect(textX, y + 7, textW, 27), offer.name, subtitle);
+                GUI.Label(new Rect(textX, y + 36, textW, 57),
                     offer.RewardLabel + "\n" + offer.CostLabel +
                     "  •  LEFT " + left + "/" + offer.dailyLimit, tiny);
                 GUI.enabled = left > 0;
@@ -907,7 +914,9 @@ namespace MythicChronicles
                 "HERO COLLECTION", 22);
             GUI.Label(new Rect(30, 226, 480, 36),
                 progress.Data.heroes.Count + " / " + WorldsCatalog.Heroes.Length +
-                " owned  •  STATIC PORTRAITS", subtitle);
+                " owned  •  COLLECTION +" +
+                (ChroniclesGrowth.CollectionBonus(progress.Data) * 100f).ToString("0.#") +
+                "% ATK/HP", subtitle);
             string[] tabs = { "ALL", "R", "SR", "SSR", "UR", "EX" };
             for (int i = 0; i < tabs.Length; i++)
             {
@@ -1465,11 +1474,35 @@ namespace MythicChronicles
                 OrnateGuiSkin.ButtonStyle()))
                 SelectBanner(SummonBannerType.AstralCovenant);
 
-            GUI.Label(new Rect(40, 648, 460, 26),
+            // Astral wishlist: tap to cycle the featured UR, hold-none via NONE.
+            if (astral && lastSummonBatch.Count == 0)
+            {
+                string wish = progress.Data.wishlistHeroId;
+                if (GUI.Button(new Rect(58, 330, 312, 40),
+                    ChroniclesSummonRules.WishlistLabel(wish),
+                    OrnateGuiSkin.ButtonStyle()))
+                {
+                    progress.Data.wishlistHeroId =
+                        ChroniclesSummonRules.NextWishlistPick(wish);
+                    progress.Save();
+                }
+                GUI.enabled = !string.IsNullOrEmpty(wish);
+                if (GUI.Button(new Rect(382, 330, 100, 40), "CLEAR",
+                    OrnateGuiSkin.ButtonStyle(false)))
+                {
+                    progress.Data.wishlistHeroId = "";
+                    progress.Save();
+                }
+                GUI.enabled = true;
+            }
+            GUI.Label(new Rect(40, 662, 460, 26),
                 ChroniclesSummonRules.Rates(activeSummonBanner), plainCenter);
             if (astral)
-                GUI.Label(new Rect(40, 670, 460, 22),
-                    "UR SHOWCASE  -  NO FEATURED RATE-UP", plainCenter);
+                GUI.Label(new Rect(40, 688, 460, 22),
+                    string.IsNullOrEmpty(progress.Data.wishlistHeroId) ?
+                        "SET A WISHLIST PICK FOR 50% FEATURED RATE-UP" :
+                        "WISHLIST ACTIVE  -  HALF OF ALL UR HITS",
+                    plainCenter);
 
             if (lastSummonBatch.Count == 1)
             {
@@ -1671,11 +1704,23 @@ namespace MythicChronicles
             GUI.Label(new Rect(26, 582, 492, 98),
                 "Elapsed: " + progress.IdleAvailableMinutes() + " / 720 minutes\n" +
                 "Gold waiting: " + progress.IdleProjectedGold(), subtitle);
-            if (GUI.Button(new Rect(40, 714, 460, 76), "CLAIM IDLE GOLD", bigButton))
+            if (GUI.Button(new Rect(40, 700, 460, 70), "CLAIM IDLE GOLD", bigButton))
             {
                 int gold = progress.ClaimIdleGold();
                 notice = gold > 0 ? "Collected " + gold + " gold." : "Not enough time elapsed yet.";
             }
+            int fastLeft = progress.FastBattlesRemaining();
+            GUI.enabled = fastLeft > 0;
+            if (GUI.Button(new Rect(40, 782, 460, 62),
+                "FAST BATTLE  -  2H INSTANT  (" + fastLeft + "/" +
+                PlayerProgressService.FastBattleDailyLimit + " LEFT)"))
+            {
+                int fastGold = progress.FastBattle();
+                notice = fastGold > 0 ?
+                    "Fast battle: +" + fastGold + " gold instantly." :
+                    "No fast battles left today.";
+            }
+            GUI.enabled = true;
         }
 
         private void Login()

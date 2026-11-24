@@ -37,7 +37,10 @@ namespace MythicChronicles
         public int lastClearedStage;
         public int astralSeals;
         public int standardPity, astralPity;
+        public string wishlistHeroId = "";
         public int loginDaysClaimed;
+        public string fastBattleUtcDay = "";
+        public int fastBattleUsed;
         public string lastLoginGiftUtc = "";
         public List<SummonHistoryRecord> summonHistory = new List<SummonHistoryRecord>();
         public float musicVolume = .8f, effectsVolume = .9f;
@@ -978,7 +981,8 @@ namespace MythicChronicles
                     List<HeroDefinition> pool = ChroniclesSummonRules.Eligible(banner, tier);
                     if (pool.Count == 0) throw new InvalidOperationException(
                         "No heroes are available for this summon tier.");
-                    HeroDefinition hero = pool[UnityEngine.Random.Range(0, pool.Count)];
+                    HeroDefinition hero = ChroniclesSummonRules.PickFromPool(
+                        banner, tier, pool, Data.wishlistHeroId);
                     OwnedHero owned = FindOwnedHero(hero.id);
                     if (owned == null)
                         Data.heroes.Add(new OwnedHero { id = hero.id });
@@ -1625,6 +1629,37 @@ namespace MythicChronicles
         public int IdleProjectedGold()
         {
             return IdleAvailableMinutes() * (IdleGoldPerMinute + Data.lastClearedStage * IdleGoldPerStagePerMinute);
+        }
+
+        public const int FastBattleDailyLimit = 3;
+        public const int FastBattleMinutes = 120;
+
+        public int FastBattlesRemaining()
+        {
+            string today = DateTime.UtcNow.ToString("yyyy-MM-dd");
+            return Data.fastBattleUtcDay == today ?
+                Mathf.Max(0, FastBattleDailyLimit - Data.fastBattleUsed) :
+                FastBattleDailyLimit;
+        }
+
+        // Instant 2h of idle income, a limited number of times per UTC day.
+        public int FastBattle()
+        {
+            string today = DateTime.UtcNow.ToString("yyyy-MM-dd");
+            if (Data.fastBattleUtcDay != today)
+            {
+                Data.fastBattleUtcDay = today;
+                Data.fastBattleUsed = 0;
+            }
+            if (Data.fastBattleUsed >= FastBattleDailyLimit) return 0;
+            int collected = FastBattleMinutes *
+                (IdleGoldPerMinute + Data.lastClearedStage * IdleGoldPerStagePerMinute);
+            Data.fastBattleUsed++;
+            Data.gold += collected;
+            IncrementQuest("idle_1");
+            IncrementWeekly("idle_minutes_180", FastBattleMinutes);
+            Save();
+            return collected;
         }
 
         public int ClaimIdleGold()

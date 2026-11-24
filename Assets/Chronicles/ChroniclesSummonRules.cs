@@ -66,6 +66,43 @@ namespace MythicChronicles
                 AstralCostGems : StandardCostGems;
         }
 
+        // Wishlist: a chosen UR wins half of all UR hits on the Astral banner.
+        public const float WishlistUrShare = .5f;
+
+        public static HeroDefinition PickFromPool(SummonBannerType banner,
+            Rarity tier, List<HeroDefinition> pool, string wishHeroId)
+        {
+            if (banner == SummonBannerType.AstralCovenant && tier == Rarity.UR &&
+                !string.IsNullOrEmpty(wishHeroId) &&
+                UnityEngine.Random.value < WishlistUrShare)
+            {
+                foreach (HeroDefinition candidate in pool)
+                    if (candidate.id == wishHeroId) return candidate;
+            }
+            return pool[UnityEngine.Random.Range(0, pool.Count)];
+        }
+
+        public static string WishlistLabel(string wishHeroId)
+        {
+            if (string.IsNullOrEmpty(wishHeroId)) return "WISHLIST: NONE";
+            HeroDefinition hero = WorldsCatalog.FindHero(wishHeroId);
+            return hero == null ? "WISHLIST: NONE" :
+                "WISH UP 50%: " + hero.name.ToUpperInvariant();
+        }
+
+        // Cycles to the next eligible UR; returns "" after the last one.
+        public static string NextWishlistPick(string currentId)
+        {
+            List<HeroDefinition> pool = Eligible(
+                SummonBannerType.AstralCovenant, Rarity.UR);
+            if (pool.Count == 0) return "";
+            if (string.IsNullOrEmpty(currentId)) return pool[0].id;
+            for (int i = 0; i < pool.Count; i++)
+                if (pool[i].id == currentId)
+                    return i + 1 < pool.Count ? pool[i + 1].id : "";
+            return pool[0].id;
+        }
+
         public static List<HeroDefinition> Eligible(SummonBannerType banner, Rarity rarity)
         {
             var pool = new List<HeroDefinition>();
