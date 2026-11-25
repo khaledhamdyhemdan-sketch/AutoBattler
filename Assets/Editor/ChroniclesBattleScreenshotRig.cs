@@ -84,6 +84,22 @@ namespace MythicChronicles.EditorTools
                 File.WriteAllBytes(Path.Combine(outDir,
                     prefix + "t" + captureAt[shot].ToString("0.0") + "s.png"),
                     png.EncodeToPNG());
+                if (shot == 0 && panel)
+                {
+                    // Identify every visible renderer once: names and world
+                    // positions explain unexpected objects in captures.
+                    foreach (Renderer r in Object.FindObjectsByType<Renderer>(
+                        FindObjectsSortMode.None))
+                    {
+                        if (!r.enabled) continue;
+                        Vector3 p = r.transform.position;
+                        Debug.Log("[SceneDump] " + r.gameObject.name + " | " +
+                            r.GetType().Name + " | pos " +
+                            p.x.ToString("0.00") + "," + p.y.ToString("0.00") + "," +
+                            p.z.ToString("0.00") + " | active " +
+                            r.gameObject.activeInHierarchy);
+                    }
+                }
                 Object.DestroyImmediate(png);
                 shot++;
             }
