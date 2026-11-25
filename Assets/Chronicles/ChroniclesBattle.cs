@@ -496,7 +496,12 @@ namespace MythicChronicles
                 // aspect so nothing clips on tall phones; the right strip
                 // stays free for the HUD rail. Rows slightly overlap.
                 int col = slot % 3, row = slot / 3;
-                float halfW = cam != null ? cam.orthographicSize * cam.aspect : 4f;
+                // Clamp to the design aspect: the layout must fit the tallest
+                // phones, and the headless capture rig can spawn units at a
+                // different aspect than it renders at. 540x960 is the canvas.
+                float spawnAspect = cam != null ? cam.aspect : .5625f;
+                float effAspect = Mathf.Min(spawnAspect, .5625f);
+                float halfW = (cam != null ? cam.orthographicSize : 5.4f) * effAspect;
                 float gridW = halfW * 2f * .78f;
                 float cardSize = Mathf.Min(2.2f, gridW / 3.1f);
                 float x0 = -halfW + cardSize * .55f;
