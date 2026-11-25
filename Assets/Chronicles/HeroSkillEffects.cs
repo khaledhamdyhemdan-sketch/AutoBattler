@@ -6,9 +6,10 @@ namespace MythicChronicles
     /// <summary>
     /// Skill/ultimate cast effects for every hero. Priority:
     ///   1. Authored VFX prefab at Resources/Chronicles/VFX/{Skills|Ultimates}/{heroId}.
-    ///   2. The hand-tuned first-five UR preview (FirstFiveURVisualEffects).
-    ///   3. A generic element-colored burst generated here, so every roster hero has a
+    ///   2. A generic element-colored burst generated here, so every roster hero has a
     ///      visible cast while production VFX are authored. Development cue, not final VFX.
+    /// The old first-five UR primitive preview (solid spheres/cubes) rendered as flat
+    /// white shapes under bloom and was retired; UR heroes use the tier-4 burst.
     /// </summary>
     public sealed class HeroSkillEffects : MonoBehaviour
     {
@@ -36,11 +37,6 @@ namespace MythicChronicles
                 GameObject live = Instantiate(authored, at, Quaternion.identity);
                 live.name = hero.id + (isUltimate ? " Ultimate (authored)" : " Skill (authored)");
                 Destroy(live, 7f);
-                return;
-            }
-            if (FirstFiveURVisualEffects.IsSupported(hero.id))
-            {
-                FirstFiveURVisualEffects.Play(hero.id, isUltimate, caster, target);
                 return;
             }
             GameObject root = new GameObject(hero.id +
@@ -104,9 +100,14 @@ namespace MythicChronicles
             return glowTex;
         }
 
-        private static Shader AdditiveShader()
+        private static Shader BlendShader()
         {
-            Shader shader = Shader.Find("Legacy Shaders/Particles/Additive");
+            // Alpha-blended first: additive sums onto the bright arena floor and
+            // saturates to flat white where shards overlap. Alpha blending keeps
+            // the element color translucent and readable.
+            Shader shader = Shader.Find("Legacy Shaders/Particles/Alpha Blended");
+            if (shader == null) shader = Shader.Find("Particles/Alpha Blended");
+            if (shader == null) shader = Shader.Find("Legacy Shaders/Particles/Additive");
             if (shader == null) shader = Shader.Find("Particles/Additive");
             if (shader == null) shader = Shader.Find("Unlit/Transparent");
             if (shader == null) shader = Shader.Find("Unlit/Color");
@@ -120,7 +121,7 @@ namespace MythicChronicles
             ultimate = isUltimate;
             tier = Mathf.Clamp(rarityTier, 1, 4);
             duration = (isUltimate ? 1.6f : .9f) * (1f + (tier - 1) * .12f);
-            Shader shader = AdditiveShader();
+            Shader shader = BlendShader();
             if (shader == null) { Destroy(gameObject); return; }
             material = new Material(shader);
             if (material.HasProperty("_MainTex")) material.mainTexture = GlowTexture();

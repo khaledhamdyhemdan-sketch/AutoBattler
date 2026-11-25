@@ -279,6 +279,7 @@ namespace MythicChronicles
                 default: auraColor = new Color(1f, .85f, .5f); break;
             }
             Shader shader = ChroniclesShaders.FindAny(
+                "Legacy Shaders/Particles/Alpha Blended", "Particles/Alpha Blended",
                 "Legacy Shaders/Particles/Additive", "Particles/Additive",
                 "Unlit/Transparent", "Unlit/Color");
             if (shader == null) return;
@@ -294,10 +295,10 @@ namespace MythicChronicles
                 ring.transform.localRotation = Quaternion.Euler(90f, 0f, 0f);
                 ring.transform.localScale = Vector3.one * 1.6f;
                 var material = new Material(shader);
-                material.color = new Color(auraColor.r, auraColor.g, auraColor.b, .55f);
+                material.color = new Color(auraColor.r, auraColor.g, auraColor.b, .45f);
                 if (material.HasProperty("_TintColor"))
                     material.SetColor("_TintColor",
-                        new Color(auraColor.r * 1.4f, auraColor.g * 1.4f, auraColor.b * 1.4f, .5f));
+                        new Color(auraColor.r, auraColor.g, auraColor.b, .4f));
                 Renderer ringRenderer = ring.GetComponent<Renderer>();
                 if (ringRenderer != null)
                 {
