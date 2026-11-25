@@ -26,6 +26,7 @@ namespace MythicChronicles
             public Vector3 panelAnchor;
             public GameObject panelQuad;
             public int slot;
+            public float castPopT;
             public float panelCardSize = 2.2f;
             public float lungeT, dealt, hitFlashT;
             public Combatant lungeTarget;
@@ -917,6 +918,15 @@ namespace MythicChronicles
                         f.panelQuad.transform.localScale = new Vector3(
                             f.panelCardSize * punch, f.panelCardSize * punch, 1f);
                     }
+                    // Cast pop: the caster swells with a glow-in, settles back.
+                    if (f.castPopT > 0f)
+                    {
+                        f.castPopT = Mathf.Max(0f, f.castPopT - dt);
+                        float cp = Mathf.Sin(Mathf.Clamp01(f.castPopT / .55f) * Mathf.PI);
+                        float cs = f.panelCardSize * (1f + .14f * cp);
+                        f.panelQuad.transform.localScale = new Vector3(cs, cs, 1f);
+                        pos.z -= .3f * cp;
+                    }
                     // Hit reaction: brief red flash and jitter on the card.
                     float flash = 0f;
                     if (f.hitFlashT > 0f)
@@ -1295,6 +1305,7 @@ namespace MythicChronicles
             if (kit.passive == HeroPassive.Stormborn)
                 actor.rallied = Mathf.Max(actor.rallied, 3.2f);
             actor.visual.Play(HeroAnimation.Skill);
+            actor.castPopT = .55f;
             HeroSkillEffects.Play(actor.hero, false,
                 actor.model.transform, target == null ? null : target.model.transform);
             CastEffect(actor, target, kit.skill, kit.skillPower * actor.skillFactor, false);
@@ -1308,6 +1319,7 @@ namespace MythicChronicles
             HeroKit kit = HeroAbilityCatalog.For(actor.hero.id);
             if (kit == null) { Hit(actor, target, actor.attack * 3f); return; }
             actor.visual.Play(HeroAnimation.Ultimate);
+            actor.castPopT = .8f;
             CutIn(actor, kit != null ? kit.ultimateName : string.Empty, true);
             HeroSkillEffects.Play(actor.hero, true,
                 actor.model.transform, target == null ? null : target.model.transform);

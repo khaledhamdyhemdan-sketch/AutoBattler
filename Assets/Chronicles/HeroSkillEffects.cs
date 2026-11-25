@@ -20,6 +20,9 @@ namespace MythicChronicles
         private Color effectColor;
         private float elapsed, duration;
         private bool panel;
+        private CombatRole role;
+        private float sparkMul = 1f, slashMul = 1f, ringMul = 1f;
+        private bool rising;
         private bool ultimate;
         // Rarity drives spectacle: R is a tight element pop, SR adds a ground
         // ring, SSR adds a rising beam, UR/EX get the largest, longest show.
@@ -44,6 +47,7 @@ namespace MythicChronicles
                 (isUltimate ? " ultimate FX" : " skill FX"));
             root.transform.position = at;
             HeroSkillEffects effect = root.AddComponent<HeroSkillEffects>();
+            effect.role = hero.role;
             effect.Initialize(ColorFor(hero.element), isUltimate, TierFor(hero.rarity));
         }
 
@@ -182,7 +186,21 @@ namespace MythicChronicles
             if (material.HasProperty("_MainTex")) material.mainTexture = GlowTexture();
             // Additive shaders tint via TintColor.
             if (material.HasProperty("_TintColor")) material.SetColor("_TintColor", color);
-            int count = (isUltimate ? 8 : 5) + (tier - 1) * 2;
+            if (PanelMode)
+            {
+                switch (role)
+                {
+                    case CombatRole.Mage: sparkMul = 1.9f; slashMul = .4f; ringMul = 1.1f; break;
+                    case CombatRole.Warrior: slashMul = 1.6f; sparkMul = .8f; break;
+                    case CombatRole.Assassin: slashMul = 1.3f; sparkMul = .6f; ringMul = .6f; break;
+                    case CombatRole.Tank: ringMul = 1.5f; slashMul = .3f; sparkMul = .8f; break;
+                    case CombatRole.Healer:
+                    case CombatRole.Support:
+                        slashMul = 0f; sparkMul = 1.5f; rising = true; ringMul = 1.2f; break;
+                    case CombatRole.Controller: ringMul = 1.3f; slashMul = .6f; break;
+                }
+            }
+            int count = Mathf.RoundToInt(((isUltimate ? 8 : 5) + (tier - 1) * 2) * sparkMul);
             pieces = new Transform[count];
             baseScales = new Vector3[count];
             for (int i = 0; i < count; i++)
@@ -209,7 +227,7 @@ namespace MythicChronicles
                 slashMaterial = new Material(shader);
                 if (slashMaterial.HasProperty("_MainTex")) slashMaterial.mainTexture = SlashTexture();
                 ring = MakePiece("impact ring", ringMaterial);
-                int sc = 2 + tier + (isUltimate ? 2 : 0);
+                int sc = Mathf.Max(slashMul <= 0f ? 0 : 1, Mathf.RoundToInt((2 + tier + (isUltimate ? 2 : 0)) * slashMul));
                 slashes = new Transform[sc];
                 for (int i = 0; i < sc; i++) slashes[i] = MakePiece("slash " + i, slashMaterial);
                 return;
@@ -327,13 +345,15 @@ namespace MythicChronicles
                 if (pieces[i] == null) continue;
                 float ang = i * Mathf.PI * 2f / count + i * .7f;
                 float r = Mathf.Lerp(.1f, 1.6f * big, 1f - Mathf.Pow(1f - t, 2f));
-                pieces[i].localPosition = new Vector3(Mathf.Cos(ang) * r, Mathf.Sin(ang) * r, -1f);
+                pieces[i].localPosition = rising
+                    ? new Vector3(Mathf.Cos(ang) * r * .6f, -.8f + t * 2.6f + Mathf.Sin(ang * 3f) * .3f, -1f)
+                    : new Vector3(Mathf.Cos(ang) * r, Mathf.Sin(ang) * r, -1f);
                 pieces[i].localRotation = Quaternion.identity;
                 pieces[i].localScale = new Vector3(.55f, .55f, 1f) * Mathf.Max(.001f, fade) * big;
             }
             if (ring != null)
             {
-                float rr = Mathf.Lerp(.4f, 3.4f * big, Mathf.SmoothStep(0f, 1f, Mathf.Min(1f, t * 1.6f)));
+                float rr = Mathf.Lerp(.4f, 3.4f * big * ringMul, Mathf.SmoothStep(0f, 1f, Mathf.Min(1f, t * 1.6f)));
                 ring.localPosition = new Vector3(0f, 0f, -1.05f);
                 ring.localRotation = Quaternion.identity;
                 ring.localScale = new Vector3(rr, rr, 1f);
