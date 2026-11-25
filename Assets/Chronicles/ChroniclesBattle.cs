@@ -919,6 +919,14 @@ namespace MythicChronicles
             if (defendingKit != null && (defendingKit.passive == HeroPassive.Guardian ||
                 defendingKit.passive == HeroPassive.Ironhide || defendingKit.passive == HeroPassive.Knight))
                 damage *= 1f - .13f * PassiveScale(defender.hero.rarity);
+            // Critical strikes: 12% chance, 1.6x damage, big gold popup (genre standard).
+            bool crit = UnityEngine.Random.value < .12f;
+            if (crit)
+            {
+                damage *= 1.6f;
+                shakeT = Mathf.Max(shakeT, .14f);
+                shakeAmp = Mathf.Max(shakeAmp, .16f);
+            }
             float absorbed = Mathf.Min(defender.shield, damage);
             defender.shield -= absorbed;
             damage = Mathf.Max(0f, damage - absorbed);
@@ -929,10 +937,14 @@ namespace MythicChronicles
             defender.hp = Mathf.Max(0f, defender.hp - actualDamage);
             if (attacker != null) attacker.dealt += actualDamage;
             defender.energy = Mathf.Min(100f, defender.energy + actualDamage * .09f);
-            Floating("-" + Mathf.RoundToInt(damage), defender, new Color(1f, .72f, .54f));
+            if (crit)
+                Floating("CRIT -" + Mathf.RoundToInt(damage), defender,
+                    new Color(1f, .84f, .2f), true);
+            else
+                Floating("-" + Mathf.RoundToInt(damage), defender, new Color(1f, .72f, .54f));
             if (ChroniclesAudioDirector.Instance != null)
                 ChroniclesAudioDirector.Instance.PlayEffect(
-                    actualDamage >= defender.maxHp * .22f ? "hit_heavy" : "hit");
+                    crit || actualDamage >= defender.maxHp * .22f ? "hit_heavy" : "hit");
 
             if (attacker != null && attackingKit != null &&
                 attackingKit.passive == HeroPassive.Bloodthirst && attacker.Alive)
