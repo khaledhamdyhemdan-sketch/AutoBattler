@@ -767,6 +767,17 @@ namespace MythicChronicles
                     float stagger = Mathf.Clamp01(t * 1.6f - (i % 5) * .12f);
                     f.model.transform.position = Vector3.Lerp(f.arrivalPosition, f.formationPosition, stagger);
                     f.model.transform.localScale = f.displayScale * Mathf.Max(.001f, stagger) * (f.boss ? 1.4f : 1f);
+                    if (PanelLayout && f.panelQuad != null)
+                    {
+                        // Card flip-in: smoothstep scale with a small overshoot
+                        // pop, staggered per card - the grid assembles like a
+                        // dealt hand instead of popping in at full size.
+                        float ease = stagger * stagger * (3f - 2f * stagger);
+                        float pop = 1f + Mathf.Sin(stagger * Mathf.PI) * .07f;
+                        float s = Mathf.Max(.001f, ease) * pop;
+                        f.panelQuad.transform.localScale = new Vector3(
+                            f.panelCardSize * s, f.panelCardSize * s, 1f);
+                    }
                     if (stagger >= 1f && !f.entered)
                     {
                         f.entered = true;
@@ -878,6 +889,11 @@ namespace MythicChronicles
                         flash = f.hitFlashT / .22f;
                         pos.x += Mathf.Sin(f.hitFlashT * 60f) * .07f * flash;
                     }
+                    // Idle life: a slow breathing bob, phased per card, so the
+                    // lineup sways gently instead of sitting frozen.
+                    if (f.lungeT <= 0f && f.hitFlashT <= 0f)
+                        pos.y += Mathf.Sin(elapsed * 1.35f +
+                            f.panelAnchor.x * 1.1f + f.side * 1.7f) * .035f;
                     if (cardRenderer != null && cardRenderer.material.HasProperty("_Color"))
                         cardRenderer.material.color = Color.Lerp(
                             Color.white, new Color(1f, .5f, .45f, 1f), flash * .85f);
@@ -1443,10 +1459,31 @@ namespace MythicChronicles
                         GUI.DrawTexture(new Rect(px - cardPx * .5f - 1f, py - 22f, 28f, 28f), badgeRing);
                     GUI.color = new Color(1f, .95f, .8f);
                     GUI.Label(new Rect(px - cardPx * .5f - 1f, py - 18f, 28f, 20f), unit.level.ToString());
-                    GUI.color = unit.side == 0 ? Color.green : new Color(1f, .3f, .3f);
-                    GUI.DrawTexture(new Rect(barX, py - 9f, barW * unit.hp / unit.maxHp, 6f), Texture2D.whiteTexture);
-                    GUI.color = new Color(1f, .8f, .25f);
-                    GUI.DrawTexture(new Rect(barX, py - 1f, barW * unit.energy / 100f, 4f), Texture2D.whiteTexture);
+                    // Inset dark channels, then enamel gradient fills with
+                    // rounded caps - art bars, not flat color strips.
+                    Texture2D channel = OrnateGuiSkin.BarChannel("panel-bar-channel");
+                    if (channel != null)
+                    {
+                        GUI.color = Color.white;
+                        GUI.DrawTexture(new Rect(barX - 1f, py - 10f, barW + 2f, 8f), channel);
+                        GUI.DrawTexture(new Rect(barX - 1f, py - 2f, barW + 2f, 6f), channel);
+                    }
+                    Color hpColor = unit.side == 0
+                        ? new Color(.28f, .82f, .34f)
+                        : new Color(.92f, .26f, .20f);
+                    GUI.color = Color.white;
+                    GUI.DrawTexture(new Rect(barX, py - 9f,
+                        barW * Mathf.Clamp01(unit.hp / unit.maxHp), 6f),
+                        OrnateGuiSkin.StatBar(unit.side == 0 ? "hp-ally" : "hp-enemy", hpColor));
+                    // Energy: gold enamel; a pulsing ready-glow when the
+                    // ultimate is charged (professional gacha "ult ready" cue).
+                    if (unit.energy >= 100f)
+                        OrnateGuiSkin.PulseGlow(new Rect(barX - 2f, py - 4f, barW + 4f, 9f),
+                            new Color(1f, .85f, .3f), 3.2f);
+                    GUI.color = Color.white;
+                    GUI.DrawTexture(new Rect(barX, py - 1f,
+                        barW * Mathf.Clamp01(unit.energy / 100f), 4f),
+                        OrnateGuiSkin.StatBar("energy-gold", new Color(1f, .76f, .22f)));
                     GUI.color = Color.white;
                     continue;
                 }

@@ -102,14 +102,15 @@ namespace MythicChronicles
 
         private static Shader BlendShader()
         {
-            // Alpha-blended first: additive sums onto the bright arena floor and
-            // saturates to flat white where shards overlap. Alpha blending keeps
-            // the element color translucent and readable.
-            Shader shader = Shader.Find("Legacy Shaders/Particles/Alpha Blended");
-            if (shader == null) shader = Shader.Find("Particles/Alpha Blended");
-            if (shader == null) shader = Shader.Find("Legacy Shaders/Particles/Additive");
-            if (shader == null) shader = Shader.Find("Particles/Additive");
+            // Sprites/Default first: it is always present in builds and alpha-
+            // blends with material.color, so overlapping glows stay element-
+            // colored. The Legacy particle shaders are not all bundled -
+            // captures showed Alpha Blended missing (fell through to additive,
+            // which saturates to white cores where shards stack).
+            Shader shader = Shader.Find("Sprites/Default");
             if (shader == null) shader = Shader.Find("Unlit/Transparent");
+            if (shader == null) shader = Shader.Find("Legacy Shaders/Particles/Alpha Blended");
+            if (shader == null) shader = Shader.Find("Legacy Shaders/Particles/Additive");
             if (shader == null) shader = Shader.Find("Unlit/Color");
             if (shader == null) shader = Shader.Find("Standard");
             return shader;
@@ -180,7 +181,7 @@ namespace MythicChronicles
             if (material != null)
             {
                 Color c = effectColor;
-                c.a = fade * .6f;
+                c.a = fade * .85f;
                 material.color = c;
                 if (material.HasProperty("_TintColor"))
                 {

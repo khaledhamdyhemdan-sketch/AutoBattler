@@ -125,6 +125,52 @@ namespace MythicChronicles
             return found != null ? found : tex;
         }
 
+        // Rounded enamel stat-bar fill: vertical sheen (bright top, dark
+        // bottom) with soft rounded caps, so HP/energy bars read as inset
+        // enamel strips instead of flat color rects.
+        public static Texture2D StatBar(string key, Color baseColor)
+        {
+            Texture2D found;
+            if (cache.TryGetValue(key, out found)) return found;
+            const int w = 64, h = 12;
+            var tex = new Texture2D(w, h, TextureFormat.RGBA32, false);
+            tex.wrapMode = TextureWrapMode.Clamp;
+            for (int y = 0; y < h; y++)
+                for (int x = 0; x < w; x++)
+                {
+                    float v = (float)y / (h - 1);
+                    float sheen = v > .62f ? 1.4f : (v > .3f ? 1.05f : .72f);
+                    float cap = Mathf.Clamp01(Mathf.Min(x, w - 1 - x) / (h * .5f));
+                    Color c = baseColor * sheen;
+                    c.a = baseColor.a * cap;
+                    tex.SetPixel(x, y, c);
+                }
+            tex.Apply();
+            cache[key] = tex;
+            return tex;
+        }
+
+        // Dark rounded inset channel that stat bars sit inside.
+        public static Texture2D BarChannel(string key)
+        {
+            Texture2D found;
+            if (cache.TryGetValue(key, out found)) return found;
+            const int w = 64, h = 12;
+            var tex = new Texture2D(w, h, TextureFormat.RGBA32, false);
+            tex.wrapMode = TextureWrapMode.Clamp;
+            for (int y = 0; y < h; y++)
+                for (int x = 0; x < w; x++)
+                {
+                    float v = (float)y / (h - 1);
+                    float shade = Mathf.Lerp(.10f, .03f, v);
+                    float cap = Mathf.Clamp01(Mathf.Min(x, w - 1 - x) / (h * .5f));
+                    tex.SetPixel(x, y, new Color(shade, shade, shade * 1.6f, .9f * cap));
+                }
+            tex.Apply();
+            cache[key] = tex;
+            return tex;
+        }
+
         // ---- Authored UI art (Assets/Resources/Chronicles/UI) ----
         // Original, generated-for-this-game art; loaded when present, with the
         // procedural skin above as the fallback when an asset is missing.
