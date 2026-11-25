@@ -23,6 +23,7 @@ namespace MythicChronicles
         private CombatRole role;
         private float sparkMul = 1f, slashMul = 1f, ringMul = 1f;
         private bool rising;
+        private float seed;
         private bool ultimate;
         // Rarity drives spectacle: R is a tight element pop, SR adds a ground
         // ring, SSR adds a rising beam, UR/EX get the largest, longest show.
@@ -48,6 +49,7 @@ namespace MythicChronicles
             root.transform.position = at;
             HeroSkillEffects effect = root.AddComponent<HeroSkillEffects>();
             effect.role = hero.role;
+            effect.seed = Mathf.Abs(hero.id.GetHashCode() % 997) / 997f;
             effect.Initialize(ColorFor(hero.element), isUltimate, TierFor(hero.rarity));
         }
 
@@ -179,6 +181,10 @@ namespace MythicChronicles
 
         private void Initialize(Color color, bool isUltimate, int rarityTier = 1)
         {
+            float hh, ss, vv;
+            Color.RGBToHSV(color, out hh, out ss, out vv);
+            hh = Mathf.Repeat(hh + (seed - .5f) * .07f, 1f);
+            color = Color.HSVToRGB(hh, ss, vv);
             effectColor = color;
             ultimate = isUltimate;
             tier = Mathf.Clamp(rarityTier, 1, 4);
@@ -371,7 +377,7 @@ namespace MythicChronicles
                     float delay = i * .06f;
                     float st = Mathf.Clamp01((t - delay) / .3f);
                     float len = Mathf.Sin(st * Mathf.PI * .5f) * 3.2f * big;
-                    float ang = (i % 2 == 0 ? 35f : -35f) + (i / 2) * 28f - 20f;
+                    float ang = (i % 2 == 0 ? 35f : -35f) + (i / 2) * 28f - 20f + (seed - .5f) * 50f;
                     slashes[i].localPosition = new Vector3((i - slashes.Length * .5f) * .12f, 0f, -1.1f - i * .01f);
                     slashes[i].localRotation = Quaternion.Euler(0f, 0f, ang);
                     float thick = .55f * big * (1f - st * .6f);
