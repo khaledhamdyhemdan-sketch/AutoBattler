@@ -72,7 +72,8 @@ namespace MythicChronicles.EditorTools
             // Game time advances at the Update clamp: .05s per Tick at Speed 1.
             const float step = .12f;
             float[] captureAt = { .5f, 3f, 6f, 9f, 12f };
-            RenderTexture rt = new RenderTexture(720, 960, 24);
+            RenderTexture rt = new RenderTexture(540, 960, 24);
+            cam.aspect = 540f / 960f; // phone aspect: layout reads cam.aspect live
             float t = 0f;
             int shot = 0;
             int guard = 0;
