@@ -95,7 +95,9 @@ namespace MythicChronicles
                 {
                     float dx = (x + .5f) / size - .5f, dy = (y + .5f) / size - .5f;
                     float d = Mathf.Sqrt(dx * dx + dy * dy) * 2f;
-                    float a = Mathf.Pow(Mathf.Clamp01(1f - d), 2.2f);
+                    // Alpha kept low: additive stacking of many shards must not
+                    // saturate to a flat white blob over the cards.
+                    float a = Mathf.Pow(Mathf.Clamp01(1f - d), 2.2f) * .5f;
                     glowTex.SetPixel(x, y, new Color(1f, 1f, 1f, a));
                 }
             glowTex.Apply();
@@ -124,7 +126,7 @@ namespace MythicChronicles
             if (material.HasProperty("_MainTex")) material.mainTexture = GlowTexture();
             // Additive shaders tint via TintColor.
             if (material.HasProperty("_TintColor")) material.SetColor("_TintColor", color);
-            int count = (isUltimate ? 10 : 6) + (tier - 1) * 3;
+            int count = (isUltimate ? 8 : 5) + (tier - 1) * 2;
             pieces = new Transform[count];
             baseScales = new Vector3[count];
             for (int i = 0; i < count; i++)
@@ -177,12 +179,14 @@ namespace MythicChronicles
             if (material != null)
             {
                 Color c = effectColor;
-                c.a = fade * .85f;
+                c.a = fade * .6f;
                 material.color = c;
                 if (material.HasProperty("_TintColor"))
                 {
-                    Color tint = effectColor * 1.6f; // hot core on additive
-                    tint.a = fade * .8f;
+                    // No hot-core boost: overlapping additive shards already
+                    // saturate; keep the element color readable.
+                    Color tint = effectColor;
+                    tint.a = fade * .5f;
                     material.SetColor("_TintColor", tint);
                 }
             }
