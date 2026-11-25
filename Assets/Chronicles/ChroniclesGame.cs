@@ -40,6 +40,7 @@ namespace MythicChronicles
         private string lastSummoned = "";
         private SummonBannerType activeSummonBanner = SummonBannerType.Standard;
         private readonly List<string> lastSummonBatch = new List<string>();
+        private float summonRevealStart = -99f;
         private bool lastVictory;
         private int clearedStageBeforeBattle = -1;
         private Vector2 chapterScroll, rosterScroll, formationScroll, gearScroll, runeScroll;
@@ -382,7 +383,8 @@ namespace MythicChronicles
             // The doors are the buildings inside the scene itself: invisible
             // hotspots over each named building, with a glowing label plate.
             if (SceneDoor(new Rect(100, 170, 110, 135),
-                new Rect(103, 288, 130, 28), "ARENA"))
+                new Rect(103, 288, 130, 28), "ARENA",
+                progress.Data.lastClearedStage < 10, "CLEAR STORY 10"))
             {
                 inArenaTraining = false; page = Page.ArenaTraining;
             }
@@ -392,19 +394,23 @@ namespace MythicChronicles
                 inTower = false; activeTrialMode = TrialMode.Normal;
                 chapterScroll = Vector2.zero; page = Page.Trials;
             }
+            bool ch1Open = progress.Data.lastClearedStage >= 10;
             if (SceneDoor(new Rect(415, 190, 120, 150),
-                new Rect(408, 316, 130, 28), "LABYRINTH"))
+                new Rect(408, 316, 130, 28), "LABYRINTH",
+                !ch1Open, "CLEAR STORY 10"))
             {
                 inLabyrinth = false; page = Page.Labyrinth;
             }
             if (SceneDoor(new Rect(415, 395, 120, 170),
-                new Rect(408, 548, 130, 28), "TOWERS"))
+                new Rect(408, 548, 130, 28), "TOWERS",
+                !ch1Open, "CLEAR STORY 10"))
             {
                 inTower = false; chapterScroll = Vector2.zero;
                 page = Page.Towers;
             }
             if (SceneDoor(new Rect(210, 70, 130, 170),
-                new Rect(207, 238, 130, 28), "WORLD BOSS"))
+                new Rect(207, 238, 130, 28), "WORLD BOSS",
+                !ch1Open, "CLEAR STORY 10"))
             {
                 inRaid = false; page = Page.Raid;
             }
@@ -466,12 +472,40 @@ namespace MythicChronicles
         // building itself. Returns true when tapped.
         private bool SceneDoor(Rect hotspot, Rect labelRect, string label)
         {
+            return SceneDoor(hotspot, labelRect, label, false, "");
+        }
+
+        private bool SceneDoor(Rect hotspot, Rect labelRect, string label,
+            bool locked, string lockHint)
+        {
             // Slim dark text backing instead of an ornate frame, so the
             // scene stays clean and the label stays readable.
             GUI.DrawTexture(new Rect(labelRect.x - 8f, labelRect.y - 2f,
                 labelRect.width + 16f, labelRect.height + 4f),
                 OrnateGuiSkin.Glow("door_label_bg",
                     new Color(0f, 0f, 0f, .6f)));
+            if (locked)
+            {
+                // Darken the building and pin a lock plate on it, like the
+                // reference home-city screens do for gated buildings.
+                Color pre = GUI.color;
+                GUI.color = new Color(0f, 0f, 0f, .45f);
+                GUI.DrawTexture(hotspot, Texture2D.whiteTexture);
+                GUI.color = pre;
+                Rect plate = new Rect(hotspot.center.x - 55f,
+                    hotspot.center.y - 22f, 110f, 44f);
+                GUI.DrawTexture(new Rect(plate.x - 6f, plate.y - 4f,
+                    plate.width + 12f, plate.height + 8f),
+                    OrnateGuiSkin.Glow("door_lock_bg",
+                        new Color(0f, 0f, 0f, .75f)));
+                OrnateGuiSkin.PulseGlow(plate,
+                    new Color(.8f, .8f, .8f, .8f), 2.2f);
+                GUIStyle lockStyle = new GUIStyle(tiny) {
+                    alignment = TextAnchor.MiddleCenter, fontSize = 11 };
+                lockStyle.normal.textColor = new Color(.92f, .92f, .95f);
+                GUI.Label(plate, "LOCKED\n" + lockHint, lockStyle);
+                return false;
+            }
             OrnateGuiSkin.PulseGlow(labelRect,
                 OrnateGuiSkin.GoldBright, 1.6f);
             GUIStyle labelStyle = new GUIStyle(subtitle) {
@@ -1553,11 +1587,37 @@ namespace MythicChronicles
                 // Generate only thumbnails inside or near the viewport.
                 if (y + 218f < rosterScroll.y - 30f ||
                     y > rosterScroll.y + 550f) continue;
+                // Rarity aura behind the card, like the reference card
+                // walls: stronger glow for higher tiers.
+                float aura = hero.rarity == Rarity.UR ? .55f :
+                    hero.rarity == Rarity.EX ? .5f :
+                    hero.rarity == Rarity.SSR ? .42f :
+                    hero.rarity == Rarity.SR ? .3f : .22f;
+                Color frameCol = RarityFrameColor(hero.rarity);
+                GUI.DrawTexture(new Rect(x - 14f, y - 14f, 178f, 240f),
+                    OrnateGuiSkin.Glow("card_aura_" + hero.rarity,
+                        new Color(frameCol.r, frameCol.g, frameCol.b, aura)));
                 OrnateGuiSkin.Panel(new Rect(x, y, 150, 212),
-                    "card_" + hero.rarity, RarityFrameColor(hero.rarity),
+                    "card_" + hero.rarity, frameCol,
                     new Color(.08f, .06f, .12f, .94f));
                 ChroniclesHeroPortrait.Draw(hero.id,
                     new Rect(x + 4, y + 4, 142, 164), false);
+                OwnedHero ownedCard = progress.FindOwnedHero(hero.id);
+                if (ownedCard != null)
+                {
+                    GUIStyle lvStyle = new GUIStyle(tiny) {
+                        alignment = TextAnchor.MiddleCenter, fontSize = 11 };
+                    lvStyle.normal.textColor = OrnateGuiSkin.GoldBright;
+                    GUI.DrawTexture(new Rect(x + 98, y + 6, 48, 21),
+                        OrnateGuiSkin.Glow("card_lv_bg",
+                            new Color(0f, 0f, 0f, .8f)));
+                    GUI.Label(new Rect(x + 98, y + 7, 48, 19),
+                        "LV " + ownedCard.level, lvStyle);
+                    for (int s = 0; s < Mathf.Min(ownedCard.stars, 6); s++)
+                        GUI.DrawTexture(new Rect(x + 9 + s * 17, y + 146, 14, 14),
+                            OrnateGuiSkin.Glow("card_star",
+                                new Color(1f, .85f, .4f, .95f)));
+                }
                 Texture2D namePlate = OrnateGuiSkin.Art("bar_plate");
                 Color oldColor = GUI.color;
                 if (namePlate != null)
@@ -2154,19 +2214,37 @@ namespace MythicChronicles
                 HeroDefinition hero = WorldsCatalog.FindHero(id);
                 if (hero != null)
                 {
-                    GUI.DrawTexture(new Rect(120, 310, 300, 330),
+                    float rt = progress.Data.reducePortraitMotion ? 99f :
+                        Time.realtimeSinceStartup - summonRevealStart;
+                    float pop = EaseOutBack(Mathf.Clamp01(rt / .45f));
+                    float fade = Mathf.Clamp01(rt / .3f);
+                    Color rarityCol = RarityFrameColor(hero.rarity);
+                    if (rt < .8f)
+                    {
+                        float flash = 1f - Mathf.Clamp01(rt / .8f);
+                        Color preFlash = GUI.color;
+                        GUI.color = new Color(1f, 1f, 1f, flash);
+                        GUI.DrawTexture(new Rect(40, 240, 460, 460),
+                            OrnateGuiSkin.Glow("summon_flash_" + hero.rarity,
+                                new Color(rarityCol.r, rarityCol.g, rarityCol.b, .55f)));
+                        GUI.color = preFlash;
+                    }
+                    Color saved = GUI.color;
+                    GUI.color = new Color(1f, 1f, 1f, fade);
+                    GUI.DrawTexture(ScaledAroundCenter(new Rect(120, 310, 300, 330), pop),
                         OrnateGuiSkin.Glow("summon_result_glow",
                             new Color(.95f, .8f, .4f, .5f)));
-                    OrnateGuiSkin.Panel(new Rect(150, 320, 240, 300),
+                    OrnateGuiSkin.Panel(ScaledAroundCenter(new Rect(150, 320, 240, 300), pop),
                         "summon_result", OrnateGuiSkin.GoldBright,
                         new Color(.08f, .06f, .12f, .95f));
                     ChroniclesHeroPortrait.Draw(id,
-                        new Rect(162, 332, 216, 246),
+                        ScaledAroundCenter(new Rect(162, 332, 216, 246), pop),
                         !progress.Data.reducePortraitMotion);
                     OrnateGuiSkin.Title(new Rect(30, 574, 480, 36),
                         hero.name.ToUpperInvariant(), 24);
                     GUI.Label(new Rect(30, 608, 480, 28),
                         hero.rarity + "  -  " + hero.element, goldCenter);
+                    GUI.color = saved;
                 }
             }
             else if (lastSummonBatch.Count > 1)
@@ -2180,10 +2258,34 @@ namespace MythicChronicles
                     if (hero == null) continue;
                     int column = i % 5, row = i / 5;
                     float x = 45 + column * 92, y = 334 + row * 156;
+                    float rt = progress.Data.reducePortraitMotion ? 99f :
+                        Time.realtimeSinceStartup - summonRevealStart - i * .16f;
+                    if (rt <= 0f) continue;
+                    float pop = EaseOutBack(Mathf.Clamp01(rt / .35f));
+                    float fade = Mathf.Clamp01(rt / .25f);
+                    if (rt < .6f)
+                    {
+                        float flash = 1f - Mathf.Clamp01(rt / .6f);
+                        Color fc = RarityFrameColor(hero.rarity);
+                        Color pre = GUI.color;
+                        GUI.color = new Color(1f, 1f, 1f, flash);
+                        GUI.DrawTexture(new Rect(x - 26, y - 26, 135, 150),
+                            OrnateGuiSkin.Glow("batch_flash_" + hero.rarity,
+                                new Color(fc.r, fc.g, fc.b, .6f)));
+                        GUI.color = pre;
+                    }
+                    Color saved = GUI.color;
+                    GUI.color = new Color(1f, 1f, 1f, fade);
+                    Color fc2 = RarityFrameColor(hero.rarity);
+                    GUI.DrawTexture(ScaledAroundCenter(
+                        new Rect(x - 8, y - 8, 99, 114), pop),
+                        OrnateGuiSkin.Glow("batch_aura_" + hero.rarity,
+                            new Color(fc2.r, fc2.g, fc2.b, .38f)));
                     ChroniclesHeroPortrait.Draw(hero.id,
-                        new Rect(x, y, 83, 98), false);
+                        ScaledAroundCenter(new Rect(x, y, 83, 98), pop), false);
                     GUI.Label(new Rect(x - 4, y + 100, 91, 48),
                         hero.name + "\n" + hero.rarity, plainCenter);
+                    GUI.color = saved;
                 }
             }
 
@@ -2272,6 +2374,7 @@ namespace MythicChronicles
                 return;
             }
             lastSummonBatch.AddRange(result.heroIds);
+            summonRevealStart = Time.realtimeSinceStartup;
             lastSummoned = result.heroIds.Count > 0 ?
                 result.heroIds[result.heroIds.Count - 1] : "";
             notice = result.heroIds.Count + (result.heroIds.Count == 1 ?
@@ -2373,6 +2476,19 @@ namespace MythicChronicles
             if (art != null)
                 GUI.DrawTexture(new Rect(x, y, 40, 40), art, ScaleMode.ScaleToFit, true);
             GUI.Label(new Rect(x + 46, y + 5, 110, 30), amount.ToString(), style);
+        }
+
+        private static float EaseOutBack(float t)
+        {
+            const float c1 = 1.70158f, c3 = c1 + 1f;
+            float u = t - 1f;
+            return 1f + c3 * u * u * u + c1 * u * u;
+        }
+
+        private static Rect ScaledAroundCenter(Rect r, float scale)
+        {
+            float w = r.width * scale, h = r.height * scale;
+            return new Rect(r.center.x - w / 2f, r.center.y - h / 2f, w, h);
         }
 
         private void Login()
