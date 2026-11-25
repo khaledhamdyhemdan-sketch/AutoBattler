@@ -19,6 +19,7 @@ namespace MythicChronicles
         private Material material;
         private Color effectColor;
         private float elapsed, duration;
+        private bool panel;
         private bool ultimate;
         // Rarity drives spectacle: R is a tight element pop, SR adds a ground
         // ring, SSR adds a rising beam, UR/EX get the largest, longest show.
@@ -73,6 +74,59 @@ namespace MythicChronicles
             }
         }
 
+
+        // Set by the battle when the camera looks flat down the Z axis (panel
+        // card wall). Effects then lay out in the XY plane and scale to card size.
+        public static bool PanelMode;
+        private Material ringMaterial;
+        private static Texture2D ringTex;
+
+        private static Texture2D RingTexture()
+        {
+            if (ringTex != null) return ringTex;
+            const int size = 128;
+            ringTex = new Texture2D(size, size, TextureFormat.RGBA32, false);
+            ringTex.wrapMode = TextureWrapMode.Clamp;
+            ringTex.filterMode = FilterMode.Bilinear;
+            for (int y = 0; y < size; y++)
+                for (int x = 0; x < size; x++)
+                {
+                    float dx = (x + .5f) / size - .5f, dy = (y + .5f) / size - .5f;
+                    float d = Mathf.Sqrt(dx * dx + dy * dy) * 2f;
+                    // thin bright band near the rim, soft inner haze
+                    float band = Mathf.Exp(-Mathf.Pow((d - .86f) / .07f, 2f));
+                    float haze = Mathf.Clamp01(1f - d) * .12f;
+                    float a = Mathf.Clamp01(band * .95f + haze) * (d < 1f ? 1f : 0f);
+                    ringTex.SetPixel(x, y, new Color(1f, 1f, 1f, a));
+                }
+            ringTex.Apply();
+            return ringTex;
+        }
+
+        private static Texture2D slashTex;
+        // Tapered streak (bright center, fading both ends) for slash arcs.
+        private static Texture2D SlashTexture()
+        {
+            if (slashTex != null) return slashTex;
+            const int w = 128, h = 32;
+            slashTex = new Texture2D(w, h, TextureFormat.RGBA32, false);
+            slashTex.wrapMode = TextureWrapMode.Clamp;
+            slashTex.filterMode = FilterMode.Bilinear;
+            for (int y = 0; y < h; y++)
+                for (int x = 0; x < w; x++)
+                {
+                    float u = (x + .5f) / w * 2f - 1f, v = (y + .5f) / h * 2f - 1f;
+                    float taper = 1f - Mathf.Abs(u);
+                    float width = Mathf.Lerp(.05f, .55f, Mathf.Pow(taper, .8f));
+                    float a = Mathf.Clamp01(1f - Mathf.Abs(v) / width) * Mathf.Pow(taper, .6f);
+                    slashTex.SetPixel(x, y, new Color(1f, 1f, 1f, a));
+                }
+            slashTex.Apply();
+            return slashTex;
+        }
+
+        private Material slashMaterial;
+        private Transform[] slashes;
 
         private static Texture2D glowTex;
 
@@ -147,6 +201,19 @@ namespace MythicChronicles
                 pieces[i] = shard.transform;
                 baseScales[i] = new Vector3(.3f, .3f, 1f) * (1f + (tier - 1) * .18f);
             }
+            if (PanelMode)
+            {
+                panel = true;
+                ringMaterial = new Material(shader);
+                if (ringMaterial.HasProperty("_MainTex")) ringMaterial.mainTexture = RingTexture();
+                slashMaterial = new Material(shader);
+                if (slashMaterial.HasProperty("_MainTex")) slashMaterial.mainTexture = SlashTexture();
+                ring = MakePiece("impact ring", ringMaterial);
+                int sc = 2 + tier + (isUltimate ? 2 : 0);
+                slashes = new Transform[sc];
+                for (int i = 0; i < sc; i++) slashes[i] = MakePiece("slash " + i, slashMaterial);
+                return;
+            }
             if (tier >= 2) ring = MakePiece("ground ring");
             if (tier >= 3)
             {
@@ -155,7 +222,7 @@ namespace MythicChronicles
             }
         }
 
-        private Transform MakePiece(string name)
+        private Transform MakePiece(string name, Material mat = null)
         {
             GameObject piece = GameObject.CreatePrimitive(PrimitiveType.Quad);
             piece.name = "skill FX " + name;
@@ -163,7 +230,7 @@ namespace MythicChronicles
             Renderer renderer = piece.GetComponent<Renderer>();
             if (renderer != null)
             {
-                renderer.sharedMaterial = material;
+                renderer.sharedMaterial = mat != null ? mat : material;
                 renderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
             }
             Collider collider = piece.GetComponent<Collider>();
@@ -191,6 +258,12 @@ namespace MythicChronicles
                     tint.a = fade * .5f;
                     material.SetColor("_TintColor", tint);
                 }
+            }
+            if (panel)
+            {
+                UpdatePanel(t, fade);
+                if (t >= 1f) Destroy(gameObject);
+                return;
             }
             float reach = 1f + (tier - 1) * .22f;
             int count = pieces.Length;
@@ -236,9 +309,59 @@ namespace MythicChronicles
             if (t >= 1f) Destroy(gameObject);
         }
 
+        // Panel (flat ortho) layout: everything in the XY plane, facing the camera,
+        // sized for a ~2.5-unit card. Burst sparks + impact ring + slash arcs.
+        private void UpdatePanel(float t, float fade)
+        {
+            float big = (ultimate ? 1.5f : 1f) * (1f + (tier - 1) * .2f);
+            Color c = effectColor;
+            // brighten toward white at the very start for an impact flash
+            float flash = Mathf.Clamp01(1f - t * 6f);
+            Color hot = Color.Lerp(c, Color.white, flash * .7f);
+            hot.a = fade;
+            if (ringMaterial != null) ringMaterial.color = hot;
+            if (slashMaterial != null) slashMaterial.color = hot;
+            int count = pieces.Length;
+            for (int i = 0; i < count; i++)
+            {
+                if (pieces[i] == null) continue;
+                float ang = i * Mathf.PI * 2f / count + i * .7f;
+                float r = Mathf.Lerp(.1f, 1.6f * big, 1f - Mathf.Pow(1f - t, 2f));
+                pieces[i].localPosition = new Vector3(Mathf.Cos(ang) * r, Mathf.Sin(ang) * r, -1f);
+                pieces[i].localRotation = Quaternion.identity;
+                pieces[i].localScale = new Vector3(.55f, .55f, 1f) * Mathf.Max(.001f, fade) * big;
+            }
+            if (ring != null)
+            {
+                float rr = Mathf.Lerp(.4f, 3.4f * big, Mathf.SmoothStep(0f, 1f, Mathf.Min(1f, t * 1.6f)));
+                ring.localPosition = new Vector3(0f, 0f, -1.05f);
+                ring.localRotation = Quaternion.identity;
+                ring.localScale = new Vector3(rr, rr, 1f);
+            }
+            if (slashes != null)
+            {
+                float sIn = Mathf.Clamp01(t / .22f);
+                for (int i = 0; i < slashes.Length; i++)
+                {
+                    if (slashes[i] == null) continue;
+                    // staggered strikes crossing the target at different angles
+                    float delay = i * .06f;
+                    float st = Mathf.Clamp01((t - delay) / .3f);
+                    float len = Mathf.Sin(st * Mathf.PI * .5f) * 3.2f * big;
+                    float ang = (i % 2 == 0 ? 35f : -35f) + (i / 2) * 28f - 20f;
+                    slashes[i].localPosition = new Vector3((i - slashes.Length * .5f) * .12f, 0f, -1.1f - i * .01f);
+                    slashes[i].localRotation = Quaternion.Euler(0f, 0f, ang);
+                    float thick = .55f * big * (1f - st * .6f);
+                    slashes[i].localScale = new Vector3(Mathf.Max(.001f, len), Mathf.Max(.001f, thick) * (st > 0f && st < 1f ? 1f : 0f), 1f);
+                }
+            }
+        }
+
         private void OnDestroy()
         {
             if (material != null) Destroy(material);
+            if (ringMaterial != null) Destroy(ringMaterial);
+            if (slashMaterial != null) Destroy(slashMaterial);
         }
     }
 }

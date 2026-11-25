@@ -509,6 +509,7 @@ namespace MythicChronicles
         private void RelayoutPanels()
         {
             if (cam == null) return;
+            HeroSkillEffects.PanelMode = true;
             foreach (Combatant f in units)
             {
                 Vector3 p; float sz;
@@ -866,7 +867,7 @@ namespace MythicChronicles
                 else if (f.attackCd <= 0f)
                 {
                     f.visual.Play(HeroAnimation.Attack);
-                    if (PanelLayout) { f.lungeT = .24f; f.lungeTarget = target; }
+                    if (PanelLayout) { f.lungeT = .36f; f.lungeTarget = target; }
                     Hit(f, target, f.attack);
                     float baseCooldown = f.hero.role == CombatRole.Assassin ? .85f : 1.25f;
                     if (f.frozen > 0f) baseCooldown *= 1.45f;
@@ -904,12 +905,17 @@ namespace MythicChronicles
                     if (f.lungeT > 0f && f.lungeTarget != null)
                     {
                         f.lungeT -= dt;
-                        float phase = 1f - Mathf.Max(0f, f.lungeT) / .24f;
-                        float swing = Mathf.Sin(phase * Mathf.PI);
+                        float phase = 1f - Mathf.Max(0f, f.lungeT) / .36f;
+                        // Wind-up pull-back (first 30%), then a fast strike
+                        // toward the target with a slight scale punch.
+                        float swing = phase < .3f
+                            ? -.3f * Mathf.Sin(phase / .3f * Mathf.PI * .5f)
+                            : Mathf.Sin((phase - .3f) / .7f * Mathf.PI);
                         Vector3 dir = f.lungeTarget.panelAnchor - f.panelAnchor;
-                        // Reference motion: a short bounce toward the target,
-                        // not a long travel across the field.
-                        pos += dir.normalized * swing * .28f;
+                        pos += dir.normalized * swing * .75f;
+                        float punch = 1f + .09f * Mathf.Max(0f, swing);
+                        f.panelQuad.transform.localScale = new Vector3(
+                            f.panelCardSize * punch, f.panelCardSize * punch, 1f);
                     }
                     // Hit reaction: brief red flash and jitter on the card.
                     float flash = 0f;
