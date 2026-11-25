@@ -76,9 +76,25 @@ namespace MythicChronicles.EditorTools
             float t = 0f;
             int shot = 0;
             int guard = 0;
+            var fxElapsed = typeof(HeroSkillEffects).GetField("elapsed",
+                System.Reflection.BindingFlags.NonPublic |
+                System.Reflection.BindingFlags.Instance);
             while (shot < captureAt.Length && guard < 2000)
             {
                 battle.Tick(step, step);
+                // Batchmode has no player loop: MonoBehaviour Updates never run,
+                // so battle-spawned skill FX would freeze at spawn (all shards
+                // stacked at the cast point) and ghost as white blobs. Tick
+                // their clocks manually like the rarity demo rig does; at t>=1
+                // their material alpha reaches zero, so even the never-flushed
+                // Destroy leaves nothing visible.
+                foreach (HeroSkillEffects fx in Object.FindObjectsByType<HeroSkillEffects>(
+                    FindObjectsSortMode.None))
+                {
+                    fxElapsed.SetValue(fx,
+                        (float)fxElapsed.GetValue(fx) + step);
+                    fx.SendMessage("Update", SendMessageOptions.DontRequireReceiver);
+                }
                 t += .05f;
                 guard++;
                 if (t + 1e-4f < captureAt[shot]) continue;
