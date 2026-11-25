@@ -25,6 +25,7 @@ namespace MythicChronicles
             public Vector3 formationPosition, arrivalPosition, displayScale;
             public Vector3 panelAnchor;
             public GameObject panelQuad;
+            public int slot;
             public float panelCardSize = 2.2f;
             public float lungeT, dealt, hitFlashT;
             public Combatant lungeTarget;
@@ -484,6 +485,42 @@ namespace MythicChronicles
             lightObject.transform.rotation = Quaternion.Euler(60f, -35f, 0f);
         }
 
+        // Panel slot geometry from the LIVE camera aspect (no clamp to the
+        // design aspect): columns always span the full screen width edge to
+        // edge, rows reach the top and bottom edges. Card size is capped so
+        // two rows fit in each half on wide screens.
+        private void PanelSlot(int side, int slot, out Vector3 pos, out float size)
+        {
+            int col = slot % 3, row = slot / 3;
+            float aspect = cam != null && cam.aspect > .2f ? cam.aspect : .5625f;
+            float halfH = 5.4f;
+            float halfW = halfH * aspect;
+            float colW = halfW * 2f / 3f;
+            size = Mathf.Min(colW, halfH * .47f);
+            float rowGap = size * .96f;
+            float blockRow = side == 1 ? row : (1 - row);
+            float px = -halfW + colW * (col + .5f);
+            float py = (side == 1 ? 1f : -1f) *
+                (halfH - size * .5f - blockRow * rowGap)
+                + (col - 1) * .09f * (side == 1 ? 1f : -1f);
+            pos = new Vector3(px, py, -0.4f);
+        }
+
+        private void RelayoutPanels()
+        {
+            if (cam == null) return;
+            foreach (Combatant f in units)
+            {
+                Vector3 p; float sz;
+                PanelSlot(f.side, f.slot, out p, out sz);
+                Vector3 arrive = p + new Vector3(0f, f.side == 0 ? -4f : 4f, 0f);
+                f.formationPosition = p; f.panelAnchor = p;
+                f.arrivalPosition = arrive; f.panelCardSize = sz;
+                if (introTime <= 0f && f.panelQuad != null)
+                    f.panelQuad.transform.localScale = new Vector3(sz, sz, 1f);
+            }
+        }
+
         private void Spawn(HeroDefinition hero, int side, int slot, int level, bool boss,
             int weaponLevel = 0, int armorLevel = 0, int stars = 1, string skin = "default")
         {
@@ -498,25 +535,7 @@ namespace MythicChronicles
                 // tilt (cards rotate with the column), and the middle band
                 // left open for the scene and VFX. Sized to the design aspect
                 // so nothing clips on tall phones.
-                int col = slot % 3, row = slot / 3;
-                // Clamp to the design aspect: the layout must fit the tallest
-                // phones, and the headless capture rig can spawn units at a
-                // different aspect than it renders at. 540x960 is the canvas.
-                float spawnAspect = cam != null ? cam.aspect : .5625f;
-                float effAspect = Mathf.Min(spawnAspect, .5625f);
-                float halfH = cam != null ? cam.orthographicSize : 5.4f;
-                float halfW = halfH * effAspect;
-                float cardSize = halfW * 2f / 3f; // full-bleed three columns
-                float rowGap = cardSize * .96f;   // rows kiss with a hair overlap
-                // Ally row 0 sits closer to the middle band, row 1 at the
-                // bottom edge; enemy rows mirror from the top.
-                float blockRow = side == 1 ? row : (1 - row);
-                float px = -halfW + cardSize * (col + .5f);
-                float py = (side == 1 ? 1f : -1f) *
-                    (halfH - cardSize * .5f - blockRow * rowGap)
-                    + (col - 1) * .09f * (side == 1 ? 1f : -1f);
-                destination = new Vector3(px, py, -0.4f);
-                panelCardSizeLocal = cardSize;
+                PanelSlot(side, slot, out destination, out panelCardSizeLocal);
             }
             else
             {
@@ -547,7 +566,8 @@ namespace MythicChronicles
                 arrivalPosition = destination + (PanelLayout ?
                     new Vector3(0f, side == 0 ? -4f : 4f, 0f) :
                     new Vector3(0f, 0f, side == 0 ? -5f : 5f)),
-                panelAnchor = destination
+                panelAnchor = destination,
+                slot = slot
             };
             unit.hp = unit.maxHp;
             unit.visual = HeroVisualDriver.Spawn(hero, skin, transform,
@@ -861,6 +881,7 @@ namespace MythicChronicles
 
             if (PanelLayout)
             {
+                RelayoutPanels();
                 foreach (Combatant f in units)
                 {
                     if (f.panelQuad == null) continue;
