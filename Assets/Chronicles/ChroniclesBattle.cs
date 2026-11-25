@@ -25,6 +25,7 @@ namespace MythicChronicles
             public Vector3 formationPosition, arrivalPosition, displayScale;
             public Vector3 panelAnchor;
             public GameObject panelQuad;
+            public float panelCardSize = 2.2f;
             public float lungeT, dealt;
             public Combatant lungeTarget;
             public bool Alive { get { return hp > 0f; } }
@@ -487,13 +488,24 @@ namespace MythicChronicles
         {
             bool front = slot < 2;
             Vector3 destination;
+            float panelCardSizeLocal = 2.2f;
             if (PanelLayout)
             {
-                // Comic-panel wall: 3 top slots, 2 centered bottom slots per side.
+                // Card-battle wall like the approved mock: a tight 3+2 grid on
+                // the left ~78% of the frame (right strip stays free for the
+                // HUD rail), cards sized to the camera aspect so nothing
+                // clips on tall phones. Rows slightly overlap like the mock.
                 int col = slot % 3, row = slot / 3;
-                float px = row == 0 ? (col - 1) * 2.0f : (slot == 3 ? -1.0f : 1.0f);
-                float py = side == 1 ? 3.95f - row * 2.35f : -1.65f - row * 2.35f;
+                float halfW = cam != null ? cam.orthographicSize * cam.aspect : 4f;
+                float gridW = halfW * 2f * .78f;
+                float cardSize = Mathf.Min(2.2f, gridW / 3.1f);
+                float x0 = -halfW + cardSize * .55f;
+                float px = row == 0 ? x0 + col * cardSize * 1.02f
+                    : x0 + cardSize * .51f + (slot == 3 ? 0f : cardSize * 1.02f);
+                float py = side == 1 ? 4.35f - row * cardSize * .92f
+                    : -2.55f - row * cardSize * .92f;
                 destination = new Vector3(px, py, -0.4f);
+                panelCardSizeLocal = cardSize;
             }
             else
             {
@@ -519,6 +531,7 @@ namespace MythicChronicles
                 armor = 9f + level * 1.3f + armorLevel * 2f + (hero.role == CombatRole.Tank ? 18f : 0f),
                 attackCd = .5f + slot * .09f, skillCd = 2.6f + slot * .4f,
                 formationPosition = destination,
+                panelCardSize = panelCardSizeLocal,
                 arrivalPosition = destination + (PanelLayout ?
                     new Vector3(0f, side == 0 ? -4f : 4f, 0f) :
                     new Vector3(0f, 0f, side == 0 ? -5f : 5f)),
@@ -552,17 +565,24 @@ namespace MythicChronicles
                     panelAllyTex = Resources.Load<Texture2D>("Chronicles/UI/panel_battle_ally");
                 if (panelEnemyTex == null)
                     panelEnemyTex = Resources.Load<Texture2D>("Chronicles/UI/panel_battle_enemy");
-                Texture2D panelTex = side == 0 ? panelAllyTex : panelEnemyTex;
+                // Card face is the hero's full splash art (mock look: art
+                // fills the card edge-to-edge); the dark ornate panel texture
+                // is only a fallback when a hero has no portrait yet.
+                Texture2D cardArt = ChroniclesPortraitAssets.Static(hero.id);
+                Texture2D panelTex = cardArt != null ? cardArt
+                    : (side == 0 ? panelAllyTex : panelEnemyTex);
                 if (panelTex != null)
                 {
+                    int panelRow = slot / 3;
+                    float cardScale = unit.panelCardSize;
                     GameObject quad = GameObject.CreatePrimitive(PrimitiveType.Quad);
                     quad.name = "Panel - " + hero.name;
                     Collider quadCollider = quad.GetComponent<Collider>();
                     if (quadCollider != null) Destroy(quadCollider);
                     quad.transform.SetParent(transform);
                     quad.transform.position = new Vector3(
-                        unit.panelAnchor.x, unit.panelAnchor.y, 0.6f);
-                    quad.transform.localScale = new Vector3(2.35f, 2.35f, 1f);
+                        unit.panelAnchor.x, unit.panelAnchor.y, 0.6f - panelRow * .02f);
+                    quad.transform.localScale = new Vector3(cardScale, cardScale, 1f);
                     Shader panelShader = ChroniclesShaders.FindAny(
                         "Unlit/Texture", "Sprites/Default",
                         "Universal Render Pipeline/Unlit");
@@ -575,17 +595,16 @@ namespace MythicChronicles
                     }
                     quad.transform.rotation = Quaternion.Euler(-6f, 0f, 0f);
                     unit.panelQuad = quad;
-                    // Rarity-colored card frame behind the panel, like the
-                    // reference card battles.
+                    // Rarity-colored metallic frame behind the card, parented
+                    // to it so attack lunges move card and frame together.
                     GameObject frame = GameObject.CreatePrimitive(PrimitiveType.Quad);
                     frame.name = "Panel Frame - " + hero.name;
                     Collider frameCollider = frame.GetComponent<Collider>();
                     if (frameCollider != null) Destroy(frameCollider);
-                    frame.transform.SetParent(transform);
-                    frame.transform.position = new Vector3(
-                        unit.panelAnchor.x, unit.panelAnchor.y, 0.63f);
-                    frame.transform.localScale = new Vector3(2.50f, 2.50f, 1f);
-                    frame.transform.rotation = Quaternion.Euler(-6f, 0f, 0f);
+                    frame.transform.SetParent(quad.transform, false);
+                    frame.transform.localPosition = new Vector3(0f, 0f, .035f);
+                    frame.transform.localScale = new Vector3(1.07f, 1.07f, 1f);
+                    frame.transform.localRotation = Quaternion.identity;
                     Shader frameShader = ChroniclesShaders.FindAny(
                         "Sprites/Default", "Unlit/Transparent",
                         "Universal Render Pipeline/Unlit");
@@ -597,6 +616,9 @@ namespace MythicChronicles
                         frameRenderer.material = frameMaterial;
                     }
                 }
+                // The card face carries the art in panel mode; the 2D battle
+                // rig (cutout) would double the portrait, so it stays hidden.
+                if (unit.model != null) unit.model.SetActive(false);
             }
             units.Add(unit);
         }
@@ -813,18 +835,36 @@ namespace MythicChronicles
             {
                 foreach (Combatant f in units)
                 {
-                    if (f.model == null) continue;
-                    if (!f.Alive) continue;
+                    if (f.panelQuad == null) continue;
                     Vector3 home = f.panelAnchor;
+                    // Dead cards gray out and stay put; live cards lunge at
+                    // their target (card and frame move together).
+                    MeshRenderer cardRenderer = f.panelQuad.GetComponent<MeshRenderer>();
+                    if (cardRenderer != null && cardRenderer.material.HasProperty("_Color"))
+                        cardRenderer.material.color = f.Alive ? Color.white
+                            : new Color(.32f, .32f, .36f, 1f);
+                    if (!f.Alive)
+                    {
+                        f.panelQuad.transform.position = new Vector3(
+                            home.x, home.y, f.panelQuad.transform.position.z);
+                        if (f.model != null) f.model.transform.position = home;
+                        continue;
+                    }
                     if (f.lungeT > 0f && f.lungeTarget != null)
                     {
                         f.lungeT -= dt;
                         float phase = 1f - Mathf.Max(0f, f.lungeT) / .34f;
                         float swing = Mathf.Sin(phase * Mathf.PI);
                         Vector3 dir = f.lungeTarget.panelAnchor - f.panelAnchor;
-                        f.model.transform.position = home + dir.normalized * swing * .7f;
+                        f.panelQuad.transform.position =
+                            home + dir.normalized * swing * .55f;
                     }
-                    else f.model.transform.position = home;
+                    else f.panelQuad.transform.position = new Vector3(
+                        home.x, home.y, f.panelQuad.transform.position.z);
+                    // The hidden rig stays the logical anchor for projectiles
+                    // and damage popups.
+                    if (f.model != null)
+                        f.model.transform.position = f.panelQuad.transform.position;
                 }
             }
 
@@ -1357,27 +1397,34 @@ namespace MythicChronicles
                 if (!unit.Alive) continue;
                 if (PanelLayout)
                 {
+                    // Bars overlay the card's bottom edge like the approved
+                    // mock: LV badge bottom-left, HP + energy bars across the
+                    // card width.
                     Vector3 anchor = cam.WorldToScreenPoint(
-                        unit.panelAnchor + new Vector3(0f, -1.02f, 0f));
+                        unit.panelAnchor + new Vector3(0f, -(unit.panelCardSize * .5f - .04f), 0f));
                     if (anchor.z <= 0f) continue;
                     float px = anchor.x / uiScale, py = (Screen.height - anchor.y) / uiScale;
+                    float halfW = cam.orthographicSize * cam.aspect;
+                    float cardPx = unit.panelCardSize / (2f * halfW) * (Screen.width / uiScale);
+                    float barW = cardPx * .66f;
+                    float barX = px - cardPx * .5f + cardPx * .22f;
                     // Illustrated plate behind the bars (Khalid: art, not flat plates)
                     Texture2D plate = OrnateGuiSkin.Art("bar_plate");
                     if (plate != null)
-                        GUI.DrawTexture(new Rect(px - 64f, py - 18f, 130f, 34f), plate);
+                        GUI.DrawTexture(new Rect(px - cardPx * .5f - 2f, py - 17f, cardPx + 4f, 32f), plate);
                     // level badge: rarity-colored ring circle + number
                     Color rarity = ChroniclesGame.RarityFrameColor(unit.hero.rarity);
                     Texture2D badgeRing = OrnateGuiSkin.Frame(
                         "panel-badge-" + unit.side + "-" + (int)unit.hero.rarity,
                         rarity, new Color(.08f, .06f, .12f, .95f), 28, 3);
                     if (badgeRing != null)
-                        GUI.DrawTexture(new Rect(px - 62f, py - 26f, 30f, 30f), badgeRing);
+                        GUI.DrawTexture(new Rect(px - cardPx * .5f - 1f, py - 22f, 28f, 28f), badgeRing);
                     GUI.color = new Color(1f, .95f, .8f);
-                    GUI.Label(new Rect(px - 62f, py - 21f, 30f, 20f), unit.level.ToString());
+                    GUI.Label(new Rect(px - cardPx * .5f - 1f, py - 18f, 28f, 20f), unit.level.ToString());
                     GUI.color = unit.side == 0 ? Color.green : new Color(1f, .3f, .3f);
-                    GUI.DrawTexture(new Rect(px - 28f, py - 10f, 88f * unit.hp / unit.maxHp, 6f), Texture2D.whiteTexture);
+                    GUI.DrawTexture(new Rect(barX, py - 9f, barW * unit.hp / unit.maxHp, 6f), Texture2D.whiteTexture);
                     GUI.color = new Color(1f, .8f, .25f);
-                    GUI.DrawTexture(new Rect(px - 28f, py - 2f, 88f * unit.energy / 100f, 4f), Texture2D.whiteTexture);
+                    GUI.DrawTexture(new Rect(barX, py - 1f, barW * unit.energy / 100f, 4f), Texture2D.whiteTexture);
                     GUI.color = Color.white;
                     continue;
                 }
