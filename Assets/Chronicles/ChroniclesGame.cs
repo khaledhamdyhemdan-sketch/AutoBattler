@@ -38,6 +38,7 @@ namespace MythicChronicles
         private float storyStartedAt;
         private string notice = "";
         private string lastSummoned = "";
+        private int summonFeatureIdx;
         private SummonBannerType activeSummonBanner = SummonBannerType.Standard;
         private readonly List<string> lastSummonBatch = new List<string>();
         private float summonRevealStart = -99f;
@@ -2208,6 +2209,36 @@ namespace MythicChronicles
                         "WISHLIST ACTIVE  -  HALF OF ALL UR HITS",
                     plainCenter);
 
+            if (lastSummonBatch.Count == 0)
+            {
+                // Featured splash: the wishlist pick (or a cycled UR) shown big
+                // with a rate-up plate and arrows, like a banner screen.
+                var featured = new List<HeroDefinition>();
+                for (int i = 0; i < WorldsCatalog.Heroes.Length; i++)
+                    if (WorldsCatalog.Heroes[i].rarity == Rarity.UR)
+                        featured.Add(WorldsCatalog.Heroes[i]);
+                if (featured.Count > 0)
+                {
+                    HeroDefinition feat = featured[((summonFeatureIdx % featured.Count) + featured.Count) % featured.Count];
+                    if (astral && !string.IsNullOrEmpty(progress.Data.wishlistHeroId))
+                    {
+                        HeroDefinition wished = WorldsCatalog.FindHero(progress.Data.wishlistHeroId);
+                        if (wished != null) feat = wished;
+                    }
+                    Color fcol = RarityFrameColor(feat.rarity);
+                    GUI.DrawTexture(new Rect(70, 360, 400, 290),
+                        OrnateGuiSkin.Glow("feat_glow_" + feat.rarity,
+                            new Color(fcol.r, fcol.g, fcol.b, .45f)));
+                    ChroniclesHeroPortrait.Draw(feat.id, new Rect(165, 378, 210, 238),
+                        !progress.Data.reducePortraitMotion);
+                    OrnateGuiSkin.TitlePlate(new Rect(110, 612, 320, 36),
+                        "RATE UP  -  " + feat.name.ToUpperInvariant(), 15);
+                    if (GUI.Button(new Rect(30, 470, 54, 60), "<", OrnateGuiSkin.ButtonStyle(false)))
+                        summonFeatureIdx--;
+                    if (GUI.Button(new Rect(456, 470, 54, 60), ">", OrnateGuiSkin.ButtonStyle(false)))
+                        summonFeatureIdx++;
+                }
+            }
             if (lastSummonBatch.Count == 1)
             {
                 string id = lastSummonBatch[0];
