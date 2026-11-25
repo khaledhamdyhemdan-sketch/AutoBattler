@@ -382,6 +382,8 @@ namespace MythicChronicles
             // Warm dusk floor that blends into the battlefield backdrop instead
             // of a flat navy slab.
             groundMaterial = CreateMaterial(new Color(.30f, .23f, .27f));
+            if (groundMaterial != null)
+                groundMaterial.mainTexture = ArenaFloorTexture();
             redMaterial = CreateMaterial(new Color(.69f, .17f, .30f));
             // Carved sandstone columns: shaft + darker base and capital, so the
             // arena frame reads as ruins, not bare capsules.
@@ -607,19 +609,39 @@ namespace MythicChronicles
             Texture2D cached;
             if (panelFrameCache.TryGetValue(rarity, out cached))
                 return cached;
-            Color col = PanelRarityColor(rarity) * .82f;
+            Color col = PanelRarityColor(rarity);
             col.a = 1f;
-            const int size = 96, border = 5;
+            const int size = 96, border = 3, innerLine = 1;
             Texture2D tex = new Texture2D(size, size, TextureFormat.RGBA32, false);
             // Solid dark card center, no alpha dependence: renders as a card
             // with a rarity border no matter which unlit shader the runtime has.
+            // Slim metallic frame: vertical sheen (bright top, darker bottom)
+            // with a darker inner hairline so the frame reads as metal edging,
+            // not a flat block of color.
             Color center = new Color(.09f, .07f, .13f, 1f);
+            Color hairline = new Color(.03f, .025f, .05f, 1f);
             for (int y = 0; y < size; y++)
                 for (int x = 0; x < size; x++)
                 {
                     bool edge = x < border || x >= size - border ||
                         y < border || y >= size - border;
-                    tex.SetPixel(x, y, edge ? col : center);
+                    if (edge)
+                    {
+                        float t = (float)y / (size - 1);
+                        float sheen = 1.12f - .5f * t;
+                        Color c = col * sheen;
+                        c.a = 1f;
+                        tex.SetPixel(x, y, c);
+                    }
+                    else if (x < border + innerLine || x >= size - border - innerLine ||
+                        y < border + innerLine || y >= size - border - innerLine)
+                    {
+                        tex.SetPixel(x, y, hairline);
+                    }
+                    else
+                    {
+                        tex.SetPixel(x, y, center);
+                    }
                 }
             tex.Apply();
             panelFrameCache[rarity] = tex;
@@ -636,6 +658,35 @@ namespace MythicChronicles
                 case Rarity.SR: return new Color(.72f, .78f, .9f);
                 default: return new Color(.68f, .54f, .36f);
             }
+        }
+
+        private static Texture2D arenaFloorTexture;
+
+        // Procedural sandstone tile texture for the arena floor: warm value
+        // noise plus darker seams so the ground reads as stone tiling, not a
+        // flat colored slab. Deterministic hash noise keeps every run identical.
+        private static Texture2D ArenaFloorTexture()
+        {
+            if (arenaFloorTexture != null) return arenaFloorTexture;
+            const int size = 128, tile = 32;
+            Texture2D tex = new Texture2D(size, size, TextureFormat.RGBA32, false);
+            tex.wrapMode = TextureWrapMode.Repeat;
+            for (int y = 0; y < size; y++)
+                for (int x = 0; x < size; x++)
+                {
+                    uint h = (uint)(x * 374761393 + y * 668265263);
+                    h = (h ^ (h >> 13)) * 1274126177;
+                    float n = ((h ^ (h >> 16)) & 0xffff) / 65535f;
+                    float v = .92f + .18f * n; // subtle mottling, avg ~1
+                    bool seamX = (x % tile) < 2, seamY = (y % tile) < 2;
+                    bool bevelX = (x % tile) == 2, bevelY = (y % tile) == 2;
+                    if (seamX || seamY) v = .45f + .1f * n;
+                    else if (bevelX || bevelY) v = 1.06f + .06f * n;
+                    tex.SetPixel(x, y, new Color(v, v * .96f, v * .92f, 1f));
+                }
+            tex.Apply();
+            arenaFloorTexture = tex;
+            return tex;
         }
 
         private void Update()
