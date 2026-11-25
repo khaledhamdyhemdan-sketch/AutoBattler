@@ -498,7 +498,7 @@ namespace MythicChronicles
             float halfW = halfH * aspect;
             float colW = halfW * 2f / 3f;
             size = Mathf.Min(colW, halfH * .47f);
-            float rowGap = size * .96f;
+            float rowGap = size * 1.0f;
             float blockRow = side == 1 ? row : (1 - row);
             float px = -halfW + colW * (col + .5f);
             float py = (side == 1 ? 1f : -1f) *
@@ -507,8 +507,53 @@ namespace MythicChronicles
             pos = new Vector3(px, py, -0.4f);
         }
 
+        // Middle-band embers: drifting warm sparks so the open scene band
+        // is alive. Pure Update-driven, so it only animates on device.
+        private Transform[] emberQuads;
+        private float[] emberSeed;
+        private Material emberMaterial;
+
+        private void UpdateEmbers()
+        {
+            if (cam == null) return;
+            float aspect = cam.aspect > .2f ? cam.aspect : .5625f;
+            float halfW = 5.4f * aspect;
+            const int n = 26;
+            if (emberQuads == null)
+            {
+                Shader sh = HeroSkillEffects.SharedBlendShader();
+                if (sh == null) { emberQuads = new Transform[0]; return; }
+                emberMaterial = new Material(sh);
+                if (emberMaterial.HasProperty("_MainTex")) emberMaterial.mainTexture = HeroSkillEffects.SharedGlow();
+                emberQuads = new Transform[n]; emberSeed = new float[n];
+                for (int i = 0; i < n; i++)
+                {
+                    GameObject q = GameObject.CreatePrimitive(PrimitiveType.Quad);
+                    q.name = "ember " + i;
+                    Collider c = q.GetComponent<Collider>(); if (c != null) Destroy(c);
+                    q.transform.SetParent(transform);
+                    q.GetComponent<Renderer>().sharedMaterial = emberMaterial;
+                    emberQuads[i] = q.transform; emberSeed[i] = i * 0.6180339f;
+                }
+            }
+            if (emberMaterial != null) emberMaterial.color = new Color(1f, .62f, .25f, .75f);
+            for (int i = 0; i < emberQuads.Length; i++)
+            {
+                float ph = (elapsed * .11f + emberSeed[i]) % 1f;      // 0..1 rise cycle
+                float x = (Mathf.Sin(emberSeed[i] * 37.1f) * .5f) * halfW * 2f
+                    + Mathf.Sin(elapsed * .7f + i) * .25f;
+                float y = Mathf.Lerp(-1.6f, 1.6f, ph);
+                float fadeE = Mathf.Sin(ph * Mathf.PI);
+                float sz = .14f + .10f * ((i * 7) % 5) / 4f;
+                emberQuads[i].position = new Vector3(x, y, -0.2f);
+                emberQuads[i].rotation = Quaternion.identity;
+                emberQuads[i].localScale = new Vector3(sz * (.5f + fadeE), sz * (.5f + fadeE), 1f);
+            }
+        }
+
         private void RelayoutPanels()
         {
+            UpdateEmbers();
             if (cam == null) return;
             HeroSkillEffects.PanelMode = true;
             foreach (Combatant f in units)

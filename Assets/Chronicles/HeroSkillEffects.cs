@@ -137,6 +137,9 @@ namespace MythicChronicles
         // Soft radial glow texture, generated once: white-hot core fading to
         // transparent, so overlapping quads blend into light instead of hard
         // squares. Runtime-generated so no authored art is required.
+        public static Texture2D SharedGlow() { return GlowTexture(); }
+        public static Shader SharedBlendShader() { return BlendShader(); }
+
         private static Texture2D GlowTexture()
         {
             if (glowTex != null) return glowTex;
