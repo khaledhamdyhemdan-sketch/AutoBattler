@@ -85,6 +85,10 @@ namespace MythicChronicles.EditorTools
             Object.DestroyImmediate(scene);
             Object.DestroyImmediate(cam.gameObject);
             Object.DestroyImmediate(ground);
+            // The demo effect root is scene-less: Destroy() from its own Update
+            // never flushes in batchmode (no player loop), so without this it
+            // leaks and ghosts into later battle capture frames.
+            Object.DestroyImmediate(root);
         }
     }
 }
