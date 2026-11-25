@@ -387,9 +387,12 @@ namespace MythicChronicles
             // arena frame reads as ruins, not bare capsules.
             sandstoneMaterial = CreateMaterial(new Color(.58f, .44f, .30f));
             sandstoneDarkMaterial = CreateMaterial(new Color(.40f, .30f, .21f));
+            if (!PanelLayout)
+            {
             MakePrimitive("Arena Floor", PrimitiveType.Cube, new Vector3(0f, -.40f, 0f), new Vector3(9f, .5f, 12f), groundMaterial, transform);
             MakePrimitive("Alliance Boundary", PrimitiveType.Cube, new Vector3(0f, -.10f, 0f), new Vector3(8f, .02f, .06f), goldMaterial, transform);
-            for (int side = -1; side <= 1; side += 2)
+            }
+            for (int side = -1; !PanelLayout && side <= 1; side += 2)
             {
                 for (int end = -1; end <= 1; end += 2)
                 {
@@ -526,6 +529,8 @@ namespace MythicChronicles
             unit.model = unit.visual.gameObject;
             unit.model.transform.position = unit.arrivalPosition;
             unit.displayScale = unit.model.transform.localScale;
+            // In panel mode the hero art insets inside the card frame.
+            if (PanelLayout) unit.displayScale *= .80f;
             unit.model.transform.localScale = unit.displayScale * .001f;
             if (unit.visual.IsPlaceholder)
             {
@@ -567,10 +572,68 @@ namespace MythicChronicles
                         panelMaterial.mainTexture = panelTex;
                         panelRenderer.material = panelMaterial;
                     }
+                    quad.transform.rotation = Quaternion.Euler(-6f, 0f, 0f);
                     unit.panelQuad = quad;
+                    // Rarity-colored card frame behind the panel, like the
+                    // reference card battles.
+                    GameObject frame = GameObject.CreatePrimitive(PrimitiveType.Quad);
+                    frame.name = "Panel Frame - " + hero.name;
+                    Collider frameCollider = frame.GetComponent<Collider>();
+                    if (frameCollider != null) Destroy(frameCollider);
+                    frame.transform.SetParent(transform);
+                    frame.transform.position = new Vector3(
+                        unit.panelAnchor.x, unit.panelAnchor.y, 0.63f);
+                    frame.transform.localScale = new Vector3(2.62f, 2.62f, 1f);
+                    frame.transform.rotation = Quaternion.Euler(-6f, 0f, 0f);
+                    Shader frameShader = ChroniclesShaders.FindAny(
+                        "Sprites/Default", "Unlit/Transparent",
+                        "Universal Render Pipeline/Unlit");
+                    MeshRenderer frameRenderer = frame.GetComponent<MeshRenderer>();
+                    if (frameShader != null && frameRenderer != null)
+                    {
+                        var frameMaterial = new Material(frameShader);
+                        frameMaterial.mainTexture = PanelFrameTexture(hero.rarity);
+                        frameRenderer.material = frameMaterial;
+                    }
                 }
             }
             units.Add(unit);
+        }
+
+        private static readonly System.Collections.Generic.Dictionary<Rarity, Texture2D>
+            panelFrameCache = new System.Collections.Generic.Dictionary<Rarity, Texture2D>();
+
+        private static Texture2D PanelFrameTexture(Rarity rarity)
+        {
+            Texture2D cached;
+            if (panelFrameCache.TryGetValue(rarity, out cached))
+                return cached;
+            Color col = PanelRarityColor(rarity);
+            const int size = 64, border = 7;
+            Texture2D tex = new Texture2D(size, size, TextureFormat.RGBA32, false);
+            Color clear = new Color(0f, 0f, 0f, 0f);
+            for (int y = 0; y < size; y++)
+                for (int x = 0; x < size; x++)
+                {
+                    bool edge = x < border || x >= size - border ||
+                        y < border || y >= size - border;
+                    tex.SetPixel(x, y, edge ? col : clear);
+                }
+            tex.Apply();
+            panelFrameCache[rarity] = tex;
+            return tex;
+        }
+
+        private static Color PanelRarityColor(Rarity rarity)
+        {
+            switch (rarity)
+            {
+                case Rarity.UR: return new Color(1f, .85f, .5f);
+                case Rarity.EX: return new Color(.9f, .55f, .9f);
+                case Rarity.SSR: return new Color(.86f, .66f, .28f);
+                case Rarity.SR: return new Color(.72f, .78f, .9f);
+                default: return new Color(.68f, .54f, .36f);
+            }
         }
 
         private void Update()
