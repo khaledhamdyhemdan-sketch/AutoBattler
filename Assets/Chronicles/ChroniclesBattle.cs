@@ -741,9 +741,11 @@ namespace MythicChronicles
             }
             if (PanelLayout && cam != null && cam.orthographic)
             {
-                // Cinematic zoom-in under an ultimate cut-in, ease back after.
+                // Subtle pulse under an ultimate cut-in, ease back after.
+                // Keep it shallow: the card grid must never clip off-frame
+                // (a hard 4.35 zoom cut the enemy top row in half).
                 float targetSize = cutInUltimate && cutInTime < 1.75f &&
-                    !string.IsNullOrEmpty(cutInHero) ? 4.35f : 5.4f;
+                    !string.IsNullOrEmpty(cutInHero) ? 5.15f : 5.4f;
                 cam.orthographicSize = Mathf.Lerp(cam.orthographicSize, targetSize,
                     Mathf.Clamp01(unscaledDt * 5f));
             }
