@@ -611,13 +611,15 @@ namespace MythicChronicles
             col.a = 1f;
             const int size = 96, border = 5;
             Texture2D tex = new Texture2D(size, size, TextureFormat.RGBA32, false);
-            Color clear = new Color(0f, 0f, 0f, 0f);
+            // Solid dark card center, no alpha dependence: renders as a card
+            // with a rarity border no matter which unlit shader the runtime has.
+            Color center = new Color(.09f, .07f, .13f, 1f);
             for (int y = 0; y < size; y++)
                 for (int x = 0; x < size; x++)
                 {
                     bool edge = x < border || x >= size - border ||
                         y < border || y >= size - border;
-                    tex.SetPixel(x, y, edge ? col : clear);
+                    tex.SetPixel(x, y, edge ? col : center);
                 }
             tex.Apply();
             panelFrameCache[rarity] = tex;
