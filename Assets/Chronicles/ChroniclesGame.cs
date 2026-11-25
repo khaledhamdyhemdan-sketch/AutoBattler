@@ -41,6 +41,7 @@ namespace MythicChronicles
         private SummonBannerType activeSummonBanner = SummonBannerType.Standard;
         private readonly List<string> lastSummonBatch = new List<string>();
         private bool lastVictory;
+        private int clearedStageBeforeBattle = -1;
         private Vector2 chapterScroll, rosterScroll, formationScroll, gearScroll, runeScroll;
         private GUIStyle heading, subtitle, tiny, pageDesc;
         private GUIStyle rowText, tinyCenter, cellText;
@@ -2733,6 +2734,7 @@ namespace MythicChronicles
             }
             if (menuCamera != null) menuCamera.enabled = false;
             if (menuAudio != null) menuAudio.enabled = false;
+            clearedStageBeforeBattle = progress.Data.lastClearedStage;
             page = Page.Battle; notice = "";
             if (audio != null) audio.SetState(AudioScene.Battle, stage.chapter);
         }
@@ -3076,9 +3078,23 @@ namespace MythicChronicles
                     "\nCampaign rank: " + ChroniclesTrials.CampaignRank(progress.Data),
                 subtitle);
             DrawVsResults(new Rect(38, 452, 464, 196), 452f);
-            GUI.Label(new Rect(38, 654, 464, 30),
-                lastVictory ? "First-clear rewards are added once. Your progress is saved." :
-                    "Upgrade your heroes or change formation to try again.", tiny);
+            if (lastVictory && activeTrialMode == TrialMode.Normal &&
+                !inTower && !inGuildBoss && !inEventAdventure && !inElementalGate &&
+                !inRaid && !inLabyrinth && !inArenaTraining && !inTournament &&
+                stageId == clearedStageBeforeBattle + 1)
+            {
+                // Icon-first first-clear rewards: icon + amount, no written names.
+                GUIStyle rewardStyle = new GUIStyle(subtitle) { fontSize = 20 };
+                rewardStyle.normal.textColor = OrnateGuiSkin.GoldBright;
+                DrawCurrency(130, 648, "icon_gold_gems", stage.gold, rewardStyle);
+                DrawCurrency(290, 648, "icon_gems", stage.gems, rewardStyle);
+            }
+            else
+            {
+                GUI.Label(new Rect(38, 654, 464, 30),
+                    lastVictory ? "First-clear rewards are added once. Your progress is saved." :
+                        "Upgrade your heroes or change formation to try again.", tiny);
+            }
             bool finalTrialStage = activeTrialMode != TrialMode.Normal &&
                 stageId % ChroniclesTrials.StagesPerChapter == 0;
             bool finishedTower = inTower &&
