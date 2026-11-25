@@ -1662,12 +1662,28 @@ namespace MythicChronicles
                 bannerStyle.normal.textColor = new Color(1f, .92f, .6f);
             }
             float x = Mathf.Lerp(-560f, 0f, inT) + 560f * outT;
-            // dark sweep plate behind the text
-            GUI.color = new Color(0f, 0f, 0f, .45f * a);
-            GUI.DrawTexture(new Rect(0f, 415f, 540f, 90f), Texture2D.whiteTexture);
-            GUI.color = new Color(1f, .85f, .4f, .9f * a);
-            GUI.DrawTexture(new Rect(0f, 415f, 540f, 3f), Texture2D.whiteTexture);
-            GUI.DrawTexture(new Rect(0f, 502f, 540f, 3f), Texture2D.whiteTexture);
+            // Illustrated ornate plaque (art) behind the text, with a soft
+            // gold glow; falls back to the dark sweep when the art is missing.
+            Texture2D bannerArt = OrnateGuiSkin.Art("bar_plate");
+            if (bannerArt != null)
+            {
+                Texture2D glow = OrnateGuiSkin.Glow("banner_glow", new Color(1f, .8f, .35f));
+                if (glow != null)
+                {
+                    GUI.color = new Color(1f, 1f, 1f, .55f * a);
+                    GUI.DrawTexture(new Rect(x - 20f, 385f, 580f, 150f), glow);
+                }
+                GUI.color = new Color(1f, 1f, 1f, a);
+                GUI.DrawTexture(new Rect(x + 10f, 410f, 520f, 100f), bannerArt, ScaleMode.StretchToFill);
+            }
+            else
+            {
+                GUI.color = new Color(0f, 0f, 0f, .45f * a);
+                GUI.DrawTexture(new Rect(0f, 415f, 540f, 90f), Texture2D.whiteTexture);
+                GUI.color = new Color(1f, .85f, .4f, .9f * a);
+                GUI.DrawTexture(new Rect(0f, 415f, 540f, 3f), Texture2D.whiteTexture);
+                GUI.DrawTexture(new Rect(0f, 502f, 540f, 3f), Texture2D.whiteTexture);
+            }
             GUI.color = new Color(0f, 0f, 0f, a);
             GUI.Label(new Rect(x + 3f, 423f, 540f, 80f), bannerText, bannerStyle);
             GUI.color = new Color(1f, .92f, .6f, a);
