@@ -490,8 +490,7 @@ namespace MythicChronicles
                 // Comic-panel wall: 3 top slots, 2 centered bottom slots per side.
                 int col = slot % 3, row = slot / 3;
                 float px = row == 0 ? (col - 1) * 2.0f : (slot == 3 ? -1.0f : 1.0f);
-                float py = (side == 1 ? 4.15f : -1.75f) - row * 2.5f * (side == 1 ? 1f : -1f);
-                if (side == 1) py = 4.15f - row * 2.5f; else py = -1.75f - row * 2.5f;
+                float py = side == 1 ? 3.95f - row * 2.35f : -1.65f - row * 2.35f;
                 destination = new Vector3(px, py, -0.4f);
             }
             else
@@ -583,7 +582,7 @@ namespace MythicChronicles
                     frame.transform.SetParent(transform);
                     frame.transform.position = new Vector3(
                         unit.panelAnchor.x, unit.panelAnchor.y, 0.63f);
-                    frame.transform.localScale = new Vector3(2.62f, 2.62f, 1f);
+                    frame.transform.localScale = new Vector3(2.50f, 2.50f, 1f);
                     frame.transform.rotation = Quaternion.Euler(-6f, 0f, 0f);
                     Shader frameShader = ChroniclesShaders.FindAny(
                         "Sprites/Default", "Unlit/Transparent",
@@ -608,8 +607,9 @@ namespace MythicChronicles
             Texture2D cached;
             if (panelFrameCache.TryGetValue(rarity, out cached))
                 return cached;
-            Color col = PanelRarityColor(rarity);
-            const int size = 64, border = 7;
+            Color col = PanelRarityColor(rarity) * .82f;
+            col.a = 1f;
+            const int size = 96, border = 5;
             Texture2D tex = new Texture2D(size, size, TextureFormat.RGBA32, false);
             Color clear = new Color(0f, 0f, 0f, 0f);
             for (int y = 0; y < size; y++)
