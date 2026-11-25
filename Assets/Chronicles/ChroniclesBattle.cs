@@ -563,17 +563,25 @@ namespace MythicChronicles
 
         private void Update()
         {
+            Tick(Time.deltaTime, Time.unscaledDeltaTime);
+        }
+
+        // Advances the battle by explicit frame times. Update() feeds real Unity
+        // time; the editor screenshot rig feeds fixed steps for deterministic
+        // headless captures.
+        public void Tick(float frameDt, float unscaledDt)
+        {
             if (ended || Paused) return;
-            float dt = Mathf.Min(.05f, Time.deltaTime * Speed);
+            float dt = Mathf.Min(.05f, frameDt * Speed);
             if (hitStopT > 0f)
             {
-                hitStopT -= Time.unscaledDeltaTime;
+                hitStopT -= unscaledDt;
                 dt *= .15f;
             }
-            if (cutInTime < 3f) cutInTime += Time.unscaledDeltaTime;
+            if (cutInTime < 3f) cutInTime += unscaledDt;
             if (slowMoT > 0f)
             {
-                slowMoT -= Time.unscaledDeltaTime;
+                slowMoT -= unscaledDt;
                 if (slowMoT <= 0f) Time.timeScale = 1f;
             }
             if (PanelLayout && cam != null && cam.orthographic)
@@ -582,11 +590,11 @@ namespace MythicChronicles
                 float targetSize = cutInUltimate && cutInTime < 1.75f &&
                     !string.IsNullOrEmpty(cutInHero) ? 4.35f : 5.4f;
                 cam.orthographicSize = Mathf.Lerp(cam.orthographicSize, targetSize,
-                    Mathf.Clamp01(Time.unscaledDeltaTime * 5f));
+                    Mathf.Clamp01(unscaledDt * 5f));
             }
             if (shakeT > 0f && cam != null)
             {
-                shakeT -= Time.unscaledDeltaTime;
+                shakeT -= unscaledDt;
                 Vector2 shakeOffset = UnityEngine.Random.insideUnitCircle * shakeAmp * Mathf.Max(0f, shakeT);
                 cam.transform.position = camBase + new Vector3(shakeOffset.x, shakeOffset.y, 0f);
                 if (shakeT <= 0f) cam.transform.position = camBase;

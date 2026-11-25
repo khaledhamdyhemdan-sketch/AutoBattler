@@ -17,6 +17,17 @@ namespace MythicChronicles.EditorTools
         {
             string outDir = Path.Combine(Directory.GetCurrentDirectory(), "vfx-captures");
             Directory.CreateDirectory(outDir);
+            // Battle composition frames first; a failure there must not cost
+            // the effect-tier captures below.
+            try
+            {
+                ChroniclesBattleScreenshotRig.CaptureFrames();
+            }
+            catch (System.Exception battleError)
+            {
+                Debug.LogError("VfxScreenshotRig: battle capture failed: " +
+                    battleError.Message);
+            }
             Rarity[] tiers = { Rarity.R, Rarity.SR, Rarity.SSR, Rarity.UR };
             foreach (Rarity tier in tiers)
                 foreach (bool ultimate in new[] { false, true })
