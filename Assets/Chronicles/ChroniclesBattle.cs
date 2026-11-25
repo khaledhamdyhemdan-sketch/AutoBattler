@@ -72,7 +72,7 @@ namespace MythicChronicles
         private float bannerT = 99f;
         private Texture2D speechBubbleTex;
         private readonly Dictionary<string, Texture2D> cutInPortraits = new Dictionary<string, Texture2D>();
-        private GUIStyle cutInNameStyle, cutInSkillStyle, popupBigStyle, bannerStyle, bubbleStyle;
+        private GUIStyle cutInNameStyle, cutInSkillStyle, popupBigStyle, popupSmallStyle, bannerStyle, bubbleStyle;
         private Texture2D panelAllyTex, panelEnemyTex;
         private readonly Dictionary<string, Texture2D[]> cutInAnimFrames =
             new Dictionary<string, Texture2D[]>();
@@ -1616,15 +1616,31 @@ namespace MythicChronicles
             {
                 Vector3 point = cam.WorldToScreenPoint(popup.world);
                 if (point.z <= 0f) continue;
-                GUI.color = popup.color;
                 if (popupBigStyle == null)
                 {
-                    popupBigStyle = new GUIStyle(GUI.skin.label) { fontSize = 24, fontStyle = FontStyle.Bold, alignment = TextAnchor.MiddleCenter };
+                    popupBigStyle = new GUIStyle(GUI.skin.label) { fontSize = 26, fontStyle = FontStyle.BoldAndItalic, alignment = TextAnchor.MiddleCenter, clipping = TextClipping.Overflow };
+                    popupSmallStyle = new GUIStyle(GUI.skin.label) { fontSize = 20, fontStyle = FontStyle.Bold, alignment = TextAnchor.MiddleCenter, clipping = TextClipping.Overflow };
                 }
-                if (popup.big)
-                    GUI.Label(new Rect(point.x / uiScale - 140f, (Screen.height - point.y) / uiScale - 24f, 280f, 48f), popup.text, popupBigStyle);
-                else
-                    GUI.Label(new Rect(point.x / uiScale - 30f, (Screen.height - point.y) / uiScale - 18f, 100f, 30f), popup.text);
+                GUIStyle st = popup.big ? popupBigStyle : popupSmallStyle;
+                float life = Mathf.Clamp01(popup.remaining / .9f);
+                float alpha = Mathf.Clamp01(life * 3f);
+                float pop = 1f + Mathf.Max(0f, life - .75f) * 2.4f;   // quick pop-in
+                float w = popup.big ? 320f : 140f, h = popup.big ? 52f : 34f;
+                float cx = point.x / uiScale, cy = (Screen.height - point.y) / uiScale;
+                Matrix4x4 oldM = GUI.matrix;
+                GUIUtility.ScaleAroundPivot(new Vector2(pop, pop), new Vector2(cx, cy));
+                Rect r = new Rect(cx - w * .5f, cy - h * .5f, w, h);
+                // dark outline: four offset copies, then the colored text
+                GUI.color = new Color(.05f, .03f, .02f, alpha);
+                float o = popup.big ? 2f : 1.5f;
+                GUI.Label(new Rect(r.x - o, r.y, r.width, r.height), popup.text, st);
+                GUI.Label(new Rect(r.x + o, r.y, r.width, r.height), popup.text, st);
+                GUI.Label(new Rect(r.x, r.y - o, r.width, r.height), popup.text, st);
+                GUI.Label(new Rect(r.x, r.y + o, r.width, r.height), popup.text, st);
+                Color tc = popup.color; tc.a = alpha;
+                GUI.color = tc;
+                GUI.Label(r, popup.text, st);
+                GUI.matrix = oldM;
                 GUI.color = Color.white;
             }
             DrawCutIn();
