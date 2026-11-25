@@ -1367,6 +1367,15 @@ namespace MythicChronicles
                 ChapterDefinition chapter = WorldsCatalog.Chapters[c];
                 float y = c * 498;
                 GUI.Box(new Rect(5, y, 465, 482), "");
+                Texture2D chapterArt = ChroniclesStageArt.Background(chapter.origin);
+                if (chapterArt != null)
+                {
+                    GUI.DrawTexture(new Rect(10, y + 6, 455, 118), chapterArt,
+                        ScaleMode.ScaleAndCrop);
+                    Texture2D chapterVignette = OrnateGuiSkin.Vignette();
+                    if (chapterVignette != null)
+                        GUI.DrawTexture(new Rect(10, y + 6, 455, 118), chapterVignette);
+                }
                 GUI.Label(new Rect(15, y + 10, 430, 44), chapter.number + ". " + chapter.title, rowText);
                 GUI.Label(new Rect(20, y + 52, 425, 60), chapter.summary, tiny);
                 for (int j = 0; j < 10; j++)
@@ -1401,33 +1410,38 @@ namespace MythicChronicles
             Texture2D background = ChroniclesStageArt.Background(
                 WorldsCatalog.Chapters[stage.chapter - 1].origin);
             if (background != null)
-                GUI.DrawTexture(new Rect(27, 241, 486, 216), background, ScaleMode.ScaleAndCrop);
-            GUI.Label(new Rect(22, 257, 496, 78),
+            {
+                GUI.DrawTexture(new Rect(0, 96, 540, 560), background, ScaleMode.ScaleAndCrop);
+                Texture2D vignette = OrnateGuiSkin.Vignette();
+                if (vignette != null)
+                    GUI.DrawTexture(new Rect(0, 96, 540, 560), vignette);
+            }
+            GUI.Label(new Rect(22, 120, 496, 40),
                 activeTrialMode == TrialMode.Dark ? "DARK ENCOUNTER" :
                 activeTrialMode == TrialMode.Elite ? "ELITE ENCOUNTER" :
                 stage.boss ? "BOSS ENCOUNTER" : "STORY ENCOUNTER", heading);
-            GUI.Label(new Rect(25, 349, 490, 72), stage.name, heading);
+            GUI.Label(new Rect(25, 158, 490, 52), stage.name, heading);
 
-            GUI.Box(new Rect(32, 458, 476, 196), "");
+            GUI.Box(new Rect(20, 560, 500, 208), "", OrnateGuiSkin.RowBox());
             string speaker = moment == null ? "Narrator" : moment.speaker;
             string line = moment == null ? stage.narrative : moment.line;
             Texture2D portrait = ChroniclesStageArt.Portrait(speaker);
-            float textWidth = portrait == null ? 439f : 288f;
-            GUI.Label(new Rect(45, 466, textWidth, 37), speaker, subtitle);
+            float textWidth = portrait == null ? 445f : 288f;
+            GUI.Label(new Rect(45, 572, textWidth, 37), speaker, subtitle);
             int visibleCharacters = Mathf.Clamp(
                 Mathf.FloorToInt((Time.unscaledTime - storyStartedAt) * 32f), 0, line.Length);
-            GUI.Label(new Rect(45, 506, textWidth, 140),
+            GUI.Label(new Rect(45, 612, textWidth, 148),
                 line.Substring(0, visibleCharacters), subtitle);
 
             if (portrait != null)
             {
                 float slide = 1f - Mathf.Clamp01((Time.unscaledTime - storyStartedAt) * 2f);
-                GUI.DrawTexture(new Rect(350f + slide * 70f, 465f, 141f, 180f),
+                GUI.DrawTexture(new Rect(355f + slide * 70f, 572f, 141f, 180f),
                     portrait, ScaleMode.ScaleToFit);
             }
-            if (GUI.Button(new Rect(180, 658, 180, 35), "SHOW ALL DIALOGUE"))
+            if (GUI.Button(new Rect(180, 774, 180, 32), "SHOW ALL DIALOGUE"))
                 storyStartedAt = Time.unscaledTime - 30f;
-            GUI.Label(new Rect(35, 690, 475, 50),
+            GUI.Label(new Rect(35, 808, 475, 46),
                 "Recommended power: " +
                 Mathf.RoundToInt(stage.recommendedPower *
                     ChroniclesTrials.EnemyHealthMultiplier(activeTrialMode)) +
@@ -1435,12 +1449,12 @@ namespace MythicChronicles
                     stage.gold + " Gold, " + stage.gems + " Gems" :
                     ChroniclesTrials.FirstClearReward(stageId, activeTrialMode).Description),
                 subtitle);
-            if (GUI.Button(new Rect(42, 753, 458, 70), "PREPARE TEAM", bigButton))
+            if (GUI.Button(new Rect(42, 858, 458, 56), "PREPARE TEAM", bigButton))
             {
                 notice = "";
                 page = Page.Formation;
             }
-            if (GUI.Button(new Rect(42, 831, 458, 51),
+            if (GUI.Button(new Rect(42, 920, 458, 36),
                 activeTrialMode == TrialMode.Normal ?
                     "BACK TO CHAPTERS" : "BACK TO TRIALS"))
                 page = activeTrialMode == TrialMode.Normal ?
