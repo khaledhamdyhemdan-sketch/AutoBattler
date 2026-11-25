@@ -8,18 +8,29 @@ Main owns all user-facing delivery. Repo: github.com/khaledhamdyhemdan-sketch/Au
 
 - Working branch: `feature/chronicles-battle-2d-rigs` (never commit directly to master;
   builds dispatch master's `android.yml` with `-f ref=<this branch>`).
-- HEAD at handoff: `8dc8898` (full-bleed panel layout rework).
-- LATEST DELIVERED BUILD: CI run `45595685722` (1:03 PM):
-  - temp.sh: https://temp.sh/BMFTF/Chronicles_Android.apk
-  - Gofile: https://gofile.io/d/rQnhywTG
-  - md5 `f9be51fccd3aabfbf719c8dce7252bcf`, signer verified.
-  - Fixes: VFX white-out (additive saturation + retired solid-primitive UR preview)
-    and the mid-field orb row (headless-only capture artifact, see below).
-- IN FLIGHT at handoff: CI run `45602469697` (dispatched 13:13): full-bleed card-wall
-  layout per Khalid's reference + polish batch (enamel HUD bars, card flip-in entrance,
-  idle breathing bob, Sprites/Default glows). Review captures, then deliver if clean.
-- Older live links (do NOT delete until Khalid confirms a newer install):
+- HEAD at handoff: `9594964` (capture rig ticks FX manually).
+- LATEST DELIVERED BUILD: CI run `45602469697` (1:50 PM) - full-bleed card-wall
+  layout per Khalid's reference (his 1:12 complaint 15823127 + screenshot
+  15824735) + polish batch (enamel HUD bars, card flip-in, idle bob,
+  Sprites/Default glows):
+  - temp.sh: https://temp.sh/ibvpF/Chronicles_Android.apk
+  - Gofile: https://gofile.io/d/3hejbVtT
+  - md5 `f12cd3f36562cda8880647f4a3592fa7`, signer verified.
+- IN FLIGHT at handoff: CI run `45608348549` (dispatched 13:51): capture-rig
+  fix only (ticks HeroSkillEffects manually so captures match device truth).
+  APK is code-identical to 45602469697 except the editor rig - review its
+  captures to CONFIRM the white blobs are gone from late frames, but do NOT
+  deliver it as a new build unless Khalid needs the capture proof; there is
+  no gameplay change. Report the confirmation to Main.
+- Previously delivered (keep live until Khalid confirms newer install):
+  45595685722 temp.sh/BMFTF + gofile.io/d/rQnhywTG;
   45577952061 temp.sh/AqzsF + gofile.io/d/8wmk6wgr.
+- KEY INSIGHT (cost several builds): EVERY non-animated anomaly in captures
+  was headless-only. Batchmode has no player loop: MonoBehaviour Update and
+  Destroy never run. Skill FX freeze at spawn and stack as white blobs; the
+  orb row was leaked demo FX. On device all of it animates and dies in <2s.
+  The blend-mode hardening (Sprites/Default-first) still stands as a real
+  device improvement for stacked simultaneous casts.
 
 ## Build workflow
 
@@ -117,9 +128,12 @@ Main owns all user-facing delivery. Repo: github.com/khaledhamdyhemdan-sketch/Au
 
 ## Polish backlog (next biggest gaps, in priority order)
 
-1. DELIVER build 45602469697 after capture review (full-bleed layout + enamel
-   bars + flip-in + idle bob). Watch for z-fighting at tilted card corners and
-   for the bigger cards crowding the IMGUI HUD anchors.
+1. Review build 45608348549 captures (lands ~14:10): late frames should show
+   NO white blobs and NO orbs, full-bleed layout intact. Report confirmation
+   to Main (no delivery needed - editor-rig-only change).
+2. Watch Khalid's reaction to the full-bleed layout build (delivered 13:50).
+3. Cast-glow centering: skill glows cluster at card bottoms; consider centering
+   bursts on card faces (shard orbit y-offset in HeroSkillEffects.Update).
 2. Cast-glow centering: skill glows cluster at card bottoms; consider centering
    bursts on card faces (shard orbit y-offset in HeroSkillEffects.Update).
 3. Damage popup styling: currently plain GUI labels - rarity-colored outlines,
