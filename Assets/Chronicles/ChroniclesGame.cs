@@ -2692,12 +2692,14 @@ namespace MythicChronicles
                 GoHome();
         }
 
-        // Comic-panel battle presentation (Khalid-approved layout experiment).
-        // Second presentation mode: the arena stays the default until the panel
-        // mode is verified in an internal build. Toggle persists in PlayerPrefs.
+        // Comic-panel battle presentation (Khalid-approved layout, now the
+        // default battle view per his 7:01 message: the game switches to the
+        // card style from the reference videos since we are not going 3D).
+        // The 3D-arena view stays available as the opt-in alternative. Toggle
+        // persists in PlayerPrefs.
         private bool PanelBattleEnabled
         {
-            get { return PlayerPrefs.GetInt("panel_battle", 0) == 1; }
+            get { return PlayerPrefs.GetInt("panel_battle", 1) == 1; }
             set { PlayerPrefs.SetInt("panel_battle", value ? 1 : 0); PlayerPrefs.Save(); }
         }
 

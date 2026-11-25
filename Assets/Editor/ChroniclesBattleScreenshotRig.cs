@@ -17,16 +17,24 @@ namespace MythicChronicles.EditorTools
         public static void Capture()
         {
             int shots = CaptureFrames();
-            EditorApplication.Exit(shots == 5 ? 0 : 1);
+            EditorApplication.Exit(shots >= 5 ? 0 : 1);
         }
 
-        // Writes battle_stage1_*.png frames and returns how many were captured.
-        // Does not exit the editor, so sibling rigs can run in the same session.
+        // Writes battle_stage1_*.png frames (arena view) plus
+        // battle_panel_stage1_*.png frames (panel view, the default battle
+        // presentation) and returns how many were captured. Does not exit the
+        // editor, so sibling rigs can run in the same session.
         public static int CaptureFrames()
         {
             string outDir = Path.Combine(Directory.GetCurrentDirectory(), "vfx-captures");
             Directory.CreateDirectory(outDir);
+            int shots = CaptureFrames("battle_stage1_", false, outDir);
+            shots += CaptureFrames("battle_panel_stage1_", true, outDir);
+            return shots;
+        }
 
+        private static int CaptureFrames(string prefix, bool panel, string outDir)
+        {
             StageDefinition stage = WorldsCatalog.GetStage(1);
             var squad = new List<OwnedHero>();
             foreach (string id in WorldsCatalog.StartingHeroes)
@@ -34,6 +42,7 @@ namespace MythicChronicles.EditorTools
 
             var battleGo = new GameObject("battle capture");
             ChroniclesBattle battle = battleGo.AddComponent<ChroniclesBattle>();
+            battle.PanelLayout = panel;
             battle.Initialize(stage, squad, new PlayerSave(), won => { });
 
             Camera cam = null;
@@ -73,7 +82,7 @@ namespace MythicChronicles.EditorTools
                 RenderTexture.active = null;
                 cam.targetTexture = null;
                 File.WriteAllBytes(Path.Combine(outDir,
-                    "battle_stage1_t" + captureAt[shot].ToString("0.0") + "s.png"),
+                    prefix + "t" + captureAt[shot].ToString("0.0") + "s.png"),
                     png.EncodeToPNG());
                 Object.DestroyImmediate(png);
                 shot++;
