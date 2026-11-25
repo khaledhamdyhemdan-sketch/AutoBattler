@@ -105,6 +105,6 @@ namespace MythicChronicles
         // Starter team provides all four ordinary elements and a healer,
         // without granting scarce Light/Dark UR units at sign-up.
         public static readonly string[] StartingHeroes =
-            { "sobek", "bastet", "set", "nephthys", "persephone" };
+            { "sobek", "bastet", "set", "nephthys", "persephone", "hypatia" };
     }
 }

@@ -108,6 +108,8 @@ namespace MythicChronicles
     // Local/offline save for campaign mode only. Online purchases/PvP require server-authoritative progression.
     public sealed class PlayerProgressService
     {
+        // Squad size for every mode (formation, story, towers, gates, raids).
+        public const int TeamSize = 6;
         public static readonly QuestInfo[] DailyQuests =
         {
             new QuestInfo("win_1", "Win 1 battle", 1, 150, 15),
@@ -363,7 +365,21 @@ namespace MythicChronicles
                 Data.equippedRelicId = "";
             seen.Clear();
             Data.selectedTeam.RemoveAll(id => !OwnsHero(id) || !seen.Add(id));
-            if (Data.selectedTeam.Count > 5) Data.selectedTeam.RemoveRange(5, Data.selectedTeam.Count - 5);
+            if (Data.selectedTeam.Count > TeamSize) Data.selectedTeam.RemoveRange(TeamSize, Data.selectedTeam.Count - TeamSize);
+            // Legacy five-hero squads: fill the sixth slot with the strongest
+            // owned hero not already selected so old saves stay playable.
+            if (Data.selectedTeam.Count > 0 && Data.selectedTeam.Count < TeamSize)
+            {
+                var pool = new List<OwnedHero>(Data.heroes);
+                pool.Sort((a, b) => b.level != a.level ? b.level - a.level :
+                    string.CompareOrdinal(a.id, b.id));
+                foreach (OwnedHero candidate in pool)
+                {
+                    if (Data.selectedTeam.Count >= TeamSize) break;
+                    if (!Data.selectedTeam.Contains(candidate.id))
+                        Data.selectedTeam.Add(candidate.id);
+                }
+            }
             Save();
         }
 
@@ -595,7 +611,7 @@ namespace MythicChronicles
 
         public bool SetTeam(IList<string> heroIds)
         {
-            if (heroIds == null || heroIds.Count != 5) return false;
+            if (heroIds == null || heroIds.Count != TeamSize) return false;
             var unique = new HashSet<string>(StringComparer.Ordinal);
             foreach (string id in heroIds)
                 if (!OwnsHero(id) || !unique.Add(id)) return false;
@@ -1802,7 +1818,7 @@ namespace MythicChronicles
         // Team check: all five selected heroes must match the gate element.
         public bool GateTeamMatches(HeroElement element)
         {
-            if (Data.selectedTeam.Count != 5) return false;
+            if (Data.selectedTeam.Count != TeamSize) return false;
             foreach (string id in Data.selectedTeam)
                 if (HeroElements.For(id) != element) return false;
             return true;

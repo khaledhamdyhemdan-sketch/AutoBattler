@@ -1151,7 +1151,7 @@ namespace MythicChronicles
                 inTower = false;
                 inElementalGate = false; inEventAdventure = false; inGuildBoss = false; inTournament = false;
                 activeTrialMode = TrialMode.Normal;
-                notice = "Choose five heroes for the NPC duel.";
+                notice = "Choose six heroes for the NPC duel.";
                 page = Page.Formation;
             }
             GUI.enabled = true;
@@ -1220,7 +1220,7 @@ namespace MythicChronicles
                         stageId = option.stageId;
                         activeTrialMode = TrialMode.Normal;
                         page = Page.Formation;
-                        notice = "Select five heroes for this chamber.";
+                        notice = "Select six heroes for this chamber.";
                     }
                     else
                     {
@@ -1371,7 +1371,7 @@ namespace MythicChronicles
             inElementalGate = false; inEventAdventure = false; inGuildBoss = false; inTournament = false;
             activeTrialMode = TrialMode.Normal;
             stageId = stage.id;
-            notice = "Select five heroes, including two from " + origin + ".";
+            notice = "Select six heroes, including two from " + origin + ".";
             page = Page.Formation;
         }
 
@@ -2016,15 +2016,15 @@ namespace MythicChronicles
                     "\nThe ladder here is local practice, not online PvP." :
                 inLabyrinth ? "WEEKLY LABYRINTH - ROOM " +
                     progress.LabyrinthState().nextRoom +
-                    "\nChoose five heroes and carry your blessings into battle." :
+                    "\nChoose six heroes and carry your blessings into battle." :
                 inTower ? "TOWER: " + ChroniclesTowers.DisplayName(selectedTowerOrigin) +
-                    "\nPick 5 heroes, including at least 2 from this mythology." :
-                    "Pick five heroes. Order sets your front and back rows.", pageDesc);
-            // Selected team as five big cards - the way the genre presents a squad.
-            for (int slot = 0; slot < 5; slot++)
+                    "\nPick 6 heroes, including at least 2 from this mythology." :
+                    "Pick six heroes. Order sets your front and back rows.", pageDesc);
+            // Selected team as six big cards - the way the genre presents a squad.
+            for (int slot = 0; slot < PlayerProgressService.TeamSize; slot++)
             {
-                float sx = 26f + slot * 99f;
-                Rect slotRect = new Rect(sx, 310f, 92f, 176f);
+                float sx = 26f + slot * 81f;
+                Rect slotRect = new Rect(sx, 310f, 76f, 176f);
                 if (slot < progress.Data.selectedTeam.Count)
                 {
                     string pickedId = progress.Data.selectedTeam[slot];
@@ -2036,12 +2036,12 @@ namespace MythicChronicles
                             RarityFrameColor(pickedHero.rarity),
                             new Color(.08f, .06f, .12f, .94f));
                         ChroniclesHeroPortrait.Draw(pickedHero.id,
-                            new Rect(slotRect.x + 4, slotRect.y + 4, 84, 118), false);
+                            new Rect(slotRect.x + 4, slotRect.y + 4, 68, 118), false);
                         OrnateGuiSkin.PulseGlow(slotRect,
                             new Color(1f, .82f, .42f, .18f), 1.6f + slot * .1f);
-                        GUI.Label(new Rect(slotRect.x + 4, slotRect.y + 126, 84, 20),
+                        GUI.Label(new Rect(slotRect.x + 4, slotRect.y + 126, 68, 20),
                             "SLOT " + (slot + 1), tiny);
-                        GUI.Label(new Rect(slotRect.x + 4, slotRect.y + 144, 84, 28),
+                        GUI.Label(new Rect(slotRect.x + 4, slotRect.y + 144, 68, 28),
                             "Lv " + (pickedOwned != null ? pickedOwned.level : 1) +
                             " " + pickedHero.role, tiny);
                         if (GUI.Button(slotRect, "", GUIStyle.none))
@@ -2049,7 +2049,7 @@ namespace MythicChronicles
                             List<string> temp = new List<string>(progress.Data.selectedTeam);
                             temp.Remove(pickedId);
                             progress.Data.selectedTeam = temp;
-                            notice = temp.Count + "/5 heroes selected. Complete your team to save.";
+                            notice = temp.Count + "/6 heroes selected. Complete your team to save.";
                         }
                         continue;
                     }
@@ -2099,14 +2099,14 @@ namespace MythicChronicles
                 {
                     List<string> temp = new List<string>(progress.Data.selectedTeam);
                     if (picked >= 0) temp.Remove(owned.id);
-                    else if (temp.Count < 5) temp.Add(owned.id);
-                    if (temp.Count == 5)
+                    else if (temp.Count < PlayerProgressService.TeamSize) temp.Add(owned.id);
+                    if (temp.Count == PlayerProgressService.TeamSize)
                         notice = progress.SetTeam(temp) ? "Team saved." : "Could not save team.";
                     else
                     {
                         // Temporarily allow incomplete in the formation editor.
                         progress.Data.selectedTeam = temp;
-                        notice = temp.Count + "/5 heroes selected. Complete your team to save.";
+                        notice = temp.Count + "/6 heroes selected. Complete your team to save.";
                     }
                 }
             }
@@ -2121,12 +2121,12 @@ namespace MythicChronicles
             TeamSynergyBonus bonus = TeamSynergy.Calculate(synergyHeroes);
             ElementalTeamBonus elemental = HeroElements.Calculate(synergyHeroes);
             GUI.Label(new Rect(34, 752, 472, 56),
-                "Selected " + progress.Data.selectedTeam.Count + "/5  |  " +
+                "Selected " + progress.Data.selectedTeam.Count + "/6  |  " +
                 elemental.description + "\nOrigin: " + bonus.description +
                 "  •  Element ATK/HP +" +
                 Mathf.RoundToInt((elemental.attackMultiplier - 1f) * 100f) +
                 "%  •  START ENERGY +" + elemental.startingEnergy, subtitle);
-            GUI.enabled = progress.Data.selectedTeam.Count == 5;
+            GUI.enabled = progress.Data.selectedTeam.Count == PlayerProgressService.TeamSize;
             if (GUI.Button(new Rect(40, 818, 460, 64),
                 inTower ? "START " + selectedTowerOrigin.ToString().ToUpperInvariant() +
                     " TOWER FLOOR " + selectedTowerFloor :
@@ -2705,8 +2705,8 @@ namespace MythicChronicles
 
         private void BeginBattle()
         {
-            if (progress.Data.selectedTeam.Count != 5)
-            { notice = "Select exactly five heroes first."; return; }
+            if (progress.Data.selectedTeam.Count != PlayerProgressService.TeamSize)
+            { notice = "Select exactly six heroes first."; return; }
             // Campaign stages cost stamina; every other mode keeps its own
             // attempt system (#12: free regen only, no purchases).
             bool isCampaign = !inArenaTraining && !inLabyrinth && !inRaid &&
@@ -3297,7 +3297,7 @@ namespace MythicChronicles
                 var list = side == 0 ? allies : foes;
                 bool winnerSide = side == 0 ? lastVictory : !lastVictory;
                 float x = side == 0 ? area.x + 12f : area.x + area.width / 2f + 12f;
-                for (int i = 0; i < list.Count && i < 5; i++)
+                for (int i = 0; i < list.Count && i < PlayerProgressService.TeamSize; i++)
                 {
                     var entry = list[i];
                     float y = area.y + 14f + i * 34f;
@@ -3372,12 +3372,12 @@ namespace MythicChronicles
 
         private void GoHome()
         {
-            if (page == Page.Formation && progress.Data.selectedTeam.Count != 5)
+            if (page == Page.Formation && progress.Data.selectedTeam.Count != PlayerProgressService.TeamSize)
             {
                 progress.Data.selectedTeam.Clear();
                 foreach (var id in WorldsCatalog.StartingHeroes)
                 {
-                    if (progress.Data.selectedTeam.Count >= 5) break;
+                    if (progress.Data.selectedTeam.Count >= PlayerProgressService.TeamSize) break;
                     if (progress.OwnsHero(id)) progress.Data.selectedTeam.Add(id);
                 }
                 progress.Save();

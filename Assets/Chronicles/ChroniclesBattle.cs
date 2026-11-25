@@ -26,7 +26,7 @@ namespace MythicChronicles
             public Vector3 panelAnchor;
             public GameObject panelQuad;
             public float panelCardSize = 2.2f;
-            public float lungeT, dealt;
+            public float lungeT, dealt, hitFlashT;
             public Combatant lungeTarget;
             public bool Alive { get { return hp > 0f; } }
         }
@@ -84,7 +84,7 @@ namespace MythicChronicles
         {
             raidMode = raidBattle;
             raidDamage = 0f;
-            if (chosen == null || squad == null || squad.Count != 5) throw new ArgumentException("Battle requires stage and five heroes.");
+            if (chosen == null || squad == null || squad.Count != PlayerProgressService.TeamSize) throw new ArgumentException("Battle requires stage and six heroes.");
             stage = chosen; finished = onFinished;
             // Battle-start banner: stage name; tournament rounds say ROUND N.
             bannerText = mode == TrialMode.Normal ?
@@ -118,7 +118,7 @@ namespace MythicChronicles
                 }
             }
             BuildArena();
-            for (int i = 0; i < 5; i++)
+            for (int i = 0; i < squad.Count; i++)
             {
                 HeroDefinition hero = WorldsCatalog.FindHero(squad[i].id);
                 if (hero == null) throw new ArgumentException("Unknown hero: " + squad[i].id);
@@ -156,7 +156,7 @@ namespace MythicChronicles
                     (hero.origin == Origin.Japan || hero.origin == Origin.China))))
                     opponents.Add(hero);
             if (opponents.Count == 0) throw new InvalidOperationException("Chapter needs opponents.");
-            for (int i = 0; i < 5; i++)
+            for (int i = 0; i < squad.Count; i++)
             {
                 HeroDefinition enemy;
                 if (stage.boss && i == 0)
@@ -486,22 +486,21 @@ namespace MythicChronicles
         private void Spawn(HeroDefinition hero, int side, int slot, int level, bool boss,
             int weaponLevel = 0, int armorLevel = 0, int stars = 1, string skin = "default")
         {
-            bool front = slot < 2;
+            bool front = slot < 3;
             Vector3 destination;
             float panelCardSizeLocal = 2.2f;
             if (PanelLayout)
             {
-                // Card-battle wall like the approved mock: a tight 3+2 grid on
-                // the left ~78% of the frame (right strip stays free for the
-                // HUD rail), cards sized to the camera aspect so nothing
-                // clips on tall phones. Rows slightly overlap like the mock.
+                // Card-battle wall per Khalid's mock: a tight 3x2 grid (six
+                // per side) on the left ~78% of the frame, sized to the camera
+                // aspect so nothing clips on tall phones; the right strip
+                // stays free for the HUD rail. Rows slightly overlap.
                 int col = slot % 3, row = slot / 3;
                 float halfW = cam != null ? cam.orthographicSize * cam.aspect : 4f;
                 float gridW = halfW * 2f * .78f;
                 float cardSize = Mathf.Min(2.2f, gridW / 3.1f);
                 float x0 = -halfW + cardSize * .55f;
-                float px = row == 0 ? x0 + col * cardSize * 1.02f
-                    : x0 + cardSize * .51f + (slot == 3 ? 0f : cardSize * 1.02f);
+                float px = x0 + col * cardSize * 1.02f;
                 float py = side == 1 ? 4.35f - row * cardSize * .92f
                     : -2.55f - row * cardSize * .92f;
                 destination = new Vector3(px, py, -0.4f);
@@ -509,7 +508,8 @@ namespace MythicChronicles
             }
             else
             {
-            float x = front ? (slot == 0 ? -1.55f : 1.55f) : (slot - 3) * 2.45f;
+            // 3v3 arena rows: three front, three back.
+            float x = front ? (slot - 1) * 2.2f : (slot - 4) * 2.45f;
             float z = (front ? 1.6f : 3.9f) * (side == 0 ? -1f : 1f);
             destination = new Vector3(x, 1.0f, z);
             }
@@ -818,7 +818,7 @@ namespace MythicChronicles
                 else if (f.attackCd <= 0f)
                 {
                     f.visual.Play(HeroAnimation.Attack);
-                    if (PanelLayout) { f.lungeT = .34f; f.lungeTarget = target; }
+                    if (PanelLayout) { f.lungeT = .24f; f.lungeTarget = target; }
                     Hit(f, target, f.attack);
                     float baseCooldown = f.hero.role == CombatRole.Assassin ? .85f : 1.25f;
                     if (f.frozen > 0f) baseCooldown *= 1.45f;
@@ -850,21 +850,34 @@ namespace MythicChronicles
                         if (f.model != null) f.model.transform.position = home;
                         continue;
                     }
+                    Vector3 pos = new Vector3(
+                        home.x, home.y, f.panelQuad.transform.position.z);
                     if (f.lungeT > 0f && f.lungeTarget != null)
                     {
                         f.lungeT -= dt;
-                        float phase = 1f - Mathf.Max(0f, f.lungeT) / .34f;
+                        float phase = 1f - Mathf.Max(0f, f.lungeT) / .24f;
                         float swing = Mathf.Sin(phase * Mathf.PI);
                         Vector3 dir = f.lungeTarget.panelAnchor - f.panelAnchor;
-                        f.panelQuad.transform.position =
-                            home + dir.normalized * swing * .55f;
+                        // Reference motion: a short bounce toward the target,
+                        // not a long travel across the field.
+                        pos += dir.normalized * swing * .28f;
                     }
-                    else f.panelQuad.transform.position = new Vector3(
-                        home.x, home.y, f.panelQuad.transform.position.z);
+                    // Hit reaction: brief red flash and jitter on the card.
+                    float flash = 0f;
+                    if (f.hitFlashT > 0f)
+                    {
+                        f.hitFlashT = Mathf.Max(0f, f.hitFlashT - dt);
+                        flash = f.hitFlashT / .22f;
+                        pos.x += Mathf.Sin(f.hitFlashT * 60f) * .07f * flash;
+                    }
+                    if (cardRenderer != null && cardRenderer.material.HasProperty("_Color"))
+                        cardRenderer.material.color = Color.Lerp(
+                            Color.white, new Color(1f, .5f, .45f, 1f), flash * .85f);
+                    f.panelQuad.transform.position = pos;
                     // The hidden rig stays the logical anchor for projectiles
                     // and damage popups.
                     if (f.model != null)
-                        f.model.transform.position = f.panelQuad.transform.position;
+                        f.model.transform.position = pos;
                 }
             }
 
@@ -1111,6 +1124,7 @@ namespace MythicChronicles
                 attacker != null && attacker.side == 0)
                 raidDamage += actualDamage;
             defender.hp = Mathf.Max(0f, defender.hp - actualDamage);
+            if (actualDamage > 0f) defender.hitFlashT = .22f;
             if (attacker != null) attacker.dealt += actualDamage;
             defender.energy = Mathf.Min(100f, defender.energy + actualDamage * .09f);
             if (crit)
