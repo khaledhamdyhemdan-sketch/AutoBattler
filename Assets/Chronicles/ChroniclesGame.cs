@@ -1378,15 +1378,42 @@ namespace MythicChronicles
                 }
                 GUI.Label(new Rect(15, y + 10, 430, 44), chapter.number + ". " + chapter.title, rowText);
                 GUI.Label(new Rect(20, y + 52, 425, 60), chapter.summary, tiny);
+                float prevNodeX = -1f, prevNodeY = -1f;
                 for (int j = 0; j < 10; j++)
                 {
                     int id = c * 10 + j + 1;
                     bool unlocked = id <= progress.Data.lastClearedStage + 1;
+                    bool cleared = id <= progress.Data.lastClearedStage;
                     int col = j % 5, row = j / 5;
+                    int pathCol = row == 0 ? col : 4 - col; // serpentine path
+                    bool bossNode = j == 9;
+                    float nodeSize = bossNode ? 88f : 74f;
+                    float nx = 28 + pathCol * 86 + (row == 1 ? 20f : 0f);
+                    float ny = y + 138 + row * 118 + (pathCol % 2 == 0 ? 0f : 12f);
+                    if (prevNodeX >= 0f)
+                    {
+                        // gold connector along the path
+                        float cx = Mathf.Min(prevNodeX, nx) + 30f;
+                        float cy = Mathf.Min(prevNodeY, ny) + 34f;
+                        float cw = Mathf.Abs(nx - prevNodeX) + 14f;
+                        float ch = Mathf.Abs(ny - prevNodeY) + 8f;
+                        Color oldGui = GUI.color;
+                        GUI.color = new Color(.78f, .62f, .28f,
+                            id <= progress.Data.lastClearedStage + 1 ? .8f : .25f);
+                        GUI.DrawTexture(new Rect(cx, cy + ch * .5f - 2f, cw, 4f),
+                            Texture2D.whiteTexture);
+                        if (ch > 10f)
+                            GUI.DrawTexture(new Rect(cx + cw * .5f - 2f, cy, 4f, ch),
+                                Texture2D.whiteTexture);
+                        GUI.color = oldGui;
+                    }
+                    prevNodeX = nx; prevNodeY = ny;
                     GUI.enabled = unlocked;
-                    if (GUI.Button(new Rect(20 + col * 88, y + 135 + row * 106, 82, 84),
-                        (j == 9 ? "BOSS\n" : "STAGE\n") + id +
-                        (id <= progress.Data.lastClearedStage ? "\nCLEARED" : "")))
+                    Color prevBg = GUI.backgroundColor;
+                    if (bossNode) GUI.backgroundColor = new Color(.75f, .25f, .2f);
+                    else if (cleared) GUI.backgroundColor = new Color(.45f, .65f, .35f);
+                    if (GUI.Button(new Rect(nx, ny, nodeSize, nodeSize),
+                        (bossNode ? "BOSS\n" : "") + id + (cleared ? "\n\u2605" : "")))
                     {
                         stageId = id;
                         activeTrialMode = TrialMode.Normal;
@@ -1395,6 +1422,7 @@ namespace MythicChronicles
                         if (audio != null) audio.SetState(AudioScene.Story, chapter.number);
                         notice = "";
                     }
+                    GUI.backgroundColor = prevBg;
                     GUI.enabled = true;
                 }
                 GUI.Label(new Rect(20, y + 367, 428, 70), "Chapter boss: " + chapter.boss, tiny);
