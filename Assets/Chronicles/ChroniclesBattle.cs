@@ -41,7 +41,8 @@ namespace MythicChronicles
         private readonly List<Combatant> units = new List<Combatant>();
         private readonly List<FloatingText> popups = new List<FloatingText>();
         private readonly Dictionary<Origin, Material> materials = new Dictionary<Origin, Material>();
-        private Material goldMaterial, groundMaterial, redMaterial;
+        private Material goldMaterial, groundMaterial, redMaterial,
+            sandstoneMaterial, sandstoneDarkMaterial;
         private Camera cam;
         private StageDefinition stage;
         private Origin arenaOrigin;
@@ -378,14 +379,25 @@ namespace MythicChronicles
         private void BuildArena()
         {
             goldMaterial = CreateMaterial(new Color(.92f, .66f, .20f));
-            groundMaterial = CreateMaterial(new Color(.11f, .10f, .21f));
+            // Warm dusk floor that blends into the battlefield backdrop instead
+            // of a flat navy slab.
+            groundMaterial = CreateMaterial(new Color(.30f, .23f, .27f));
             redMaterial = CreateMaterial(new Color(.69f, .17f, .30f));
+            // Carved sandstone columns: shaft + darker base and capital, so the
+            // arena frame reads as ruins, not bare capsules.
+            sandstoneMaterial = CreateMaterial(new Color(.58f, .44f, .30f));
+            sandstoneDarkMaterial = CreateMaterial(new Color(.40f, .30f, .21f));
             MakePrimitive("Arena Floor", PrimitiveType.Cube, new Vector3(0f, -.40f, 0f), new Vector3(9f, .5f, 12f), groundMaterial, transform);
             MakePrimitive("Alliance Boundary", PrimitiveType.Cube, new Vector3(0f, -.10f, 0f), new Vector3(8f, .02f, .06f), goldMaterial, transform);
             for (int side = -1; side <= 1; side += 2)
             {
-                MakePrimitive("Ruin Pillar", PrimitiveType.Cylinder, new Vector3(side * 4.0f, .8f, 3.9f), new Vector3(.65f, 1.1f, .65f), goldMaterial, transform);
-                MakePrimitive("Ruin Pillar", PrimitiveType.Cylinder, new Vector3(side * 4.0f, .8f, -3.9f), new Vector3(.65f, 1.1f, .65f), goldMaterial, transform);
+                for (int end = -1; end <= 1; end += 2)
+                {
+                    float px = side * 4.0f, pz = end * 3.9f;
+                    MakePrimitive("Ruin Pillar Base", PrimitiveType.Cylinder, new Vector3(px, -.02f, pz), new Vector3(.9f, .28f, .9f), sandstoneDarkMaterial, transform);
+                    MakePrimitive("Ruin Pillar", PrimitiveType.Cylinder, new Vector3(px, .8f, pz), new Vector3(.65f, 1.1f, .65f), sandstoneMaterial, transform);
+                    MakePrimitive("Ruin Pillar Capital", PrimitiveType.Cylinder, new Vector3(px, 1.88f, pz), new Vector3(.85f, .22f, .85f), sandstoneDarkMaterial, transform);
+                }
             }
 
             GameObject cameraObject = new GameObject("Chronicles Portrait Camera");
@@ -1562,6 +1574,8 @@ namespace MythicChronicles
             if (goldMaterial != null) Destroy(goldMaterial);
             if (groundMaterial != null) Destroy(groundMaterial);
             if (redMaterial != null) Destroy(redMaterial);
+            if (sandstoneMaterial != null) Destroy(sandstoneMaterial);
+            if (sandstoneDarkMaterial != null) Destroy(sandstoneDarkMaterial);
         }
     }
 }

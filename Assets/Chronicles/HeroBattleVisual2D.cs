@@ -79,8 +79,12 @@ namespace MythicChronicles
             // portraits are never modified.
             bool hasRig;
             RigData rig = LoadRig(hero.id, out hasRig);
-            Texture2D art = hasRig ?
-                Resources.Load<Texture2D>("Chronicles/BattleCutouts/" + hero.id) : null;
+            // Rigged heroes use their sliced atlas; unrigged heroes use a
+            // background-removed full cutout ({id}_full.png) when one exists,
+            // so they read as characters in the arena instead of cards with a
+            // painted backdrop. Original portraits stay untouched.
+            Texture2D art = Resources.Load<Texture2D>(
+                "Chronicles/BattleCutouts/" + hero.id + (hasRig ? "" : "_full"));
             if (art == null) art = ChroniclesPortraitAssets.Static(hero.id, skinId);
             if (art == null) return null;
             GameObject root = new GameObject(hero.name + " - 2D battle rig");
