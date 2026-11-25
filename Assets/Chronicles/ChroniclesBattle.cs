@@ -492,23 +492,29 @@ namespace MythicChronicles
             float panelCardSizeLocal = 2.2f;
             if (PanelLayout)
             {
-                // Card-battle wall per Khalid's mock: a tight 3x2 grid (six
-                // per side) on the left ~78% of the frame, sized to the camera
-                // aspect so nothing clips on tall phones; the right strip
-                // stays free for the HUD rail. Rows slightly overlap.
+                // Card-battle wall per Khalid's reference (X-Hero style, his
+                // screenshot 15824735): three FULL-BLEED columns edge to edge,
+                // two rows reaching the top and bottom screen edges, a fanned
+                // tilt (cards rotate with the column), and the middle band
+                // left open for the scene and VFX. Sized to the design aspect
+                // so nothing clips on tall phones.
                 int col = slot % 3, row = slot / 3;
                 // Clamp to the design aspect: the layout must fit the tallest
                 // phones, and the headless capture rig can spawn units at a
                 // different aspect than it renders at. 540x960 is the canvas.
                 float spawnAspect = cam != null ? cam.aspect : .5625f;
                 float effAspect = Mathf.Min(spawnAspect, .5625f);
-                float halfW = (cam != null ? cam.orthographicSize : 5.4f) * effAspect;
-                float gridW = halfW * 2f * .78f;
-                float cardSize = Mathf.Min(2.2f, gridW / 3.1f);
-                float x0 = -halfW + cardSize * .55f;
-                float px = x0 + col * cardSize * 1.02f;
-                float py = side == 1 ? 4.35f - row * cardSize * .92f
-                    : -2.55f - row * cardSize * .92f;
+                float halfH = cam != null ? cam.orthographicSize : 5.4f;
+                float halfW = halfH * effAspect;
+                float cardSize = halfW * 2f / 3f; // full-bleed three columns
+                float rowGap = cardSize * .96f;   // rows kiss with a hair overlap
+                // Ally row 0 sits closer to the middle band, row 1 at the
+                // bottom edge; enemy rows mirror from the top.
+                float blockRow = side == 1 ? row : (1 - row);
+                float px = -halfW + cardSize * (col + .5f);
+                float py = (side == 1 ? 1f : -1f) *
+                    (halfH - cardSize * .5f - blockRow * rowGap)
+                    + (col - 1) * .09f * (side == 1 ? 1f : -1f);
                 destination = new Vector3(px, py, -0.4f);
                 panelCardSizeLocal = cardSize;
             }
@@ -580,6 +586,7 @@ namespace MythicChronicles
                 if (panelTex != null)
                 {
                     int panelRow = slot / 3;
+                    int panelCol = slot % 3;
                     float cardScale = unit.panelCardSize;
                     GameObject quad = GameObject.CreatePrimitive(PrimitiveType.Quad);
                     quad.name = "Panel - " + hero.name;
@@ -587,7 +594,8 @@ namespace MythicChronicles
                     if (quadCollider != null) Destroy(quadCollider);
                     quad.transform.SetParent(transform);
                     quad.transform.position = new Vector3(
-                        unit.panelAnchor.x, unit.panelAnchor.y, 0.6f - panelRow * .02f);
+                        unit.panelAnchor.x, unit.panelAnchor.y,
+                        0.6f - panelRow * .02f - panelCol * .008f);
                     quad.transform.localScale = new Vector3(cardScale, cardScale, 1f);
                     Shader panelShader = ChroniclesShaders.FindAny(
                         "Unlit/Texture", "Sprites/Default",
@@ -599,7 +607,8 @@ namespace MythicChronicles
                         panelMaterial.mainTexture = panelTex;
                         panelRenderer.material = panelMaterial;
                     }
-                    quad.transform.rotation = Quaternion.Euler(-6f, 0f, 0f);
+                    quad.transform.rotation = Quaternion.Euler(-6f, 0f,
+                        (slot % 3 - 1) * 2.2f); // fanned tilt like the reference
                     unit.panelQuad = quad;
                     // Rarity-colored metallic frame behind the card, parented
                     // to it so attack lunges move card and frame together.
