@@ -2563,6 +2563,16 @@ namespace MythicChronicles
             GUI.Label(new Rect(26, 582, 492, 98),
                 "Elapsed: " + progress.IdleAvailableMinutes() + " / 720 minutes\n" +
                 "Gold waiting: " + progress.IdleProjectedGold(), subtitle);
+            {
+                // Fill bar: how much of the 12h AFK cap has built up.
+                float fill = Mathf.Clamp01(progress.IdleAvailableMinutes() / 720f);
+                Color barOld = GUI.color;
+                GUI.color = new Color(.05f, .04f, .08f, .9f);
+                GUI.DrawTexture(new Rect(40, 678, 460, 16), Texture2D.whiteTexture);
+                GUI.color = fill >= 1f ? new Color(.95f, .78f, .3f, 1f) : new Color(.45f, .75f, .4f, 1f);
+                GUI.DrawTexture(new Rect(42, 680, 456f * fill, 12), Texture2D.whiteTexture);
+                GUI.color = barOld;
+            }
             if (GUI.Button(new Rect(40, 700, 460, 70), "CLAIM IDLE GOLD", bigButton))
             {
                 int gold = progress.ClaimIdleGold();
