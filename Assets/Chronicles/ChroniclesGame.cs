@@ -1451,6 +1451,16 @@ namespace MythicChronicles
                         GUI.color = oldGui;
                     }
                     prevNodeX = nx; prevNodeY = ny;
+                    if (id == progress.Data.lastClearedStage + 1)
+                    {
+                        // Current stage: pulsing gold halo so the next fight is obvious.
+                        float pulse = .65f + .35f * Mathf.Sin(Time.realtimeSinceStartup * 3.2f);
+                        Color haloOld = GUI.color;
+                        GUI.color = new Color(1f, 1f, 1f, pulse);
+                        GUI.DrawTexture(new Rect(nx - 20f, ny - 20f, nodeSize + 40f, nodeSize + 40f),
+                            OrnateGuiSkin.Glow("stage_halo", new Color(1f, .82f, .35f, .75f)));
+                        GUI.color = haloOld;
+                    }
                     GUI.enabled = unlocked;
                     Color prevBg = GUI.backgroundColor;
                     if (bossNode) GUI.backgroundColor = new Color(.75f, .25f, .2f);
