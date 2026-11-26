@@ -1676,8 +1676,10 @@ namespace MythicChronicles
 
             // Both static and animated portraits are available for EVERY hero.
             GUI.DrawTexture(new Rect(0, 320, 300, 340),
-                OrnateGuiSkin.Glow("detail_glow",
-                    new Color(.95f, .78f, .38f, .4f)));
+                OrnateGuiSkin.Glow("detail_glow_" + hero.rarity,
+                    new Color(RarityFrameColor(hero.rarity).r,
+                        RarityFrameColor(hero.rarity).g,
+                        RarityFrameColor(hero.rarity).b, .42f)));
             ChroniclesHeroPortrait.Draw(hero.id,
                 new Rect(30, 350, 228, 280),
                 showHeroMotion && !progress.Data.reducePortraitMotion);
