@@ -3111,7 +3111,8 @@ namespace MythicChronicles
                 Texture2D railPlate = OrnateGuiSkin.Art("bar_plate");
                 if (railPlate != null)
                 {
-                    Color railC = new Color(.14f, .12f, .26f, .95f);
+                    Color railC = battle.SecondsLeft < 10f ?
+                        new Color(.42f, .1f, .1f, .95f) : new Color(.14f, .12f, .26f, .95f);
                     GUI.color = railC;
                     GUI.DrawTexture(new Rect(478, 236, 62, 44),
                         railPlate, ScaleMode.StretchToFill);
