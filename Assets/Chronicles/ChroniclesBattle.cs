@@ -30,6 +30,7 @@ namespace MythicChronicles
             public float panelCardSize = 2.2f;
             public float lungeT, dealt, hitFlashT;
             public Vector3 hitDir;
+            public float koT;
             public Combatant lungeTarget;
             public bool Alive { get { return hp > 0f; } }
         }
@@ -942,8 +943,14 @@ namespace MythicChronicles
                             : new Color(.32f, .32f, .36f, 1f);
                     if (!f.Alive)
                     {
+                        // KO: sink, shrink a little and tilt over ~.6s, then rest greyed.
+                        f.koT = Mathf.Min(.6f, f.koT + dt);
+                        float ko = Mathf.SmoothStep(0f, 1f, f.koT / .6f);
                         f.panelQuad.transform.position = new Vector3(
-                            home.x, home.y, f.panelQuad.transform.position.z);
+                            home.x, home.y - .12f * ko, f.panelQuad.transform.position.z);
+                        float ks = f.panelCardSize * (1f - .08f * ko);
+                        f.panelQuad.transform.localScale = new Vector3(ks, ks, 1f);
+                        f.panelQuad.transform.localRotation = Quaternion.Euler(0f, 0f, (f.side == 0 ? 1f : -1f) * 6f * ko);
                         if (f.model != null) f.model.transform.position = home;
                         continue;
                     }
