@@ -39,6 +39,7 @@ namespace MythicChronicles
         private string notice = "";
         private string lastSummoned = "";
         private int summonFeatureIdx;
+        private bool eventSplashDone;
         private SummonBannerType activeSummonBanner = SummonBannerType.Standard;
         private readonly List<string> lastSummonBatch = new List<string>();
         private float summonRevealStart = -99f;
@@ -237,17 +238,21 @@ namespace MythicChronicles
                 Screen.safeArea, Screen.width, Screen.height, out scale);
             GUI.color = Color.white;
 
+            bool splashUp = page == Page.Home && !eventSplashDone &&
+                PlayerPrefs.GetString("chronicles_splash_day", "") != DateTime.UtcNow.ToString("yyyyMMdd");
             if (page != Page.Battle && page != Page.Results)
             {
                 GUI.DrawTexture(new Rect(0, 0, 540, 960), panelTex);
                 OrnateGuiSkin.ScreenBackground(
                     page == Page.Home ? "bg_home" :
                     page == Page.Summon ? "bg_summon" : "bg_menu");
+                GUI.enabled = !splashUp;
                 Header();
+                GUI.enabled = true;
             }
             switch (page)
             {
-                case Page.Home: Home(); break;
+                case Page.Home: GUI.enabled = !splashUp; Home(); GUI.enabled = true; break;
                 case Page.More: More(); break;
                 case Page.Bounty: Bounty(); break;
                 case Page.Legacy: Legacy(); break;
@@ -288,6 +293,8 @@ namespace MythicChronicles
                 case Page.Battle: BattleHud(scale); break;
                 case Page.Results: Results(); break;
             }
+            if (page == Page.Home && !eventSplashDone)
+                EventSplash();
             if (page != Page.Battle && page != Page.Results)
                 TutorialOverlay();
             // Smooth page transitions: short black fade on every page switch
@@ -2009,6 +2016,37 @@ namespace MythicChronicles
                 page = Page.Training;
         }
 
+        // Home event splash: shown once per day, big event art, GO button,
+        // tap anywhere else to close, "don't display again today" toggle.
+        private void EventSplash()
+        {
+            string dayKey = "chronicles_splash_day";
+            string today = DateTime.UtcNow.ToString("yyyyMMdd");
+            if (PlayerPrefs.GetString(dayKey, "") == today) { eventSplashDone = true; return; }
+            Texture2D art = OrnateGuiSkin.Art("event_launch_gold_rush");
+            GUI.color = new Color(0f, 0f, 0f, .72f);
+            GUI.DrawTexture(new Rect(0, 0, 540, 960), Texture2D.whiteTexture);
+            GUI.color = Color.white;
+            Rect card = new Rect(50, 170, 440, 560);
+            OrnateGuiSkin.Panel(card, "event_splash_panel", OrnateGuiSkin.GoldBright,
+                new Color(.07f, .05f, .11f, .97f));
+            if (art != null)
+                GUI.DrawTexture(new Rect(card.x + 12, card.y + 12, card.width - 24, 380), art, ScaleMode.ScaleAndCrop);
+            OrnateGuiSkin.TitlePlate(new Rect(card.x + 30, card.y + 330, card.width - 60, 48), "LAUNCH GOLD RUSH", 20);
+            GUI.Label(new Rect(card.x + 20, card.y + 392, card.width - 40, 24),
+                "Limited event rewards, ends soon", new GUIStyle(tiny) { alignment = TextAnchor.MiddleCenter });
+            if (GUI.Button(new Rect(card.x + 100, card.y + 424, 240, 56), "GO", OrnateGuiSkin.ButtonStyle()))
+            { eventSplashDone = true; page = Page.Events; }
+            if (GUI.Button(new Rect(card.x + 100, card.y + 492, 240, 36), "DON'T SHOW AGAIN TODAY",
+                OrnateGuiSkin.ButtonStyle(false)))
+            { PlayerPrefs.SetString(dayKey, today); PlayerPrefs.Save(); eventSplashDone = true; }
+            GUI.Label(new Rect(0, 740, 540, 24), "Tap any blank area to close",
+                new GUIStyle(tiny) { alignment = TextAnchor.MiddleCenter });
+            // Last so GO / don't-show buttons (drawn first) win their own clicks.
+            if (GUI.Button(new Rect(0, 0, 540, 960), "", GUIStyle.none))
+                eventSplashDone = true;
+        }
+
         private void Formation()
         {
             OrnateGuiSkin.TitlePlate(new Rect(30, 182, 480, 54), "TEAM FORMATION", 24);
@@ -2063,8 +2101,39 @@ namespace MythicChronicles
                 plus.normal.textColor = new Color(.6f, .56f, .7f, .8f);
                 GUI.Label(slotRect, "+", plus);
             }
+            // Synergy chips under the squad: one per mythology on the team with
+            // its live attack bonus (same thresholds TeamSynergy applies in battle).
+            {
+                var originCount = new Dictionary<Origin, int>();
+                int teamN = progress.Data.selectedTeam.Count;
+                for (int i = 0; i < teamN; i++)
+                {
+                    HeroDefinition th = WorldsCatalog.FindHero(progress.Data.selectedTeam[i]);
+                    if (th == null) continue;
+                    int cc; originCount.TryGetValue(th.origin, out cc);
+                    originCount[th.origin] = cc + 1;
+                }
+                float chipX = 26f;
+                GUIStyle chip = new GUIStyle(tiny) { alignment = TextAnchor.MiddleCenter, fontSize = 11, fontStyle = FontStyle.Bold };
+                foreach (var pair in originCount)
+                {
+                    int n = pair.Value;
+                    string bonus = n >= teamN && teamN >= 5 ? "+25%" : n >= 5 ? "+20%" :
+                        n >= 4 ? "+15%" : n >= 3 ? "+10%" : n >= 2 ? "+6%" : "";
+                    Color chipCol = bonus == "" ? new Color(.5f, .46f, .6f) : OrnateGuiSkin.GoldBright;
+                    Texture2D chipBg = OrnateGuiSkin.Frame("synergy_chip_" + (bonus == ""), chipCol,
+                        new Color(.07f, .055f, .11f, .95f), 32, 3);
+                    Rect cr = new Rect(chipX, 489f, 96f, 24f);
+                    GUI.DrawTexture(cr, chipBg);
+                    chip.normal.textColor = chipCol;
+                    GUI.Label(cr, pair.Key.ToString().ToUpperInvariant() + " x" + n +
+                        (bonus == "" ? "" : " " + bonus + " ATK"), chip);
+                    chipX += 100f;
+                    if (chipX > 440f) break;
+                }
+            }
             int rosterRows = Mathf.CeilToInt(progress.Data.heroes.Count / 3f);
-            formationScroll = GUI.BeginScrollView(new Rect(20, 494, 500, 248), formationScroll,
+            formationScroll = GUI.BeginScrollView(new Rect(20, 518, 500, 224), formationScroll,
                 new Rect(0, 0, 473, rosterRows * 178 + 8));
             for (int i = 0; i < progress.Data.heroes.Count; i++)
             {
