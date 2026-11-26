@@ -2102,7 +2102,7 @@ namespace MythicChronicles
                 GUI.Label(slotRect, "+", plus);
             }
             // Synergy chips under the squad: one per mythology on the team with
-            // its live attack bonus (same thresholds TeamSynergy applies in battle).
+            // its live attack chipBonus (same thresholds TeamSynergy applies in battle).
             {
                 var originCount = new Dictionary<Origin, int>();
                 int teamN = progress.Data.selectedTeam.Count;
@@ -2118,16 +2118,16 @@ namespace MythicChronicles
                 foreach (var pair in originCount)
                 {
                     int n = pair.Value;
-                    string bonus = n >= teamN && teamN >= 5 ? "+25%" : n >= 5 ? "+20%" :
+                    string chipBonus = n >= teamN && teamN >= 5 ? "+25%" : n >= 5 ? "+20%" :
                         n >= 4 ? "+15%" : n >= 3 ? "+10%" : n >= 2 ? "+6%" : "";
-                    Color chipCol = bonus == "" ? new Color(.5f, .46f, .6f) : OrnateGuiSkin.GoldBright;
-                    Texture2D chipBg = OrnateGuiSkin.Frame("synergy_chip_" + (bonus == ""), chipCol,
+                    Color chipCol = chipBonus == "" ? new Color(.5f, .46f, .6f) : OrnateGuiSkin.GoldBright;
+                    Texture2D chipBg = OrnateGuiSkin.Frame("synergy_chip_" + (chipBonus == ""), chipCol,
                         new Color(.07f, .055f, .11f, .95f), 32, 3);
                     Rect cr = new Rect(chipX, 489f, 96f, 24f);
                     GUI.DrawTexture(cr, chipBg);
                     chip.normal.textColor = chipCol;
                     GUI.Label(cr, pair.Key.ToString().ToUpperInvariant() + " x" + n +
-                        (bonus == "" ? "" : " " + bonus + " ATK"), chip);
+                        (chipBonus == "" ? "" : " " + chipBonus + " ATK"), chip);
                     chipX += 100f;
                     if (chipX > 440f) break;
                 }
