@@ -2512,6 +2512,15 @@ namespace MythicChronicles
                 GUI.Label(new Rect(37, y + 8, 276, 67),
                     quest.title + "\n" + Math.Min(quest.target, amount) + "/" + quest.target +
                     "  •  " + quest.goldReward + " gold / " + quest.gemReward + " gems", tiny);
+                {
+                    float qf = quest.target > 0 ? Mathf.Clamp01(amount / (float)quest.target) : 1f;
+                    Color qOld = GUI.color;
+                    GUI.color = new Color(.05f, .04f, .08f, .85f);
+                    GUI.DrawTexture(new Rect(37, y + 72, 290, 8), Texture2D.whiteTexture);
+                    GUI.color = qf >= 1f ? new Color(.95f, .78f, .3f, 1f) : new Color(.45f, .75f, .4f, 1f);
+                    GUI.DrawTexture(new Rect(38, y + 73, 288f * qf, 6), Texture2D.whiteTexture);
+                    GUI.color = qOld;
+                }
                 GUI.enabled = !claimed && amount >= quest.target;
                 if (GUI.Button(new Rect(340, y + 17, 157, 54), claimed ? "CLAIMED" : "CLAIM"))
                     notice = (weekly ? progress.ClaimWeeklyQuest(quest.id) : progress.ClaimDailyQuest(quest.id))
