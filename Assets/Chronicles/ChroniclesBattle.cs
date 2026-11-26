@@ -1239,6 +1239,7 @@ namespace MythicChronicles
                 damage *= 1.6f;
                 shakeT = Mathf.Max(shakeT, .14f);
                 shakeAmp = Mathf.Max(shakeAmp, .16f);
+                hitStopT = Mathf.Max(hitStopT, .05f);
             }
             float absorbed = Mathf.Min(defender.shield, damage);
             defender.shield -= absorbed;
