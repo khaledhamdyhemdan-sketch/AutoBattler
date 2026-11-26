@@ -29,6 +29,7 @@ namespace MythicChronicles
             public float castPopT;
             public float panelCardSize = 2.2f;
             public float lungeT, dealt, hitFlashT;
+            public Vector3 hitDir;
             public Combatant lungeTarget;
             public bool Alive { get { return hp > 0f; } }
         }
@@ -979,6 +980,7 @@ namespace MythicChronicles
                         f.hitFlashT = Mathf.Max(0f, f.hitFlashT - dt);
                         flash = f.hitFlashT / .22f;
                         pos.x += Mathf.Sin(f.hitFlashT * 60f) * .07f * flash;
+                        pos += f.hitDir * .16f * flash * flash;
                     }
                     // Idle life: a slow breathing bob, phased per card, so the
                     // lineup sways gently instead of sitting frozen.
@@ -1239,7 +1241,15 @@ namespace MythicChronicles
                 attacker != null && attacker.side == 0)
                 raidDamage += actualDamage;
             defender.hp = Mathf.Max(0f, defender.hp - actualDamage);
-            if (actualDamage > 0f) defender.hitFlashT = .22f;
+            if (actualDamage > 0f)
+            {
+                defender.hitFlashT = .22f;
+                if (attacker != null)
+                {
+                    Vector3 kd = defender.panelAnchor - attacker.panelAnchor;
+                    defender.hitDir = kd.sqrMagnitude > .0001f ? kd.normalized : Vector3.zero;
+                }
+            }
             if (attacker != null) attacker.dealt += actualDamage;
             defender.energy = Mathf.Min(100f, defender.energy + actualDamage * .09f);
             if (crit)
