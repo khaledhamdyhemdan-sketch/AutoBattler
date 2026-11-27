@@ -2752,6 +2752,8 @@ namespace MythicChronicles
                 OrnateGuiSkin.PulseGlow(r, new Color(1f, .82f, .42f, .22f), 1.8f);
             GUIStyle cardTitle = new GUIStyle(subtitle) {
                 fontStyle = FontStyle.Bold, fontSize = 22 };
+            cardTitle.alignment = TextAnchor.MiddleLeft;
+            cardTitle.wordWrap = false;
             cardTitle.normal.textColor = Color.black;
             GUI.Label(new Rect(r.x + 22, r.y + 13, r.width - 160, 32), title, cardTitle);
             cardTitle.normal.textColor = OrnateGuiSkin.GoldBright;
