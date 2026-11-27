@@ -1572,7 +1572,7 @@ namespace MythicChronicles
                 if (i == 5)
                 {
                     GUI.Box(new Rect(x, 268, 77, 45), "", OrnateGuiSkin.CellBox());
-                    GUI.Label(new Rect(x, 270, 77, 39), "EX\nLOCKED", tiny);
+                    { GUIStyle exTiny = new GUIStyle(tiny); exTiny.wordWrap = false; exTiny.fontSize = 11; exTiny.alignment = TextAnchor.MiddleCenter; GUI.Label(new Rect(x, 270, 77, 39), "EX\nLOCKED", exTiny); }
                     continue;
                 }
                 if (GUI.Button(new Rect(x, 268, 77, 45), tabs[i],
@@ -1665,11 +1665,15 @@ namespace MythicChronicles
                         Texture2D.whiteTexture);
                 }
                 GUI.color = oldColor;
+                GUIStyle cardTiny = new GUIStyle(tiny);
+                cardTiny.wordWrap = false; cardTiny.fontSize = 11;
+                cardTiny.clipping = TextClipping.Clip;
+                string cardName = hero.name.Length > 13 ? hero.name.Substring(0, 12) + "." : hero.name;
                 GUI.Label(new Rect(x + 7, y + 162, 136, 22),
-                    hero.name + "  " + hero.rarity, tiny);
-                GUI.Label(new Rect(x + 7, y + 185, 137, 24),
+                    cardName + "  " + hero.rarity, cardTiny);
+                GUI.Label(new Rect(x + 7, y + 185, 137, 20),
                     hero.element.ToString() +
-                    (progress.OwnsHero(hero.id) ? " • OWNED" : " • LOCKED"), tiny);
+                    (progress.OwnsHero(hero.id) ? " - OWNED" : " - LOCKED"), cardTiny);
                 if (GUI.Button(new Rect(x, y, 150, 212), "", GUIStyle.none))
                 {
                     selectedHero = hero.id;
