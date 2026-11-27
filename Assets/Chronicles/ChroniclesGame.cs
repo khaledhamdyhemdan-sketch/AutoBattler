@@ -90,7 +90,7 @@ namespace MythicChronicles
             // branch defines CHRONICLES_EMU_TEST (never part of a shipped build).
             progress.Data.lastClearedStage = Mathf.Max(progress.Data.lastClearedStage, 9);
             foreach (OwnedHero emuHero in progress.Data.heroes)
-                emuHero.level = Mathf.Max(emuHero.level, 12);
+                emuHero.level = Mathf.Max(emuHero.level, 25);
 #endif
             stageId = Mathf.Clamp(progress.Data.lastClearedStage + 1, 1, 60);
         }
