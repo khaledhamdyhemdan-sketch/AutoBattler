@@ -456,7 +456,10 @@ namespace MythicChronicles
             }
 
             // Bottom navigation follows common mobile hero-RPG conventions.
-            GUIStyle navStyle = OrnateGuiSkin.ButtonStyle();
+            GUIStyle navStyle = new GUIStyle(OrnateGuiSkin.ButtonStyle());
+            navStyle.wordWrap = false;
+            navStyle.fontSize = 12;
+            navStyle.clipping = TextClipping.Overflow;
             OrnateGuiSkin.Bar(new Rect(12, 802, 516, 85));
             if (GUI.Button(new Rect(18, 813, 80, 61), "HOME", navStyle))
                 page = Page.Home;
