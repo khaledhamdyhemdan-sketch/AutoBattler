@@ -3189,7 +3189,7 @@ namespace MythicChronicles
                 int shown = 0;
                 foreach (var entry in damageMeterScratch)
                 {
-                    if (shown >= 4) break;
+                    if (shown >= 3) break;
                     GUI.Label(new Rect(482, 356 + shown * 30, 58, 28),
                         (entry.amount >= 1000 ?
                             (entry.amount / 1000).ToString() + "K" :
