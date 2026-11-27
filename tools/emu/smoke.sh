@@ -21,12 +21,15 @@ tapw(){ adb shell input tap $1 $2; sleep 4; }
 shot a_home_guide
 tapw 222 247; tapw 222 247; tapw 222 247; tapw 222 247; tapw 222 247
 shot b_home_after_skip
-tapw 299 843; sleep 3; shot c_summon
-tapw 128 843; sleep 3; shot d_heroes
-tapw 226 843; sleep 3; shot e_story
-tapw 393 843; sleep 3; shot f_events
-tapw 477 843; sleep 3; shot g_more
-tapw 42 843; sleep 3; shot h_home
+go(){ tapw 84 84; tapw $1 843; sleep 3; shot $2; }
+go 128 c_heroes
+tapw 270 520; sleep 3; shot c2_heroes_tap
+go 226 d_story
+tapw 270 740; sleep 3; shot d2_story_continue
+go 393 e_events
+go 477 f_more
+go 299 g_summon
+tapw 84 84; sleep 3; shot h_home
 adb logcat -d > $OUT/logcat.txt 2>&1
 grep -iE "FATAL|Unity|libil2cpp|Vulkan|GLES|native-bridge|ndk_translation|houdini" $OUT/logcat.txt | head -80 > $OUT/logcat_key.txt
 exit 0
