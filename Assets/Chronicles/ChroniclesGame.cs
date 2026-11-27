@@ -2761,14 +2761,14 @@ namespace MythicChronicles
             Rect chip = new Rect(r.x + r.width - 118, r.y + 12, 100, 28);
             if (chipArt != null)
             {
-                GUI.color = active ? new Color(.55f, 1f, .6f) :
-                    upcoming ? new Color(1f, .9f, .5f) : Color.gray;
+                GUI.color = Color.white;
                 GUI.DrawTexture(chip, chipArt, ScaleMode.StretchToFill);
                 GUI.color = Color.white;
             }
             GUIStyle status = new GUIStyle(tiny) {
                 fontStyle = FontStyle.Bold, alignment = TextAnchor.MiddleCenter };
-            status.normal.textColor = new Color(.08f, .06f, .12f);
+            status.normal.textColor = active ? new Color(.72f, 1f, .72f) :
+                upcoming ? new Color(1f, .9f, .5f) : new Color(.8f, .8f, .8f);
             GUI.Label(chip, active ? "ACTIVE" : upcoming ? "SOON" : "ENDED", status);
             GUIStyle desc = new GUIStyle(tiny);
             desc.normal.textColor = new Color(1f, .96f, .88f);
