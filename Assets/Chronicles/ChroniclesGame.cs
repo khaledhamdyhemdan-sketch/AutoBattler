@@ -350,8 +350,10 @@ namespace MythicChronicles
             OrnateGuiSkin.Title(new Rect(20, 12, 500, 48), "CHRONICLES OF THE LOOM", 26);
             GUIStyle subtitleShadow = new GUIStyle(subtitle);
             subtitleShadow.normal.textColor = new Color(0f, 0f, 0f, .8f);
+            if (page == Page.Home) {
             GUI.Label(new Rect(26, 87, 490, 34), "An original crossover of myths, legends and histories", subtitleShadow);
             GUI.Label(new Rect(25, 85, 490, 34), "An original crossover of myths, legends and histories", subtitle);
+            }
             OrnateGuiSkin.Bar(new Rect(15, 112, 510, 55));
             GUIStyle currency = new GUIStyle(tiny) {
                 alignment = TextAnchor.MiddleLeft, fontSize = 17 };
