@@ -1545,6 +1545,15 @@ namespace MythicChronicles
                     Page.Chapters : Page.Trials;
         }
 
+        private static GUIStyle ElementChipStyle(bool off)
+        {
+            GUIStyle st = new GUIStyle(OrnateGuiSkin.ButtonStyle(off));
+            st.wordWrap = false;
+            st.fontSize = 11;
+            st.clipping = TextClipping.Overflow;
+            return st;
+        }
+
         private void Heroes()
         {
             OrnateGuiSkin.Title(new Rect(110, 179, 320, 44),
@@ -1555,13 +1564,15 @@ namespace MythicChronicles
                 (ChroniclesGrowth.CollectionBonus(progress.Data) * 100f).ToString("0.#") +
                 "% ATK/HP", subtitle);
             string[] tabs = { "ALL", "R", "SR", "SSR", "UR", "EX" };
+            GUIStyle chipStyleFlat = new GUIStyle(OrnateGuiSkin.ButtonStyle());
+            chipStyleFlat.wordWrap = false; chipStyleFlat.fontSize = 12;
             for (int i = 0; i < tabs.Length; i++)
             {
                 float x = 22f + i * 83f;
                 if (i == 5)
                 {
                     GUI.Box(new Rect(x, 268, 77, 45), "", OrnateGuiSkin.CellBox());
-                    GUI.Label(new Rect(x, 270, 77, 39), "EX LOCKED", tiny);
+                    GUI.Label(new Rect(x, 270, 77, 39), "EX\nLOCKED", tiny);
                     continue;
                 }
                 if (GUI.Button(new Rect(x, 268, 77, 45), tabs[i],
@@ -1576,7 +1587,7 @@ namespace MythicChronicles
             for (int i = 0; i < elementTabs.Length; i++)
                 if (GUI.Button(new Rect(22f + i * 71f, 319f, 67f, 40f),
                     elementTabs[i],
-                    OrnateGuiSkin.ButtonStyle(galleryElementFilter != i - 1)))
+                    ElementChipStyle(galleryElementFilter != i - 1)))
                 {
                     galleryElementFilter = i - 1;
                     rosterScroll = Vector2.zero;
