@@ -3188,10 +3188,19 @@ namespace MythicChronicles
                     turnLabel.clipping = TextClipping.Overflow; turnLabel.wordWrap = false;
                     turnLabel.normal.textColor = Color.white;
                     turnLabel.alignment = TextAnchor.MiddleCenter;
-                    GUI.Label(new Rect(478, 474, 62, 18), "NEXT", turnLabel);
+                    {
+                        // Blue frame around the whole turn-order strip.
+                        Rect fr = new Rect(477, 470, 63, 88);
+                        GUI.color = new Color(.35f, .65f, 1f, 1f);
+                        GUI.DrawTexture(fr, Texture2D.whiteTexture);
+                        GUI.color = new Color(.03f, .07f, .2f, 1f);
+                        GUI.DrawTexture(new Rect(fr.x + 2, fr.y + 2, fr.width - 4, fr.height - 4), Texture2D.whiteTexture);
+                        GUI.color = Color.white;
+                    }
+                    GUI.Label(new Rect(478, 473, 62, 18), "NEXT", turnLabel);
                     for (int ti = 0; ti < turnScratch.Count; ti++)
                     {
-                        Rect chipR = new Rect(481 + (ti % 2) * 30, 494 + (ti / 2) * 30, 28, 26);
+                        Rect chipR = new Rect(481 + (ti % 2) * 29, 493 + (ti / 2) * 30, 27, 26);
                         GUI.color = turnScratch[ti].side == 0 ?
                             new Color(.04f, .16f, .55f, 1f) : new Color(.5f, .04f, .04f, 1f);
                         GUI.DrawTexture(chipR, Texture2D.whiteTexture);
