@@ -1032,6 +1032,9 @@ namespace MythicChronicles
             if (f.hasteT > 0f) v *= 1.2f;
             if (f.frozen > 0f) v *= .55f;
             if (f.cursed > 0f) v *= .8f;
+            HeroKit sk = HeroAbilityCatalog.For(f.hero.id);
+            if (sk != null && (sk.passive == HeroPassive.Sage || sk.passive == HeroPassive.Oracle))
+                v *= 1f + .08f * PassiveScale(f.hero.rarity);
             return Mathf.Max(20f, v);
         }
 
