@@ -29,7 +29,7 @@ tapw 222 247; tapw 222 247; tapw 222 247; tapw 222 247; tapw 222 247
 shot b_home_after_skip
 go(){ tapw 84 84; tapw $1 843; sleep 3; shot $2; }
 for x in 50 138 314 400; do go $x t_tab_$x; done
-go 138 u_heroes; tapw 95 460; sleep 3; shot u_hero_detail; tapw 447 378; shot u_hero_detail2; tapw 330 378; tapw 147 813; shot u_equipment
+go 138 u_heroes; tapw 95 460; sleep 3; shot u_hero_detail; tapw 447 378; shot u_hero_detail2; tapw 147 813; sleep 2; shot u_equipment; tapw 270 916; tapw 95 460; tapw 392 813; sleep 2; shot u_skilltrain; tapw 270 916; tapw 95 460; tapw 147 866; sleep 2; shot u_ascend; tapw 270 916
 go 477 f_more
 tapw 380 380; sleep 3; shot i_formation
 tapw 270 480; sleep 2; shot i2_formation_tap
