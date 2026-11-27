@@ -221,9 +221,6 @@ namespace MythicChronicles
                     if (unit.side != 1) continue;
                     unit.maxHp *= arenaScale;
                     unit.hp = unit.maxHp;
-            unit.speed = BaseSpeed(hero, boss);
-            unit.gauge = Mathf.Min(70f, unit.speed * .4f);
-            unit.skillFactor = 1.7f;
                     unit.attack *= arenaScale;
                     unit.armor *= arenaScale;
                 }
@@ -624,6 +621,9 @@ namespace MythicChronicles
                 slot = slot
             };
             unit.hp = unit.maxHp;
+            unit.speed = BaseSpeed(hero, boss);
+            unit.gauge = Mathf.Min(70f, unit.speed * .4f);
+            unit.skillFactor = 1.7f;
             unit.visual = HeroVisualDriver.Spawn(hero, skin, transform,
                 side == 0 ? OriginMaterial(hero.origin) : redMaterial);
             unit.model = unit.visual.gameObject;
