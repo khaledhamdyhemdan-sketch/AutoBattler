@@ -2176,16 +2176,19 @@ namespace MythicChronicles
                     "card_" + hero.rarity, RarityFrameColor(hero.rarity),
                     new Color(.08f, .06f, .12f, .94f));
                 ChroniclesHeroPortrait.Draw(hero.id, new Rect(x + 4, y + 4, 142, 116), false);
-                GUI.Label(new Rect(x + 7, y + 124, 136, 20),
-                    hero.name + "  " + hero.rarity, tiny);
-                GUI.Label(new Rect(x + 7, y + 144, 136, 20),
-                    "Lv " + owned.level + " " + hero.role, tiny);
+                GUIStyle cardTxt = new GUIStyle(tiny) { fontSize = 12, wordWrap = false,
+                    clipping = TextClipping.Overflow, alignment = TextAnchor.MiddleLeft };
+                GUI.Label(new Rect(x + 7, y + 122, 136, 22),
+                    hero.name + "  " + hero.rarity, cardTxt);
+                GUI.Label(new Rect(x + 7, y + 144, 136, 22),
+                    "Lv " + owned.level + " " + hero.role, cardTxt);
                 if (picked >= 0)
                 {
                     OrnateGuiSkin.PulseGlow(new Rect(x, y, 150, 170),
                         new Color(1f, .82f, .42f, .25f), 1.7f);
                     GUIStyle slotBadge = new GUIStyle(tiny) {
-                        alignment = TextAnchor.MiddleCenter, fontStyle = FontStyle.Bold };
+                        alignment = TextAnchor.MiddleCenter, fontStyle = FontStyle.Bold,
+                        fontSize = 11, wordWrap = false, clipping = TextClipping.Overflow };
                     slotBadge.normal.textColor = new Color(1f, .9f, .6f);
                     GUI.color = new Color(0f, 0f, 0f, .6f);
                     GUI.DrawTexture(new Rect(x + 4, y + 4, 60, 22), Texture2D.whiteTexture);
@@ -2217,12 +2220,14 @@ namespace MythicChronicles
             }
             TeamSynergyBonus bonus = TeamSynergy.Calculate(synergyHeroes);
             ElementalTeamBonus elemental = HeroElements.Calculate(synergyHeroes);
+            GUIStyle synText = new GUIStyle(subtitle) { fontSize = 11, wordWrap = true,
+                clipping = TextClipping.Overflow };
             GUI.Label(new Rect(34, 752, 472, 56),
                 "Selected " + progress.Data.selectedTeam.Count + "/6  |  " +
                 elemental.description + "\nOrigin: " + bonus.description +
                 "  •  Element ATK/HP +" +
                 Mathf.RoundToInt((elemental.attackMultiplier - 1f) * 100f) +
-                "%  •  START ENERGY +" + elemental.startingEnergy, subtitle);
+                "%  •  START ENERGY +" + elemental.startingEnergy, synText);
             GUI.enabled = progress.Data.selectedTeam.Count == PlayerProgressService.TeamSize;
             if (GUI.Button(new Rect(40, 818, 460, 64),
                 inTower ? "START " + selectedTowerOrigin.ToString().ToUpperInvariant() +
