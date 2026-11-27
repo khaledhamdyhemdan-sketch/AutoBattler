@@ -3176,10 +3176,11 @@ namespace MythicChronicles
                     var turnScratch = new System.Collections.Generic.List<ChroniclesBattle.TurnEntry>();
                     battle.FillTurnOrder(turnScratch, 4);
                     GUIStyle turnLabel = new GUIStyle(tiny);
-                    turnLabel.fontSize = 13; turnLabel.fontStyle = FontStyle.Bold; turnLabel.wordWrap = false;
+                    turnLabel.fontSize = 12; turnLabel.fontStyle = FontStyle.Bold;
+                    turnLabel.padding = new RectOffset(0, 0, 0, 0); turnLabel.margin = new RectOffset(0, 0, 0, 0);
+                    turnLabel.clipping = TextClipping.Overflow; turnLabel.wordWrap = false;
                     turnLabel.normal.textColor = Color.white;
                     turnLabel.alignment = TextAnchor.MiddleCenter;
-                    turnLabel.clipping = TextClipping.Clip;
                     GUI.Label(new Rect(478, 474, 62, 18), "NEXT", turnLabel);
                     for (int ti = 0; ti < turnScratch.Count; ti++)
                     {
