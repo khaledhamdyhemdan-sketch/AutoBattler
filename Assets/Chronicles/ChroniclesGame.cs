@@ -1702,7 +1702,7 @@ namespace MythicChronicles
                 hero.name.ToUpperInvariant(), 27);
             GUI.Label(new Rect(26, 292, 487, 39),
                 hero.rarity + " • " + hero.element + " • " +
-                hero.origin + " • " + hero.role, subtitle);
+                hero.origin + " • " + hero.role + " • SPD " + ChroniclesBattle.SpeedOf(hero), subtitle);
 
             // Both static and animated portraits are available for EVERY hero.
             GUI.DrawTexture(new Rect(0, 320, 300, 340),
