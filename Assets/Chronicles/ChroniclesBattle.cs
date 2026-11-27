@@ -1662,6 +1662,8 @@ namespace MythicChronicles
             output.Sort((a, b) => b.amount.CompareTo(a.amount));
         }
 
+        private GUIStyle badgeStyle;
+
         public void DrawWorldLabels(float uiScale)
         {
             if (cam == null || introTime > 0) return;
@@ -1692,8 +1694,18 @@ namespace MythicChronicles
                         rarity, new Color(.08f, .06f, .12f, .95f), 28, 3);
                     if (badgeRing != null)
                         GUI.DrawTexture(new Rect(px - cardPx * .5f - 1f, py - 22f, 28f, 28f), badgeRing);
-                    GUI.color = new Color(1f, .95f, .8f);
-                    GUI.Label(new Rect(px - cardPx * .5f - 1f, py - 18f, 28f, 20f), unit.level.ToString());
+                    if (badgeStyle == null)
+                    {
+                        badgeStyle = new GUIStyle(GUI.skin.label);
+                        badgeStyle.fontSize = 14; badgeStyle.fontStyle = FontStyle.Bold;
+                        badgeStyle.alignment = TextAnchor.MiddleCenter;
+                        badgeStyle.padding = new RectOffset(0, 0, 0, 0);
+                        badgeStyle.margin = new RectOffset(0, 0, 0, 0);
+                        badgeStyle.wordWrap = false; badgeStyle.clipping = TextClipping.Overflow;
+                        badgeStyle.normal.textColor = new Color(1f, .96f, .82f);
+                    }
+                    GUI.color = Color.white;
+                    GUI.Label(new Rect(px - cardPx * .5f - 1f, py - 22f, 28f, 28f), unit.level.ToString(), badgeStyle);
                     // Inset dark channels, then enamel gradient fills with
                     // rounded caps - art bars, not flat color strips.
                     Texture2D channel = OrnateGuiSkin.BarChannel("panel-bar-channel");
