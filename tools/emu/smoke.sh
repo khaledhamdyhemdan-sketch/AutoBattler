@@ -16,6 +16,12 @@ adb shell settings put secure immersive_mode_confirmations confirmed
 adb shell wm size 540x960 >/dev/null 2>&1; adb shell wm density 240 >/dev/null 2>&1
 adb shell monkey -p "$PKG" -c android.intent.category.LAUNCHER 1 >> $OUT/summary.txt 2>&1
 sleep 25
+for try in 1 2 3 4 5; do
+  if adb shell pidof "$PKG" >/dev/null 2>&1; then break; fi
+  echo "relaunch $try (translation SIGILL flake)" >> $OUT/summary.txt
+  adb shell monkey -p "$PKG" -c android.intent.category.LAUNCHER 1 >/dev/null 2>&1
+  sleep 25
+done
 shot(){ adb exec-out screencap -p > $OUT/$1.png; adb shell pidof "$PKG" >/dev/null 2>&1 || echo "process gone at $1" >> $OUT/summary.txt; }
 tapw(){ adb shell input tap $1 $2; sleep 4; }
 shot a_home_guide
