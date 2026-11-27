@@ -1,0 +1,43 @@
+name: Emulator launch matrix (diagnostics)
+on:
+  push:
+    branches: [ 'feature/emu-matrix' ]
+permissions:
+  contents: read
+  actions: read
+jobs:
+  matrix:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+      - name: Fetch APKs (same-repo artifacts, no secrets)
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p apk
+          for RUN in $(cat tools/emu/apk-runs.txt); do
+            mkdir -p dl/$RUN
+            gh run download "$RUN" -R "$GITHUB_REPOSITORY" -n AutoBattler-Android-APK -D dl/$RUN
+            cp dl/$RUN/Chronicles_Android.apk apk/$RUN.apk
+          done
+          ls -la apk
+      - name: Enable KVM
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+      - uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 34
+          target: google_apis
+          arch: x86_64
+          profile: Nexus 5
+          disable-animations: true
+          emulator-options: -no-window -gpu swiftshader_indirect -no-snapshot -noaudio -no-boot-anim -camera-back none
+          script: bash tools/emu/matrix.sh
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: emu-matrix
+          path: emu-out/
