@@ -85,6 +85,13 @@ namespace MythicChronicles
             draftEffects = progress.Data.effectsVolume;
             audio.SetVolumes(draftMusic, draftEffects);
             audio.SetState(AudioScene.Menu);
+#if CHRONICLES_EMU_TEST
+            // Emulator balance testing only. Compiled out unless the test
+            // branch defines CHRONICLES_EMU_TEST (never part of a shipped build).
+            progress.Data.lastClearedStage = Mathf.Max(progress.Data.lastClearedStage, 9);
+            foreach (OwnedHero emuHero in progress.Data.heroes)
+                emuHero.level = Mathf.Max(emuHero.level, 12);
+#endif
             stageId = Mathf.Clamp(progress.Data.lastClearedStage + 1, 1, 60);
         }
 
