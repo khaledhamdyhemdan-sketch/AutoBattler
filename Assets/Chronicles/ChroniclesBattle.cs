@@ -1690,7 +1690,7 @@ namespace MythicChronicles
                     // Illustrated plate behind the bars (Khalid: art, not flat plates)
                     Texture2D plate = OrnateGuiSkin.Art("bar_plate");
                     if (plate != null)
-                        GUI.DrawTexture(new Rect(px - cardPx * .5f - 2f, py - 17f, cardPx + 4f, 32f), plate);
+                        GUI.DrawTexture(new Rect(px - cardPx * .5f - 2f, py - 21f, cardPx + 4f, 38f), plate);
                     // level badge: rarity-colored ring circle + number
                     Color rarity = ChroniclesGame.RarityFrameColor(unit.hero.rarity);
                     Texture2D badgeRing = OrnateGuiSkin.Frame(
@@ -1716,24 +1716,24 @@ namespace MythicChronicles
                     if (channel != null)
                     {
                         GUI.color = Color.white;
-                        GUI.DrawTexture(new Rect(barX - 1f, py - 10f, barW + 2f, 8f), channel);
-                        GUI.DrawTexture(new Rect(barX - 1f, py - 2f, barW + 2f, 6f), channel);
+                        GUI.DrawTexture(new Rect(barX - 1f, py - 15f, barW + 2f, 12f), channel);
+                        GUI.DrawTexture(new Rect(barX - 1f, py - 2f, barW + 2f, 8f), channel);
                     }
                     Color hpColor = unit.side == 0
                         ? new Color(.28f, .82f, .34f)
                         : new Color(.92f, .26f, .20f);
                     GUI.color = Color.white;
-                    GUI.DrawTexture(new Rect(barX, py - 9f,
-                        barW * Mathf.Clamp01(unit.hp / unit.maxHp), 6f),
+                    GUI.DrawTexture(new Rect(barX, py - 14f,
+                        barW * Mathf.Clamp01(unit.hp / unit.maxHp), 10f),
                         OrnateGuiSkin.StatBar(unit.side == 0 ? "hp-ally" : "hp-enemy", hpColor));
                     // Energy: gold enamel; a pulsing ready-glow when the
                     // ultimate is charged (professional gacha "ult ready" cue).
                     if (unit.energy >= 100f)
-                        OrnateGuiSkin.PulseGlow(new Rect(barX - 2f, py - 4f, barW + 4f, 9f),
+                        OrnateGuiSkin.PulseGlow(new Rect(barX - 2f, py - 4f, barW + 4f, 11f),
                             new Color(1f, .85f, .3f), 3.2f);
                     GUI.color = Color.white;
                     GUI.DrawTexture(new Rect(barX, py - 1f,
-                        barW * Mathf.Clamp01(unit.energy / 100f), 4f),
+                        barW * Mathf.Clamp01(unit.energy / 100f), 6f),
                         OrnateGuiSkin.StatBar("energy-gold", new Color(1f, .76f, .22f)));
                     GUI.color = Color.white;
                     continue;
