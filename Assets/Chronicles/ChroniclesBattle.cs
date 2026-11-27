@@ -1266,7 +1266,7 @@ namespace MythicChronicles
         {
             if (popups.Count >= 22) popups.RemoveAt(0);
             popups.Add(new FloatingText { text = message, color = color, big = big, remaining = .9f,
-                world = target.model.transform.position + Vector3.up * 1.6f });
+                world = PanelLayout ? target.panelAnchor + new Vector3(0f, target.panelCardSize * .1f, -.5f) : target.model.transform.position + Vector3.up * 1.6f });
         }
 
         // Passive strength scales with rarity: SR is baseline, R weaker,
@@ -1776,14 +1776,14 @@ namespace MythicChronicles
                 if (point.z <= 0f) continue;
                 if (popupBigStyle == null)
                 {
-                    popupBigStyle = new GUIStyle(GUI.skin.label) { fontSize = 26, fontStyle = FontStyle.BoldAndItalic, alignment = TextAnchor.MiddleCenter, clipping = TextClipping.Overflow };
-                    popupSmallStyle = new GUIStyle(GUI.skin.label) { fontSize = 20, fontStyle = FontStyle.Bold, alignment = TextAnchor.MiddleCenter, clipping = TextClipping.Overflow };
+                    popupBigStyle = new GUIStyle(GUI.skin.label) { fontSize = PanelLayout ? 36 : 26, fontStyle = FontStyle.BoldAndItalic, alignment = TextAnchor.MiddleCenter, clipping = TextClipping.Overflow };
+                    popupSmallStyle = new GUIStyle(GUI.skin.label) { fontSize = PanelLayout ? 28 : 20, fontStyle = FontStyle.Bold, alignment = TextAnchor.MiddleCenter, clipping = TextClipping.Overflow };
                 }
                 GUIStyle st = popup.big ? popupBigStyle : popupSmallStyle;
                 float life = Mathf.Clamp01(popup.remaining / .9f);
                 float alpha = Mathf.Clamp01(life * 3f);
                 float pop = 1f + Mathf.Max(0f, life - .75f) * 2.4f;   // quick pop-in
-                float w = popup.big ? 320f : 140f, h = popup.big ? 52f : 34f;
+                float w = popup.big ? 320f : 140f, h = popup.big ? (PanelLayout ? 64f : 52f) : (PanelLayout ? 44f : 34f);
                 float cx = point.x / uiScale, cy = (Screen.height - point.y) / uiScale;
                 Matrix4x4 oldM = GUI.matrix;
                 GUIUtility.ScaleAroundPivot(new Vector2(pop, pop), new Vector2(cx, cy));
