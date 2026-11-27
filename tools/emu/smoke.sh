@@ -39,6 +39,9 @@ tapw 270 884; sleep 4; shot k_prepare_team
 tapw 270 850; sleep 8; shot l_battle_8s
 sleep 12; shot m_battle_20s
 sleep 15; shot n_battle_35s
+sleep 25; shot o_battle_60s
+sleep 30; shot p_battle_90s
+sleep 40; shot q_battle_130s
 adb logcat -d > $OUT/logcat.txt 2>&1
 grep -iE "FATAL|Unity|libil2cpp|Vulkan|GLES|native-bridge|ndk_translation|houdini" $OUT/logcat.txt | head -80 > $OUT/logcat_key.txt
 exit 0
