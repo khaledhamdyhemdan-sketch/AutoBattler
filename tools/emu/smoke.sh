@@ -28,6 +28,7 @@ shot a_home_guide
 tapw 222 247; tapw 222 247; tapw 222 247; tapw 222 247; tapw 222 247
 shot b_home_after_skip
 go(){ tapw 84 84; tapw $1 843; sleep 3; shot $2; }
+for x in 50 138 314 400; do go $x t_tab_$x; done
 go 477 f_more
 tapw 380 380; sleep 3; shot i_formation
 tapw 270 480; sleep 2; shot i2_formation_tap
