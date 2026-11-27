@@ -3171,6 +3171,27 @@ namespace MythicChronicles
                             entry.amount.ToString()), subtitle);
                     shown++;
                 }
+                {
+                    // Turn order: the next four actors, blue = ours, red = enemy.
+                    var turnScratch = new System.Collections.Generic.List<ChroniclesBattle.TurnEntry>();
+                    battle.FillTurnOrder(turnScratch, 4);
+                    GUIStyle turnLabel = new GUIStyle(tiny);
+                    turnLabel.fontSize = 11; turnLabel.wordWrap = false;
+                    turnLabel.alignment = TextAnchor.MiddleCenter;
+                    turnLabel.clipping = TextClipping.Clip;
+                    GUI.Label(new Rect(478, 478, 62, 16), "NEXT", turnLabel);
+                    for (int ti = 0; ti < turnScratch.Count; ti++)
+                    {
+                        Rect chipR = new Rect(481 + (ti % 2) * 30, 494 + (ti / 2) * 30, 28, 26);
+                        GUI.color = turnScratch[ti].side == 0 ?
+                            new Color(.25f, .5f, 1f, .95f) : new Color(.9f, .22f, .2f, .95f);
+                        GUI.DrawTexture(chipR, Texture2D.whiteTexture);
+                        GUI.color = Color.white;
+                        HeroDefinition th = WorldsCatalog.FindHero(turnScratch[ti].heroId);
+                        string initials = th != null ? th.name.Substring(0, Mathf.Min(2, th.name.Length)).ToUpperInvariant() : "?";
+                        GUI.Label(chipR, initials, turnLabel);
+                    }
+                }
                 if (GUI.Button(new Rect(486, 560, 52, 46),
                     battle.Paused ? ">" : "||", OrnateGuiSkin.ButtonStyle(false)))
                     battle.Paused = !battle.Paused;

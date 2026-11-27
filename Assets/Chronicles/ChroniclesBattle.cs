@@ -19,6 +19,8 @@ namespace MythicChronicles
             public float burn, burnTick, cursed, frozen, rallied, tauntSeconds, passiveTimer;
             public float skillFactor = 1f, ultimateFactor = 1f, passiveFactor = 1f;
             public bool savedOnce;
+            public float speed = 100f, gauge, hasteT;
+            public int turnsSinceSkill;
             public Combatant forcedTarget;
             public bool boss;
             public float bossSpecialTimer = 9f;
@@ -62,7 +64,7 @@ namespace MythicChronicles
         public bool PanelLayout { get; set; }
         public string BannerOverride { set { bannerText = value ?? string.Empty; } }
         public bool Complete { get { return ended; } }
-        public float SecondsLeft { get { return Mathf.Max(0f, 90f - elapsed); } }
+        public float SecondsLeft { get { return Mathf.Max(0f, MaxBattleSeconds - elapsed); } }
         public float Speed { get; set; } = 1f;
         private float shakeT, shakeAmp, hitStopT, slowMoT;
         private Vector3 camBase = new Vector3(0f, 11.5f, -13f);
@@ -219,6 +221,9 @@ namespace MythicChronicles
                     if (unit.side != 1) continue;
                     unit.maxHp *= arenaScale;
                     unit.hp = unit.maxHp;
+            unit.speed = BaseSpeed(hero, boss);
+            unit.gauge = Mathf.Min(70f, unit.speed * .4f);
+            unit.skillFactor = 1.7f;
                     unit.attack *= arenaScale;
                     unit.armor *= arenaScale;
                 }
@@ -876,56 +881,14 @@ namespace MythicChronicles
                 TickStatuses(f, dt);
                 if (!f.Alive) continue;
                 if (f.boss) TickBossMechanics(f, dt);
-                f.attackCd -= dt;
-                f.skillCd -= dt;
-                if (f.stunned > 0f) continue;
-                Combatant target = FindTarget(f);
-                if (target == null) continue;
-
-                HeroKit kit = HeroAbilityCatalog.For(f.hero.id);
-                if (f.energy >= 100f)
-                {
-                    f.energy = 0f;
-                    CastUltimate(f, target);
-                    continue;
-                }
-                if (f.skillCd <= 0f)
-                {
-                    f.skillCd = kit == null ? 6f : kit.cooldown;
-                    if (kit != null && (kit.passive == HeroPassive.Sage || kit.passive == HeroPassive.Oracle))
-                        f.skillCd *= 1f - .15f * PassiveScale(f.hero.rarity);
-                    CastSkill(f, target);
-                    continue;
-                }
-
-                float range = f.hero.role == CombatRole.Mage || f.hero.role == CombatRole.Healer ||
-                    f.hero.role == CombatRole.Support || f.hero.role == CombatRole.Controller ? 4.5f : 1.6f;
-                if (PanelLayout) range = 999f;
-                Vector3 direction = target.model.transform.position - f.model.transform.position;
-                direction.y = PanelLayout ? direction.y : 0f;
-                if (!PanelLayout && direction.magnitude > range)
-                {
-                    float moveSpeed = f.frozen > 0f ? 1.0f : 2.1f;
-                    f.visual.Play(HeroAnimation.Run);
-                    f.model.transform.position += direction.normalized *
-                        Mathf.Min(moveSpeed * dt, direction.magnitude - range);
-                    f.model.transform.LookAt(new Vector3(target.model.transform.position.x,
-                        f.model.transform.position.y, target.model.transform.position.z));
-                }
-                else if (f.attackCd <= 0f)
-                {
-                    f.visual.Play(HeroAnimation.Attack);
-                    if (PanelLayout) { f.lungeT = .36f; f.lungeTarget = target; }
-                    Hit(f, target, f.attack);
-                    float baseCooldown = f.hero.role == CombatRole.Assassin ? .85f : 1.25f;
-                    if (f.frozen > 0f) baseCooldown *= 1.45f;
-                    if (kit != null && kit.passive == HeroPassive.Stormborn && f.rallied > 0f)
-                        baseCooldown *= 1f - .2f * PassiveScale(f.hero.rarity);
-                    f.attackCd = baseCooldown;
-                    f.energy = Mathf.Min(100f, f.energy + (kit != null &&
-                        kit.passive == HeroPassive.Enchantress ? 12f + 6f * PassiveScale(f.hero.rarity) : 12f));
-                }
+                if (f.stunned > 0f || !f.Alive) { }
                 else f.visual.Play(HeroAnimation.Idle);
+            }
+            turnWait -= dt;
+            if (turnWait <= 0f)
+            {
+                turnWait = TurnGap;
+                TakeTurn();
             }
 
             if (PanelLayout)
@@ -1013,7 +976,7 @@ namespace MythicChronicles
             }
             bool playerAlive = units.Exists(x => x.side == 0 && x.Alive);
             bool enemyAlive = units.Exists(x => x.side == 1 && x.Alive);
-            if (!playerAlive || !enemyAlive || elapsed >= 90f)
+            if (!playerAlive || !enemyAlive || elapsed >= MaxBattleSeconds)
             {
                 ended = true;
                 float left = 0f, right = 0f;
@@ -1028,6 +991,128 @@ namespace MythicChronicles
                         unit.visual.Play(HeroAnimation.Victory);
                 if (finished != null) finished(won);
             }
+        }
+
+        // ---- Turn order: action-meter system. Every hero's meter fills at its
+        // speed; the first full meter acts alone. Speed buffs and slows change
+        // the order live.
+        private const float MaxBattleSeconds = 150f;
+        private const float TurnGap = .55f;
+        private const float MeterFull = 100f;
+        private float turnWait = .6f;
+        public string NextActorName { get; private set; }
+
+        private static float BaseSpeed(HeroDefinition h, bool boss)
+        {
+            float v;
+            switch (h.role)
+            {
+                case CombatRole.Assassin: v = 118f; break;
+                case CombatRole.Mage: v = 104f; break;
+                case CombatRole.Controller: v = 102f; break;
+                case CombatRole.Support: v = 100f; break;
+                case CombatRole.Healer: v = 98f; break;
+                case CombatRole.Warrior: v = 95f; break;
+                default: v = 82f; break;
+            }
+            v += 3f * Mathf.Min(4, (int)h.rarity);
+            int hash = 0;
+            for (int i = 0; i < h.id.Length; i++) hash = hash * 31 + h.id[i];
+            v += (hash & 0x7fffffff) % 7;
+            if (boss) v -= 8f;
+            return v;
+        }
+
+        public static int SpeedOf(HeroDefinition h) { return Mathf.RoundToInt(BaseSpeed(h, false)); }
+
+        private static float EffectiveSpeed(Combatant f)
+        {
+            float v = f.speed;
+            if (f.rallied > 0f) v *= 1.25f;
+            if (f.hasteT > 0f) v *= 1.2f;
+            if (f.frozen > 0f) v *= .55f;
+            if (f.cursed > 0f) v *= .8f;
+            return Mathf.Max(20f, v);
+        }
+
+        private Combatant NextInTurn(out float need)
+        {
+            Combatant best = null; need = 0f;
+            foreach (Combatant f in units)
+            {
+                if (!f.Alive) continue;
+                float n = Mathf.Max(0f, (MeterFull - f.gauge) / (EffectiveSpeed(f) * .1f));
+                if (best == null || n < need) { best = f; need = n; }
+            }
+            return best;
+        }
+
+        public struct TurnEntry { public string heroId; public int side; public int speed; }
+
+        // Predicted order of the next count actors, from current meters.
+        public void FillTurnOrder(List<TurnEntry> output, int count)
+        {
+            output.Clear();
+            int n = units.Count;
+            float[] g = new float[n];
+            for (int i = 0; i < n; i++) g[i] = units[i].gauge;
+            for (int k = 0; k < count; k++)
+            {
+                int best = -1; float bestNeed = 0f;
+                for (int i = 0; i < n; i++)
+                {
+                    if (!units[i].Alive) continue;
+                    float need = Mathf.Max(0f, (MeterFull - g[i]) / (EffectiveSpeed(units[i]) * .1f));
+                    if (best < 0 || need < bestNeed) { best = i; bestNeed = need; }
+                }
+                if (best < 0) return;
+                for (int i = 0; i < n; i++)
+                    if (units[i].Alive) g[i] += EffectiveSpeed(units[i]) * .1f * bestNeed;
+                g[best] -= MeterFull;
+                output.Add(new TurnEntry { heroId = units[best].hero.id, side = units[best].side,
+                    speed = Mathf.RoundToInt(EffectiveSpeed(units[best])) });
+            }
+        }
+
+        private void TakeTurn()
+        {
+            float need;
+            Combatant actor = NextInTurn(out need);
+            if (actor == null) return;
+            foreach (Combatant f in units)
+                if (f.Alive) f.gauge += EffectiveSpeed(f) * .1f * need;
+            actor.gauge -= MeterFull;
+            if (actor.gauge < 0f) actor.gauge = 0f;
+            if (actor.hasteT > 0f) actor.hasteT = Mathf.Max(0f, actor.hasteT - 1f);
+            if (actor.stunned > 0f)
+            {
+                // A stunned hero loses the turn and its meter.
+                actor.stunned = Mathf.Max(0f, actor.stunned - 1.2f);
+                actor.gauge = 0f;
+                Floating("STUNNED", actor, new Color(.8f, .8f, 1f));
+                return;
+            }
+            Combatant target = FindTarget(actor);
+            if (target == null) return;
+            HeroKit kit = HeroAbilityCatalog.For(actor.hero.id);
+            if (actor.energy >= 100f)
+            {
+                actor.energy = 0f;
+                CastUltimate(actor, target);
+                return;
+            }
+            if (actor.turnsSinceSkill >= 2)
+            {
+                actor.turnsSinceSkill = 0;
+                CastSkill(actor, target);
+                return;
+            }
+            actor.turnsSinceSkill++;
+            actor.visual.Play(HeroAnimation.Attack);
+            if (PanelLayout) { actor.lungeT = .36f; actor.lungeTarget = target; }
+            Hit(actor, target, actor.attack * 3f);
+            actor.energy = Mathf.Min(100f, actor.energy + (kit != null &&
+                kit.passive == HeroPassive.Enchantress ? 30f + 8f * PassiveScale(actor.hero.rarity) : 34f));
         }
 
         private void TickStatuses(Combatant hero, float dt)
@@ -1394,6 +1479,21 @@ namespace MythicChronicles
 
         private void CastEffect(Combatant actor, Combatant target, AbilityEffect effect, float power, bool ultimate)
         {
+            float[] speedBefore = new float[units.Count];
+            for (int i = 0; i < units.Count; i++) speedBefore[i] = EffectiveSpeed(units[i]);
+            CastEffectCore(actor, target, effect, power, ultimate);
+            for (int i = 0; i < units.Count; i++)
+            {
+                Combatant u = units[i];
+                if (!u.Alive) continue;
+                float now = EffectiveSpeed(u);
+                if (now > speedBefore[i] * 1.04f) Floating("SPEED UP", u, new Color(.55f, 1f, .6f));
+                else if (now < speedBefore[i] * .96f) Floating("SPEED DOWN", u, new Color(.6f, .75f, 1f));
+            }
+        }
+
+        private void CastEffectCore(Combatant actor, Combatant target, AbilityEffect effect, float power, bool ultimate)
+        {
             switch (effect)
             {
                 case AbilityEffect.Strike:
@@ -1418,7 +1518,7 @@ namespace MythicChronicles
                     break;
                 case AbilityEffect.StunStrike:
                     Hit(actor, target, actor.attack * power);
-                    if (target.Alive) target.stunned = Mathf.Max(target.stunned, 1.1f);
+                    if (target.Alive) { target.stunned = Mathf.Max(target.stunned, 1.1f); target.gauge = Mathf.Min(target.gauge, 0f); }
                     break;
                 case AbilityEffect.FrostStrike:
                     Hit(actor, target, actor.attack * power);
@@ -1475,7 +1575,7 @@ namespace MythicChronicles
                 case AbilityEffect.EnergizeTeam:
                     foreach (Combatant ally in units)
                         if (ally.side == actor.side && ally.Alive)
-                            ally.energy = Mathf.Min(100f, ally.energy + power * 11f);
+                            { ally.energy = Mathf.Min(100f, ally.energy + power * 11f); ally.hasteT = Mathf.Max(ally.hasteT, 4f); }
                     break;
                 case AbilityEffect.TauntGuard:
                     Shield(actor, actor.maxHp * .14f * power);
