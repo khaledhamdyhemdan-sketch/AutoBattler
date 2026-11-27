@@ -494,14 +494,35 @@ namespace MythicChronicles
         // design aspect): columns always span the full screen width edge to
         // edge, rows reach the top and bottom edges. Card size is capped so
         // two rows fit in each half on wide screens.
+        // Right rail (speed, timer, damage, NEXT) takes the right 62 of 540 design
+        // pixels; the card walls fill the rest and each gets a blue frame in the HUD.
+        public const float RailPx = 62f;
+
+        private void PanelMetrics(out float halfW, out float halfH, out float colW, out float size)
+        {
+            float aspect = cam != null && cam.aspect > .2f ? cam.aspect : .5625f;
+            halfH = 5.4f;
+            halfW = halfH * aspect;
+            colW = halfW * 2f * ((540f - RailPx) / 540f) / 3f;
+            size = Mathf.Min(colW, halfH * .47f);
+        }
+
+        // GUI rect (540x960 design space) of one side's card block.
+        public Rect PanelBlockGui(int side)
+        {
+            float halfW, halfH, colW, size;
+            PanelMetrics(out halfW, out halfH, out colW, out size);
+            float rowPx = size / (2f * halfH) * 960f;
+            float h = rowPx * 2f;
+            float w = (540f - RailPx);
+            return side == 1 ? new Rect(0f, 0f, w, h) : new Rect(0f, 960f - h, w, h);
+        }
+
         private void PanelSlot(int side, int slot, out Vector3 pos, out float size)
         {
             int col = slot % 3, row = slot / 3;
-            float aspect = cam != null && cam.aspect > .2f ? cam.aspect : .5625f;
-            float halfH = 5.4f;
-            float halfW = halfH * aspect;
-            float colW = halfW * 2f / 3f;
-            size = Mathf.Min(colW, halfH * .47f);
+            float halfW, halfH, colW;
+            PanelMetrics(out halfW, out halfH, out colW, out size);
             float rowGap = size * 1.0f;
             float blockRow = side == 1 ? row : (1 - row);
             float px = -halfW + colW * (col + .5f);

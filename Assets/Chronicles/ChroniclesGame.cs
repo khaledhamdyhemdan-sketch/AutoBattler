@@ -3145,6 +3145,24 @@ namespace MythicChronicles
             }
             if (battle.PanelLayout)
             {
+                {
+                    // Blue frames: right rail column down the full edge, plus one
+                    // frame around each card wall (layout idea from Khalid's reference).
+                    Color blueEdge = new Color(.35f, .65f, 1f, 1f);
+                    Color navy = new Color(.03f, .07f, .2f, .94f);
+                    GUI.color = navy;
+                    GUI.DrawTexture(new Rect(540f - ChroniclesBattle.RailPx, 0f, ChroniclesBattle.RailPx, 960f), Texture2D.whiteTexture);
+                    GUI.color = blueEdge;
+                    GUI.DrawTexture(new Rect(540f - ChroniclesBattle.RailPx - 2f, 0f, 3f, 960f), Texture2D.whiteTexture);
+                    for (int fs = 0; fs < 2; fs++)
+                    {
+                        Rect fb = battle.PanelBlockGui(fs);
+                        GUI.DrawTexture(new Rect(fb.x, fb.y, fb.width, 3f), Texture2D.whiteTexture);
+                        GUI.DrawTexture(new Rect(fb.x, fb.yMax - 3f, fb.width, 3f), Texture2D.whiteTexture);
+                        GUI.DrawTexture(new Rect(fb.x, fb.y, 3f, fb.height), Texture2D.whiteTexture);
+                    }
+                    GUI.color = Color.white;
+                }
                 // Right rail: speed, fast-forward, timer, damage meter (panel layout).
                 if (GUI.Button(new Rect(486, 66, 52, 46), "x" + battle.Speed,
                     OrnateGuiSkin.ButtonStyle(false)))
