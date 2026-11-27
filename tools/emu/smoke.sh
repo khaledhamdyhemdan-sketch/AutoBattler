@@ -22,14 +22,15 @@ shot a_home_guide
 tapw 222 247; tapw 222 247; tapw 222 247; tapw 222 247; tapw 222 247
 shot b_home_after_skip
 go(){ tapw 84 84; tapw $1 843; sleep 3; shot $2; }
-go 128 c_heroes
-tapw 270 520; sleep 3; shot c2_heroes_tap
-go 226 d_story
-tapw 270 740; sleep 3; shot d2_story_continue
-go 393 e_events
 go 477 f_more
-go 299 g_summon
-tapw 84 84; sleep 3; shot h_home
+tapw 380 380; sleep 3; shot i_formation
+tapw 270 480; sleep 2; shot i2_formation_tap
+go 226 d_story
+tapw 84 524; sleep 3; shot j_story_node1
+tapw 270 600; sleep 3; shot j2_story_node1_b
+tapw 270 800; sleep 6; shot k_after_800
+sleep 10; shot l_battle_10s
+sleep 10; shot m_battle_20s
 adb logcat -d > $OUT/logcat.txt 2>&1
 grep -iE "FATAL|Unity|libil2cpp|Vulkan|GLES|native-bridge|ndk_translation|houdini" $OUT/logcat.txt | head -80 > $OUT/logcat_key.txt
 exit 0
