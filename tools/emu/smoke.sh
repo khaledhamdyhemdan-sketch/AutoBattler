@@ -34,7 +34,7 @@ go 477 f_more
 tapw 380 380; sleep 3; shot i_formation
 tapw 270 480; sleep 2; shot i2_formation_tap
 go 226 d_story
-tapw 84 524; sleep 3; shot j_story_node1
+NODE=$(cat tools/emu/node.txt 2>/dev/null || echo '84 524'); tapw $NODE; sleep 3; shot j_story_node1
 tapw 270 884; sleep 4; shot k_prepare_team
 tapw 270 850; sleep 8; shot l_battle_8s
 sleep 12; shot m_battle_20s
