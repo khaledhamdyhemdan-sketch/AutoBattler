@@ -1098,11 +1098,15 @@ namespace MythicChronicles
             }
         }
 
+        public int TurnsTaken;
+        public int RoundNumber { get { return 1 + TurnsTaken / 12; } }
+
         private void TakeTurn()
         {
             float need;
             Combatant actor = NextInTurn(out need);
             if (actor == null) return;
+            TurnsTaken++;
             foreach (Combatant f in units)
                 if (f.Alive) f.gauge += EffectiveSpeed(f) * .1f * need;
             actor.gauge -= MeterFull;

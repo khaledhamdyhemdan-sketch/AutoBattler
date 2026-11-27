@@ -3164,6 +3164,15 @@ namespace MythicChronicles
                     GUI.color = Color.white;
                 }
                 // Right rail: speed, fast-forward, timer, damage meter (panel layout).
+                {
+                    GUIStyle rs = new GUIStyle(subtitle);
+                    rs.fontSize = 11; rs.fontStyle = FontStyle.Bold; rs.alignment = TextAnchor.MiddleCenter;
+                    rs.padding = new RectOffset(0, 0, 0, 0); rs.wordWrap = false; rs.clipping = TextClipping.Overflow;
+                    rs.normal.textColor = new Color(.7f, .85f, 1f);
+                    GUI.Label(new Rect(478, 8, 62, 16), "ROUND", rs);
+                    rs.fontSize = 22; rs.normal.textColor = Color.white;
+                    GUI.Label(new Rect(478, 24, 62, 32), battle.RoundNumber.ToString(), rs);
+                }
                 if (GUI.Button(new Rect(486, 66, 52, 46), "x" + battle.Speed,
                     OrnateGuiSkin.ButtonStyle(false)))
                     battle.Speed = battle.Speed >= 2f ? 1f : 2f;
