@@ -1776,8 +1776,8 @@ namespace MythicChronicles
                 if (point.z <= 0f) continue;
                 if (popupBigStyle == null)
                 {
-                    popupBigStyle = new GUIStyle(GUI.skin.label) { fontSize = PanelLayout ? 36 : 26, fontStyle = FontStyle.BoldAndItalic, alignment = TextAnchor.MiddleCenter, clipping = TextClipping.Overflow };
-                    popupSmallStyle = new GUIStyle(GUI.skin.label) { fontSize = PanelLayout ? 28 : 20, fontStyle = FontStyle.Bold, alignment = TextAnchor.MiddleCenter, clipping = TextClipping.Overflow };
+                    popupBigStyle = new GUIStyle(GUI.skin.label) { fontSize = PanelLayout ? 32 : 26, fontStyle = FontStyle.BoldAndItalic, alignment = TextAnchor.MiddleCenter, wordWrap = false, clipping = TextClipping.Overflow };
+                    popupSmallStyle = new GUIStyle(GUI.skin.label) { fontSize = PanelLayout ? 28 : 20, fontStyle = FontStyle.Bold, alignment = TextAnchor.MiddleCenter, wordWrap = false, clipping = TextClipping.Overflow };
                 }
                 GUIStyle st = popup.big ? popupBigStyle : popupSmallStyle;
                 float life = Mathf.Clamp01(popup.remaining / .9f);
@@ -1785,6 +1785,12 @@ namespace MythicChronicles
                 float pop = 1f + Mathf.Max(0f, life - .75f) * 2.4f;   // quick pop-in
                 float w = popup.big ? 320f : 140f, h = popup.big ? (PanelLayout ? 64f : 52f) : (PanelLayout ? 44f : 34f);
                 float cx = point.x / uiScale, cy = (Screen.height - point.y) / uiScale;
+                if (PanelLayout)
+                {
+                    // Keep long skill names inside the card walls (left of the rail).
+                    float halfText = Mathf.Min(220f, popup.text.Length * (popup.big ? 16f : 14f) * .5f * .9f + 6f);
+                    cx = Mathf.Clamp(cx, halfText + 4f, (540f - RailPx) - halfText - 4f);
+                }
                 Matrix4x4 oldM = GUI.matrix;
                 GUIUtility.ScaleAroundPivot(new Vector2(pop, pop), new Vector2(cx, cy));
                 Rect r = new Rect(cx - w * .5f, cy - h * .5f, w, h);
