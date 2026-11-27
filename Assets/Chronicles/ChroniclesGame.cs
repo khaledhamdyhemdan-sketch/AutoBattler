@@ -3161,6 +3161,19 @@ namespace MythicChronicles
                         GUI.DrawTexture(new Rect(fb.x, fb.yMax - 3f, fb.width, 3f), Texture2D.whiteTexture);
                         GUI.DrawTexture(new Rect(fb.x, fb.y, 3f, fb.height), Texture2D.whiteTexture);
                     }
+                    // Diamond caps at both ends of the rail (our own shape, not copied art).
+                    Matrix4x4 capM = GUI.matrix;
+                    float capX = 540f - ChroniclesBattle.RailPx * .5f;
+                    float[] capY = { 934f, 214f };
+                    for (int ci = 0; ci < capY.Length; ci++)
+                    {
+                        GUIUtility.RotateAroundPivot(45f, new Vector2(capX, capY[ci]));
+                        GUI.color = blueEdge;
+                        GUI.DrawTexture(new Rect(capX - 10f, capY[ci] - 10f, 20f, 20f), Texture2D.whiteTexture);
+                        GUI.color = new Color(.1f, .25f, .6f, 1f);
+                        GUI.DrawTexture(new Rect(capX - 7f, capY[ci] - 7f, 14f, 14f), Texture2D.whiteTexture);
+                        GUI.matrix = capM;
+                    }
                     GUI.color = Color.white;
                 }
                 // Right rail: speed, fast-forward, timer, damage meter (panel layout).
