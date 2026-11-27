@@ -2104,11 +2104,12 @@ namespace MythicChronicles
                             new Rect(slotRect.x + 4, slotRect.y + 4, 68, 118), false);
                         OrnateGuiSkin.PulseGlow(slotRect,
                             new Color(1f, .82f, .42f, .18f), 1.6f + slot * .1f);
-                        GUI.Label(new Rect(slotRect.x + 4, slotRect.y + 126, 68, 20),
-                            "SLOT " + (slot + 1), tiny);
-                        GUI.Label(new Rect(slotRect.x + 4, slotRect.y + 144, 68, 28),
+                        GUIStyle slotTxt = new GUIStyle(tiny) { alignment = TextAnchor.MiddleCenter, fontSize = 10, wordWrap = false, clipping = TextClipping.Overflow };
+                        GUI.Label(new Rect(slotRect.x + 2, slotRect.y + 124, 72, 16),
+                            "SLOT " + (slot + 1), slotTxt);
+                        GUI.Label(new Rect(slotRect.x + 2, slotRect.y + 140, 72, 16),
                             "Lv " + (pickedOwned != null ? pickedOwned.level : 1) +
-                            " " + pickedHero.role, tiny);
+                            " " + pickedHero.role, slotTxt);
                         if (GUI.Button(slotRect, "", GUIStyle.none))
                         {
                             List<string> temp = new List<string>(progress.Data.selectedTeam);
@@ -2140,7 +2141,7 @@ namespace MythicChronicles
                     originCount[th.origin] = cc + 1;
                 }
                 float chipX = 26f;
-                GUIStyle chip = new GUIStyle(tiny) { alignment = TextAnchor.MiddleCenter, fontSize = 11, fontStyle = FontStyle.Bold };
+                GUIStyle chip = new GUIStyle(tiny) { alignment = TextAnchor.MiddleCenter, fontSize = 11, fontStyle = FontStyle.Bold, wordWrap = false, clipping = TextClipping.Overflow };
                 foreach (var pair in originCount)
                 {
                     int n = pair.Value;
@@ -2153,7 +2154,7 @@ namespace MythicChronicles
                     GUI.DrawTexture(cr, chipBg);
                     chip.normal.textColor = chipCol;
                     GUI.Label(cr, pair.Key.ToString().ToUpperInvariant() + " x" + n +
-                        (chipBonus == "" ? "" : " " + chipBonus + " ATK"), chip);
+                        (chipBonus == "" ? "" : " " + chipBonus), chip);
                     chipX += 100f;
                     if (chipX > 440f) break;
                 }
