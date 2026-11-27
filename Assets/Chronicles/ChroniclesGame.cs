@@ -2150,13 +2150,13 @@ namespace MythicChronicles
                     Color chipCol = chipBonus == "" ? new Color(.5f, .46f, .6f) : OrnateGuiSkin.GoldBright;
                     Texture2D chipBg = OrnateGuiSkin.Frame("synergy_chip_" + (chipBonus == ""), chipCol,
                         new Color(.07f, .055f, .11f, .95f), 32, 3);
-                    Rect cr = new Rect(chipX, 489f, 96f, 24f);
+                    Rect cr = new Rect(chipX, 489f, 118f, 24f);
                     GUI.DrawTexture(cr, chipBg);
                     chip.normal.textColor = chipCol;
                     GUI.Label(cr, pair.Key.ToString().ToUpperInvariant() + " x" + n +
                         (chipBonus == "" ? "" : " " + chipBonus), chip);
-                    chipX += 100f;
-                    if (chipX > 440f) break;
+                    chipX += 122f;
+                    if (chipX > 420f) break;
                 }
             }
             int rosterRows = Mathf.CeilToInt(progress.Data.heroes.Count / 3f);
