@@ -1716,6 +1716,14 @@ namespace MythicChronicles
                         Color fc = ChroniclesGame.RarityFrameColor(unit.hero.rarity);
                         fc.a = .9f; GUI.color = fc;
                         float fx = px - cardPx * .5f, fy = py - cardPx + 4f, fw = cardPx, fh = cardPx - 4f;
+                        if (unit.panelQuad != null)
+                        {
+                            // Follow the card (lunge, hit shake) so the frame never detaches.
+                            Vector3 qp = cam.WorldToScreenPoint(unit.panelQuad.transform.position);
+                            fx = qp.x / uiScale - cardPx * .5f;
+                            fy = (Screen.height - qp.y) / uiScale - cardPx * .5f + 2f;
+                            fh = cardPx - 4f;
+                        }
                         GUI.DrawTexture(new Rect(fx, fy, fw, 2f), Texture2D.whiteTexture);
                         GUI.DrawTexture(new Rect(fx, fy + fh - 2f, fw, 2f), Texture2D.whiteTexture);
                         GUI.DrawTexture(new Rect(fx, fy, 2f, fh), Texture2D.whiteTexture);
