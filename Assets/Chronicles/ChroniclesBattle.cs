@@ -1711,6 +1711,17 @@ namespace MythicChronicles
                     Texture2D plate = OrnateGuiSkin.Art("bar_plate");
                     if (plate != null)
                         GUI.DrawTexture(new Rect(px - cardPx * .5f - 2f, py - 21f, cardPx + 4f, 38f), plate);
+                    {
+                        // Thin rarity-colored frame around the whole card (our own style).
+                        Color fc = ChroniclesGame.RarityFrameColor(unit.hero.rarity);
+                        fc.a = .9f; GUI.color = fc;
+                        float fx = px - cardPx * .5f, fy = py - cardPx + 4f, fw = cardPx, fh = cardPx - 4f;
+                        GUI.DrawTexture(new Rect(fx, fy, fw, 2f), Texture2D.whiteTexture);
+                        GUI.DrawTexture(new Rect(fx, fy + fh - 2f, fw, 2f), Texture2D.whiteTexture);
+                        GUI.DrawTexture(new Rect(fx, fy, 2f, fh), Texture2D.whiteTexture);
+                        GUI.DrawTexture(new Rect(fx + fw - 2f, fy, 2f, fh), Texture2D.whiteTexture);
+                        GUI.color = Color.white;
+                    }
                     // level badge: rarity-colored ring circle + number
                     Color rarity = ChroniclesGame.RarityFrameColor(unit.hero.rarity);
                     Texture2D badgeRing = OrnateGuiSkin.Frame(
