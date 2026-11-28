@@ -912,6 +912,12 @@ namespace MythicChronicles
                 TakeTurn();
             }
 
+            Combatant upNext = null;
+            if (PanelLayout && !ended)
+            {
+                float upNeed;
+                upNext = NextInTurn(out upNeed);
+            }
             if (PanelLayout)
             {
                 RelayoutPanels();
@@ -978,9 +984,23 @@ namespace MythicChronicles
                     if (f.lungeT <= 0f && f.hitFlashT <= 0f)
                         pos.y += Mathf.Sin(elapsed * 1.35f +
                             f.panelAnchor.x * 1.1f + f.side * 1.7f) * .035f;
+                    // Anticipation: the hero about to act breathes a warm glow and
+                    // grows slightly, so the next turn is readable before it fires.
+                    float upGlow = 0f;
+                    if (f == upNext && f.lungeT <= 0f && f.castPopT <= 0f && f.stunned <= 0f)
+                    {
+                        upGlow = .5f + .5f * Mathf.Sin(elapsed * 9f);
+                        float us = f.panelCardSize * (1f + .035f * upGlow);
+                        f.panelQuad.transform.localScale = new Vector3(us, us, 1f);
+                    }
                     if (cardRenderer != null && cardRenderer.material.HasProperty("_Color"))
-                        cardRenderer.material.color = Color.Lerp(
+                    {
+                        Color cardTint = Color.Lerp(
                             Color.white, new Color(1f, .5f, .45f, 1f), flash * .85f);
+                        if (upGlow > 0f)
+                            cardTint = Color.Lerp(cardTint, new Color(1f, .95f, .6f, 1f), .35f * upGlow);
+                        cardRenderer.material.color = cardTint;
+                    }
                     f.panelQuad.transform.position = pos;
                     // The hidden rig stays the logical anchor for projectiles
                     // and damage popups.
