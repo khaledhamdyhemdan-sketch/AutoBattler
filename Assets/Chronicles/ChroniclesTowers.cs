@@ -53,7 +53,7 @@ namespace MythicChronicles
             if (save == null || save.lastClearedStage < 10 ||
                 !IsTower(origin) || floor < 1 || floor > MaxFloor ||
                 floor != Highest(save, origin) + 1 ||
-                team == null || team.Count != 5 || save.heroes == null) return false;
+                team == null || team.Count != PlayerProgressService.TeamSize || save.heroes == null) return false;
             var unique = new HashSet<string>(StringComparer.Ordinal);
             int matching = 0;
             foreach (string id in team)

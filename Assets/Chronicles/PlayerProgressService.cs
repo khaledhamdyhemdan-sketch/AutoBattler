@@ -34,10 +34,35 @@ namespace MythicChronicles
         public string lastWeeklyUtc;
         public long lastIdleClaimTicks;
         public int gold = 2500, gems = 350, summonTickets = 3, heroFragments, forgeDust, relicDust, nextItemSerial = 1;
+        public int stamina = 40;
+        public long lastStaminaTicks;
         public int lastClearedStage;
         public int astralSeals;
         public int standardPity, astralPity;
+        public string wishlistHeroId = "";
         public int loginDaysClaimed;
+        public string fastBattleUtcDay = "";
+        public int fastBattleUsed;
+        public int legacyWar, legacyGuard, legacyFortune;
+        public List<ElementalGateProgress> elementalGates = new List<ElementalGateProgress>();
+        public string gateUtcDay = "";
+        public int gateAttemptsUsed;
+        public List<EventAdventureProgress> eventAdventures = new List<EventAdventureProgress>();
+        public string adventurePendingRunId = "";
+        public string passSeasonKey = "";
+        public int passSeasonXp;
+        public List<int> passLevelsClaimed = new List<int>();
+        public string leaderboardWeekClaimed = "";
+        public GuildState guild = new GuildState();
+        public FriendsState friends = new FriendsState();
+        public string tournamentWeekKey = "";
+        public int tournamentRoundsWon;
+        public bool tournamentEliminated;
+        public string tournamentPendingRunId = "";
+        public string tournamentRewardClaimed = "";
+        public string bountyUtcDay = "";
+        public List<ActiveBounty> activeBounties = new List<ActiveBounty>();
+        public List<string> claimedBountyIds = new List<string>();
         public string lastLoginGiftUtc = "";
         public List<SummonHistoryRecord> summonHistory = new List<SummonHistoryRecord>();
         public float musicVolume = .8f, effectsVolume = .9f;
@@ -83,13 +108,17 @@ namespace MythicChronicles
     // Local/offline save for campaign mode only. Online purchases/PvP require server-authoritative progression.
     public sealed class PlayerProgressService
     {
+        // Squad size for every mode (formation, story, towers, gates, raids).
+        public const int TeamSize = 6;
         public static readonly QuestInfo[] DailyQuests =
         {
             new QuestInfo("win_1", "Win 1 battle", 1, 150, 15),
             new QuestInfo("win_3", "Win 3 battles", 3, 350, 30),
             new QuestInfo("upgrade_1", "Upgrade any hero", 1, 180, 15),
             new QuestInfo("summon_1", "Summon a hero", 1, 180, 15),
-            new QuestInfo("idle_1", "Collect idle earnings", 1, 120, 10)
+            new QuestInfo("idle_1", "Collect idle earnings", 1, 120, 10),
+            new QuestInfo("gates_1", "Clear an Elemental Gate", 1, 220, 20),
+            new QuestInfo("adventure_1", "Clear an Event Adventure stage", 1, 220, 20)
         };
         public static readonly QuestInfo[] WeeklyQuests =
         {
@@ -336,7 +365,21 @@ namespace MythicChronicles
                 Data.equippedRelicId = "";
             seen.Clear();
             Data.selectedTeam.RemoveAll(id => !OwnsHero(id) || !seen.Add(id));
-            if (Data.selectedTeam.Count > 5) Data.selectedTeam.RemoveRange(5, Data.selectedTeam.Count - 5);
+            if (Data.selectedTeam.Count > TeamSize) Data.selectedTeam.RemoveRange(TeamSize, Data.selectedTeam.Count - TeamSize);
+            // Legacy five-hero squads: fill the sixth slot with the strongest
+            // owned hero not already selected so old saves stay playable.
+            if (Data.selectedTeam.Count > 0 && Data.selectedTeam.Count < TeamSize)
+            {
+                var pool = new List<OwnedHero>(Data.heroes);
+                pool.Sort((a, b) => b.level != a.level ? b.level - a.level :
+                    string.CompareOrdinal(a.id, b.id));
+                foreach (OwnedHero candidate in pool)
+                {
+                    if (Data.selectedTeam.Count >= TeamSize) break;
+                    if (!Data.selectedTeam.Contains(candidate.id))
+                        Data.selectedTeam.Add(candidate.id);
+                }
+            }
             Save();
         }
 
@@ -397,6 +440,7 @@ namespace MythicChronicles
             Data.claimedDailyQuests.Add(id);
             Data.gold += definition.goldReward;
             Data.gems += definition.gemReward;
+            AddPassXp(ChroniclesBattlePass.XpPerDailyQuestClaim);
             Save();
             return true;
         }
@@ -441,6 +485,7 @@ namespace MythicChronicles
             Data.claimedWeeklyQuests.Add(id);
             Data.gold += definition.goldReward;
             Data.gems += definition.gemReward;
+            AddPassXp(ChroniclesBattlePass.XpPerWeeklyQuestClaim);
             Save();
             return true;
         }
@@ -520,9 +565,53 @@ namespace MythicChronicles
         public bool OwnsHero(string id) { return Data.heroes.Exists(h => h.id == id); }
         public OwnedHero FindOwnedHero(string id) { return Data.heroes.Find(h => h.id == id); }
 
+        // Stamina: local-first, free time-based regeneration only (#12).
+        public const int StaminaMax = 40;
+        public const int StaminaRegenSeconds = 480; // 1 per 8 minutes
+        public const int StaminaCostCampaign = 6;
+
+        public int CurrentStamina()
+        {
+            long now = DateTime.UtcNow.Ticks;
+            if (Data.lastStaminaTicks <= 0)
+            {
+                Data.lastStaminaTicks = now;
+                Save();
+                return Data.stamina;
+            }
+            long elapsed = (now - Data.lastStaminaTicks) / TimeSpan.TicksPerSecond;
+            if (elapsed <= 0) return Data.stamina;
+            int gained = (int)(elapsed / StaminaRegenSeconds);
+            if (gained <= 0) return Data.stamina;
+            Data.stamina = Mathf.Min(StaminaMax, Data.stamina + gained);
+            Data.lastStaminaTicks += (long)gained * StaminaRegenSeconds * TimeSpan.TicksPerSecond;
+            if (Data.stamina >= StaminaMax) Data.lastStaminaTicks = now;
+            Save();
+            return Data.stamina;
+        }
+
+        public int StaminaSecondsToNext()
+        {
+            if (Data.stamina >= StaminaMax) return 0;
+            long now = DateTime.UtcNow.Ticks;
+            if (Data.lastStaminaTicks <= 0) return StaminaRegenSeconds;
+            long elapsed = (now - Data.lastStaminaTicks) / TimeSpan.TicksPerSecond;
+            return (int)Mathf.Max(1f, StaminaRegenSeconds - (elapsed % StaminaRegenSeconds));
+        }
+
+        public bool TrySpendStamina(int cost)
+        {
+            if (CurrentStamina() < cost) return false;
+            Data.stamina -= cost;
+            if (Data.stamina < StaminaMax && Data.lastStaminaTicks <= 0)
+                Data.lastStaminaTicks = DateTime.UtcNow.Ticks;
+            Save();
+            return true;
+        }
+
         public bool SetTeam(IList<string> heroIds)
         {
-            if (heroIds == null || heroIds.Count != 5) return false;
+            if (heroIds == null || heroIds.Count != TeamSize) return false;
             var unique = new HashSet<string>(StringComparer.Ordinal);
             foreach (string id in heroIds)
                 if (!OwnsHero(id) || !unique.Add(id)) return false;
@@ -966,9 +1055,10 @@ namespace MythicChronicles
                     }
                     else
                     {
-                        tier = guaranteed || roll <
-                            ChroniclesSummonRules.AstralUrRate ? Rarity.UR :
-                            roll < ChroniclesSummonRules.AstralUrRate +
+                        float urRate = ChroniclesSummonRules.EffectiveAstralUrRate(
+                            DateTime.UtcNow);
+                        tier = guaranteed || roll < urRate ? Rarity.UR :
+                            roll < urRate +
                             ChroniclesSummonRules.AstralSsrRate ? Rarity.SSR : Rarity.SR;
                         Data.astralPity = tier == Rarity.UR ?
                             0 : previousPity + 1;
@@ -977,7 +1067,8 @@ namespace MythicChronicles
                     List<HeroDefinition> pool = ChroniclesSummonRules.Eligible(banner, tier);
                     if (pool.Count == 0) throw new InvalidOperationException(
                         "No heroes are available for this summon tier.");
-                    HeroDefinition hero = pool[UnityEngine.Random.Range(0, pool.Count)];
+                    HeroDefinition hero = ChroniclesSummonRules.PickFromPool(
+                        banner, tier, pool, Data.wishlistHeroId);
                     OwnedHero owned = FindOwnedHero(hero.id);
                     if (owned == null)
                         Data.heroes.Add(new OwnedHero { id = hero.id });
@@ -1275,7 +1366,51 @@ namespace MythicChronicles
         public ArenaTrainingProgress ArenaTrainingState()
         {
             RefreshArenaDay();
+            RefreshArenaSeason();
             return Data.arenaTraining;
+        }
+
+        // Season flip: archive last season, soft-reset the ladder.
+        private void RefreshArenaSeason()
+        {
+            ArenaTrainingProgress arena = Data.arenaTraining;
+            string season = ChroniclesArenaTraining.SeasonKey(DateTime.UtcNow);
+            if (arena.seasonKey == season) return;
+            if (!string.IsNullOrEmpty(arena.seasonKey))
+            {
+                string finalTier = ChroniclesArenaTraining.Tier(
+                    Math.Max(arena.seasonBest, arena.rating));
+                arena.prevSeasonSummary = arena.seasonKey + ": " + finalTier +
+                    " (best " + Math.Max(arena.seasonBest, arena.rating) + ")";
+                arena.rating = ChroniclesArenaTraining.SoftResetRating(arena.rating);
+            }
+            arena.seasonKey = season;
+            arena.seasonBest = arena.rating;
+            arena.seasonTierClaimed = "";
+            Save();
+        }
+
+        public bool ClaimArenaSeasonReward()
+        {
+            RefreshArenaSeason();
+            ArenaTrainingProgress arena = Data.arenaTraining;
+            string tier = ChroniclesArenaTraining.Tier(arena.seasonBest);
+            if (arena.seasonTierClaimed == tier) return false;
+            arena.seasonTierClaimed = tier;
+            switch (tier)
+            {
+                case "MYTHIC": Data.gems += 2800; Data.summonTickets += 10; break;
+                case "LEGEND": Data.gems += 2000; Data.summonTickets += 6; break;
+                case "GRANDMASTER": Data.gems += 1500; Data.summonTickets += 5; break;
+                case "MASTER": Data.gems += 1100; Data.summonTickets += 4; break;
+                case "DIAMOND": Data.gems += 800; Data.summonTickets += 3; break;
+                case "PLATINUM": Data.gems += 550; Data.summonTickets += 2; break;
+                case "GOLD": Data.gems += 350; Data.summonTickets += 1; break;
+                case "SILVER": Data.gems += 200; break;
+                default: Data.gems += 100; break;
+            }
+            Save();
+            return true;
         }
 
         public int ArenaAttemptsRemaining()
@@ -1312,6 +1447,8 @@ namespace MythicChronicles
                     (victory ? ChroniclesArenaTraining.VictoryRating :
                         -ChroniclesArenaTraining.DefeatRating), 0, 5000);
                 arena.bestRating = Math.Max(arena.bestRating, arena.rating);
+                arena.seasonBest = Math.Max(arena.seasonBest, arena.rating);
+                AddPassXp(4);
                 if (victory) arena.wins++;
                 else arena.losses++;
                 Data.gold = checked(Data.gold + ChroniclesArenaTraining.Gold(victory));
@@ -1590,6 +1727,8 @@ namespace MythicChronicles
             IncrementQuest("win_1");
             IncrementQuest("win_3");
             IncrementWeekly("win_10");
+            AddPassXp(ChroniclesBattlePass.XpPerBattleWin);
+            AddGuildContribution(10);
             if (WorldsCatalog.GetStage(stageId).boss)
                 IncrementWeekly("boss_3");
             if (!Data.stageRewardsClaimed.Contains(stageId))
@@ -1606,7 +1745,8 @@ namespace MythicChronicles
                     if (string.IsNullOrEmpty(Data.equippedRelicId))
                         Data.equippedRelicId = rewardRelic.id;
                 }
-                Data.gold += stage.gold;
+                Data.gold += stage.gold *
+                    (ChroniclesEvents.DoubleGoldActive(DateTime.UtcNow) ? 2 : 1);
                 Data.gems += stage.gems;
             }
             if (stageId > Data.lastClearedStage) Data.lastClearedStage = stageId;
@@ -1625,11 +1765,580 @@ namespace MythicChronicles
             return IdleAvailableMinutes() * (IdleGoldPerMinute + Data.lastClearedStage * IdleGoldPerStagePerMinute);
         }
 
+        public const int FastBattleDailyLimit = 3;
+        public const int FastBattleMinutes = 120;
+
+        public int FastBattlesRemaining()
+        {
+            string today = DateTime.UtcNow.ToString("yyyy-MM-dd");
+            return Data.fastBattleUtcDay == today ?
+                Mathf.Max(0, FastBattleDailyLimit - Data.fastBattleUsed) :
+                FastBattleDailyLimit;
+        }
+
+        // Instant 2h of idle income, a limited number of times per UTC day.
+        public int FastBattle()
+        {
+            string today = DateTime.UtcNow.ToString("yyyy-MM-dd");
+            if (Data.fastBattleUtcDay != today)
+            {
+                Data.fastBattleUtcDay = today;
+                Data.fastBattleUsed = 0;
+            }
+            if (Data.fastBattleUsed >= FastBattleDailyLimit) return 0;
+            int collected = FastBattleMinutes *
+                (IdleGoldPerMinute + Data.lastClearedStage * IdleGoldPerStagePerMinute);
+            Data.fastBattleUsed++;
+            collected += (int)(collected * ChroniclesGrowth.LegacyGoldBonus(Data));
+            Data.gold += collected;
+            IncrementQuest("idle_1");
+            IncrementWeekly("idle_minutes_180", FastBattleMinutes);
+            Save();
+            return collected;
+        }
+
+        public ElementalGateProgress GateState(HeroElement element)
+        {
+            foreach (ElementalGateProgress gate in Data.elementalGates)
+                if (gate.element == element.ToString()) return gate;
+            var created = new ElementalGateProgress { element = element.ToString() };
+            Data.elementalGates.Add(created);
+            return created;
+        }
+
+        public int GateAttemptsRemaining()
+        {
+            string today = DateTime.UtcNow.ToString("yyyy-MM-dd");
+            return Data.gateUtcDay == today ?
+                Mathf.Max(0, ChroniclesElementalGates.DailyAttempts -
+                    Data.gateAttemptsUsed) :
+                ChroniclesElementalGates.DailyAttempts;
+        }
+
+        // Team check: all five selected heroes must match the gate element.
+        public bool GateTeamMatches(HeroElement element)
+        {
+            if (Data.selectedTeam.Count != TeamSize) return false;
+            foreach (string id in Data.selectedTeam)
+                if (HeroElements.For(id) != element) return false;
+            return true;
+        }
+
+        public bool CanEnterGate(HeroElement element)
+        {
+            return ChroniclesElementalGates.IsOpen(element, DateTime.UtcNow) &&
+                GateAttemptsRemaining() > 0 && GateTeamMatches(element);
+        }
+
+        // Consumes one attempt; returns "" when entry is not allowed.
+        public string BeginGate(HeroElement element)
+        {
+            if (!CanEnterGate(element)) return "";
+            string today = DateTime.UtcNow.ToString("yyyy-MM-dd");
+            if (Data.gateUtcDay != today)
+            {
+                Data.gateUtcDay = today;
+                Data.gateAttemptsUsed = 0;
+            }
+            Data.gateAttemptsUsed++;
+            Save();
+            return element.ToString();
+        }
+
+        public void AbandonGate(HeroElement element)
+        {
+            // Attempts stay consumed (genre standard for failed entries),
+            // but a battle that never started refunds the attempt.
+            if (Data.gateAttemptsUsed > 0) Data.gateAttemptsUsed--;
+            Save();
+        }
+
+        public bool CompleteGate(string runElement, bool victory, out string rewardLabel)
+        {
+            rewardLabel = "";
+            HeroElement element;
+            if (!System.Enum.TryParse(runElement, out element)) return false;
+            ElementalGateProgress gate = GateState(element);
+            if (!victory) { Save(); return true; }
+            int level = Mathf.Clamp(gate.unlockedLevel, 1,
+                ChroniclesElementalGates.Levels);
+            bool firstClear = !gate.firstClears.Contains(level);
+            if (firstClear) gate.firstClears.Add(level);
+            Data.gold += ChroniclesElementalGates.RewardGold(level);
+            Data.gems += ChroniclesElementalGates.RewardGems(level);
+            Data.forgeDust += ChroniclesElementalGates.RewardForgeDust(level, firstClear);
+            Data.relicDust += ChroniclesElementalGates.RewardRelicDust(level, firstClear);
+            rewardLabel = ChroniclesElementalGates.RewardLabel(level, firstClear);
+            if (gate.unlockedLevel < ChroniclesElementalGates.Levels)
+                gate.unlockedLevel++;
+            IncrementQuest("gates_1");
+            Save();
+            return true;
+        }
+
+        public EventAdventureProgress AdventureState(string adventureId)
+        {
+            foreach (EventAdventureProgress saved in Data.eventAdventures)
+                if (saved.adventureId == adventureId) return saved;
+            var created = new EventAdventureProgress { adventureId = adventureId };
+            Data.eventAdventures.Add(created);
+            return created;
+        }
+
+        // Stage 1..Stages; entry allowed for the next uncleared stage or a replay.
+        public bool CanEnterAdventureStage(string adventureId, int stage)
+        {
+            if (stage < 1 || stage > ChroniclesEventAdventures.Stages) return false;
+            if (ChroniclesEventAdventures.Active(DateTime.UtcNow).id != adventureId)
+                return false; // only the live adventure is playable
+            return stage <= AdventureState(adventureId).highestCleared + 1;
+        }
+
+        public string BeginAdventureStage(string adventureId, int stage)
+        {
+            if (!CanEnterAdventureStage(adventureId, stage)) return "";
+            string runId = adventureId + ":" + stage;
+            Data.adventurePendingRunId = runId;
+            Save();
+            return runId;
+        }
+
+        public void AbandonAdventure()
+        {
+            Data.adventurePendingRunId = "";
+            Save();
+        }
+
+        public bool CompleteAdventureStage(string runId, bool victory,
+            out string rewardLabel)
+        {
+            rewardLabel = "";
+            if (string.IsNullOrEmpty(runId) || runId != Data.adventurePendingRunId)
+                return false;
+            Data.adventurePendingRunId = "";
+            string[] parts = runId.Split(':');
+            int stage;
+            if (parts.Length != 2 || !int.TryParse(parts[1], out stage)) { Save(); return false; }
+            var def = ChroniclesEventAdventures.Active(DateTime.UtcNow);
+            if (def.id != parts[0]) { Save(); return false; }
+            EventAdventureProgress state = AdventureState(def.id);
+            if (!victory) { Save(); return true; }
+            bool firstClear = stage > state.highestCleared;
+            if (firstClear) state.highestCleared = stage;
+            int currency = ChroniclesEventAdventures.CurrencyReward(stage, firstClear);
+            int gold = ChroniclesEventAdventures.GoldReward(stage);
+            state.currencyEarned += currency;
+            Data.gold += gold;
+            rewardLabel = gold + " gold + " + currency + " " + def.currencyName;
+            IncrementQuest("adventure_1");
+            Save();
+            return true;
+        }
+
+        public bool ClaimAdventureMilestone(int threshold)
+        {
+            var def = ChroniclesEventAdventures.Active(DateTime.UtcNow);
+            EventAdventureProgress state = AdventureState(def.id);
+            if (state.currencyEarned < threshold ||
+                state.milestonesClaimed.Contains(threshold)) return false;
+            state.milestonesClaimed.Add(threshold);
+            switch (threshold)
+            {
+                case 100: Data.gold += 1000; break;
+                case 250: Data.gems += 60; break;
+                case 500: Data.summonTickets += 1; break;
+                case 900: Data.gold += 3000; Data.forgeDust += 80; break;
+                case 1400: Data.gems += 120; Data.relicDust += 50; break;
+                case 2000: Data.summonTickets += 2; Data.gems += 200; break;
+                default: return false;
+            }
+            Save();
+            return true;
+        }
+
+        // Season pass: resets on the first touch of a new UTC month.
+        private void ResetPassIfNeeded()
+        {
+            string season = ChroniclesBattlePass.SeasonKey(DateTime.UtcNow);
+            if (Data.passSeasonKey == season) return;
+            Data.passSeasonKey = season;
+            Data.passSeasonXp = 0;
+            Data.passLevelsClaimed.Clear();
+            Save();
+        }
+
+        public void AddPassXp(int amount)
+        {
+            ResetPassIfNeeded();
+            Data.passSeasonXp = Mathf.Clamp(Data.passSeasonXp + amount, 0,
+                ChroniclesBattlePass.Levels * ChroniclesBattlePass.XpPerLevel);
+        }
+
+        public int PassLevel()
+        {
+            ResetPassIfNeeded();
+            return ChroniclesBattlePass.LevelFor(Data.passSeasonXp);
+        }
+
+        public bool ClaimPassLevel(int level)
+        {
+            ResetPassIfNeeded();
+            if (level < 1 || level > PassLevel() ||
+                Data.passLevelsClaimed.Contains(level)) return false;
+            Data.passLevelsClaimed.Add(level);
+            ChroniclesBattlePass.GrantReward(Data, level);
+            Save();
+            return true;
+        }
+
+        public int TowerHighestTotal()
+        {
+            int total = 0;
+            foreach (TowerProgressRecord record in Data.towerProgress)
+                total = Math.Max(total, record.highestFloor);
+            return total;
+        }
+
+        // Weekly leaderboard reward, once per UTC week, based on current rank.
+        public bool ClaimLeaderboardReward(int rank, out string label)
+        {
+            label = "";
+            DateTime today = DateTime.UtcNow.Date;
+            int daysSinceMonday = ((int)today.DayOfWeek + 6) % 7;
+            string week = today.AddDays(-daysSinceMonday).ToString("yyyy-MM-dd");
+            if (Data.leaderboardWeekClaimed == week) return false;
+            int gems = rank == 1 ? 500 : rank <= 3 ? 300 : rank <= 10 ? 150 :
+                rank <= 25 ? 75 : 25;
+            Data.leaderboardWeekClaimed = week;
+            Data.gems += gems;
+            label = gems + " gems";
+            Save();
+            return true;
+        }
+
+        public GuildState GuildState()
+        {
+            return Data.guild;
+        }
+
+        public void AddGuildContribution(int amount)
+        {
+            string today = DateTime.UtcNow.ToString("yyyy-MM-dd");
+            if (Data.guild.contributionUtcDay != today)
+            {
+                Data.guild.contributionUtcDay = today;
+                Data.guild.contributionToday = 0;
+            }
+            if (Data.guild.contributionToday >= ChroniclesGuild.DailyContributionCap)
+                return;
+            int added = Math.Min(amount,
+                ChroniclesGuild.DailyContributionCap - Data.guild.contributionToday);
+            Data.guild.contributionToday += added;
+            Data.guild.contributionTotal += added;
+        }
+
+        public int GuildBossAttemptsRemaining()
+        {
+            string today = DateTime.UtcNow.ToString("yyyy-MM-dd");
+            return Data.guild.guildBossUtcDay == today ?
+                Math.Max(0, ChroniclesGuild.BossDailyAttacks -
+                    Data.guild.guildBossAttacksToday) :
+                ChroniclesGuild.BossDailyAttacks;
+        }
+
+        public string BeginGuildBoss()
+        {
+            string today = DateTime.UtcNow.ToString("yyyy-MM-dd");
+            if (GuildBossAttemptsRemaining() <= 0 ||
+                !string.IsNullOrEmpty(Data.guild.guildBossPendingRunId)) return "";
+            if (Data.guild.guildBossUtcDay != today)
+            {
+                Data.guild.guildBossUtcDay = today;
+                Data.guild.guildBossDamageToday = 0;
+                Data.guild.guildBossAttacksToday = 0;
+                Data.guild.guildBossMilestonesClaimed.Clear();
+            }
+            Data.guild.guildBossAttacksToday++;
+            Data.guild.guildBossPendingRunId = Guid.NewGuid().ToString("N");
+            Save();
+            return Data.guild.guildBossPendingRunId;
+        }
+
+        public void AbandonGuildBoss()
+        {
+            // A battle that never started refunds the attack.
+            if (Data.guild.guildBossAttacksToday > 0)
+                Data.guild.guildBossAttacksToday--;
+            Data.guild.guildBossPendingRunId = "";
+            Save();
+        }
+
+        public bool CompleteGuildBoss(string runId, int damage)
+        {
+            if (string.IsNullOrEmpty(runId) ||
+                runId != Data.guild.guildBossPendingRunId) return false;
+            Data.guild.guildBossPendingRunId = "";
+            Data.guild.guildBossDamageToday += Math.Max(0, damage);
+            AddGuildContribution(25);
+            Save();
+            return true;
+        }
+
+        public bool ClaimGuildBossMilestone(int threshold)
+        {
+            int total = Data.guild.guildBossDamageToday +
+                ChroniclesGuild.MemberBossDamageToday(DateTime.UtcNow);
+            if (total < threshold ||
+                Data.guild.guildBossMilestonesClaimed.Contains(threshold))
+                return false;
+            Data.guild.guildBossMilestonesClaimed.Add(threshold);
+            switch (threshold)
+            {
+                case 50000: Data.gold += 500; Data.gems += 20; break;
+                case 150000: Data.gold += 1200; Data.forgeDust += 40; break;
+                case 400000: Data.gems += 80; Data.relicDust += 30; break;
+                case 900000: Data.summonTickets += 2; break;
+                case 1800000: Data.gems += 300; Data.summonTickets += 3; break;
+                default: return false;
+            }
+            Save();
+            return true;
+        }
+
+        public bool ClaimGuildWeeklyChest(out string label)
+        {
+            label = "";
+            DateTime today = DateTime.UtcNow.Date;
+            int daysSinceMonday = ((int)today.DayOfWeek + 6) % 7;
+            string week = today.AddDays(-daysSinceMonday).ToString("yyyy-MM-dd");
+            if (Data.guild.weeklyChestClaimed == week) return false;
+            int weekly = ChroniclesGuild.MemberContributionWeek(DateTime.UtcNow) +
+                Data.guild.contributionTotal;
+            int tier = ChroniclesGuild.WeeklyChestTier(weekly);
+            if (tier == 0) return false;
+            Data.guild.weeklyChestClaimed = week;
+            if (tier == 3) { Data.gems += 500; Data.summonTickets += 3; }
+            else if (tier == 2) { Data.gems += 250; Data.summonTickets += 1; }
+            else { Data.gems += 100; }
+            label = ChroniclesGuild.WeeklyChestLabel(tier);
+            Save();
+            return true;
+        }
+
+        public bool ClaimFriendGift(string friendName)
+        {
+            var def = Array.Find(ChroniclesFriends.Friends,
+                f => f.name == friendName);
+            if (def == null) return false;
+            string today = DateTime.UtcNow.ToString("yyyy-MM-dd");
+            if (Data.friends.giftUtcDay != today)
+            {
+                Data.friends.giftUtcDay = today;
+                Data.friends.giftsClaimedToday.Clear();
+            }
+            if (Data.friends.giftsClaimedToday.Contains(friendName)) return false;
+            Data.friends.giftsClaimedToday.Add(friendName);
+            Data.gold += def.giftGold;
+            Data.friends.friendPoints += def.giftPoints;
+            Save();
+            return true;
+        }
+
+        public bool HireMercenary(string championId)
+        {
+            var def = Array.Find(ChroniclesFriends.Friends,
+                f => f.championId == championId);
+            string today = DateTime.UtcNow.ToString("yyyy-MM-dd");
+            if (def == null || Data.friends.mercenaryUtcDay == today ||
+                Data.friends.friendPoints < ChroniclesFriends.MercenaryCost)
+                return false;
+            Data.friends.friendPoints -= ChroniclesFriends.MercenaryCost;
+            Data.friends.mercenaryUtcDay = today;
+            Data.friends.mercenaryUsedHeroId = championId;
+            Data.friends.mercenaryPending = true;
+            Save();
+            return true;
+        }
+
+        public void ConsumeMercenary()
+        {
+            if (!Data.friends.mercenaryPending) return;
+            Data.friends.mercenaryPending = false;
+            Save();
+        }
+
+        private void RefreshTournamentWeek()
+        {
+            string week = ChroniclesTournament.WeekKey(DateTime.UtcNow);
+            if (Data.tournamentWeekKey == week) return;
+            Data.tournamentWeekKey = week;
+            Data.tournamentRoundsWon = 0;
+            Data.tournamentEliminated = false;
+            Data.tournamentPendingRunId = "";
+        }
+
+        public bool CanEnterTournament()
+        {
+            RefreshTournamentWeek();
+            return Data.lastClearedStage >= 10 && !Data.tournamentEliminated &&
+                Data.tournamentRoundsWon < ChroniclesTournament.Rounds &&
+                string.IsNullOrEmpty(Data.tournamentPendingRunId);
+        }
+
+        public string BeginTournamentRound()
+        {
+            if (!CanEnterTournament()) return "";
+            Data.tournamentPendingRunId = Guid.NewGuid().ToString("N");
+            Save();
+            return Data.tournamentPendingRunId;
+        }
+
+        public void AbandonTournament()
+        {
+            Data.tournamentPendingRunId = "";
+            Save();
+        }
+
+        public bool CompleteTournamentRound(string runId, bool victory)
+        {
+            RefreshTournamentWeek();
+            if (string.IsNullOrEmpty(runId) ||
+                runId != Data.tournamentPendingRunId) return false;
+            Data.tournamentPendingRunId = "";
+            if (victory)
+            {
+                Data.tournamentRoundsWon++;
+                AddPassXp(10);
+            }
+            else Data.tournamentEliminated = true;
+            Save();
+            return true;
+        }
+
+        public bool ClaimTournamentReward(out string label)
+        {
+            label = "";
+            RefreshTournamentWeek();
+            bool champion = Data.tournamentRoundsWon >= ChroniclesTournament.Rounds;
+            if (!champion && !Data.tournamentEliminated) return false;
+            if (Data.tournamentRewardClaimed == Data.tournamentWeekKey) return false;
+            Data.tournamentRewardClaimed = Data.tournamentWeekKey;
+            if (champion) { Data.gems += 300; Data.summonTickets += 2; }
+            else if (Data.tournamentRoundsWon == 2)
+            { Data.gems += 150; Data.summonTickets += 1; }
+            else if (Data.tournamentRoundsWon == 1) Data.gems += 75;
+            else Data.gems += 30;
+            label = ChroniclesTournament.RewardLabel(
+                Data.tournamentRoundsWon, Data.tournamentEliminated);
+            Save();
+            return true;
+        }
+
+        public bool SpendLegacyPoint(int branch)
+        {
+            int earned = ChroniclesGrowth.LegacyPointsEarned(Data);
+            if (ChroniclesGrowth.LegacyPointsSpent(Data) >= earned) return false;
+            switch (branch)
+            {
+                case 0:
+                    if (Data.legacyWar >= ChroniclesGrowth.LegacyCap) return false;
+                    Data.legacyWar++; break;
+                case 1:
+                    if (Data.legacyGuard >= ChroniclesGrowth.LegacyCap) return false;
+                    Data.legacyGuard++; break;
+                case 2:
+                    if (Data.legacyFortune >= ChroniclesGrowth.LegacyCap) return false;
+                    Data.legacyFortune++; break;
+                default: return false;
+            }
+            Save();
+            return true;
+        }
+
+        public ActiveBounty FindActiveBounty(string bountyId)
+        {
+            foreach (ActiveBounty bounty in Data.activeBounties)
+                if (bounty.id == bountyId) return bounty;
+            return null;
+        }
+
+        // Sum of the effective levels of the N strongest owned heroes.
+        public int BestDispatchPower(int heroCount)
+        {
+            var levels = new List<int>();
+            foreach (OwnedHero hero in Data.heroes)
+                if (hero != null)
+                    levels.Add(ChroniclesGrowth.EffectiveLevel(Data, hero));
+            levels.Sort((a, b) => b.CompareTo(a));
+            int power = 0;
+            for (int i = 0; i < levels.Count && i < heroCount; i++)
+                power += levels[i];
+            return power;
+        }
+
+        private void ResetBountyDayIfNeeded()
+        {
+            string today = DateTime.UtcNow.ToString("yyyy-MM-dd");
+            if (Data.bountyUtcDay == today) return;
+            Data.bountyUtcDay = today;
+            Data.claimedBountyIds.Clear();
+        }
+
+        public bool StartBounty(string bountyId)
+        {
+            BountyDefinition def = ChroniclesBounty.Find(bountyId);
+            if (def == null) return false;
+            ResetBountyDayIfNeeded();
+            if (FindActiveBounty(bountyId) != null ||
+                Data.claimedBountyIds.Contains(bountyId)) return false;
+            if (Data.heroes.Count < def.minHeroes) return false;
+            // Auto-dispatch the strongest owned heroes.
+            var ranked = new List<OwnedHero>(Data.heroes);
+            ranked.Sort((a, b) =>
+                ChroniclesGrowth.EffectiveLevel(Data, b)
+                    .CompareTo(ChroniclesGrowth.EffectiveLevel(Data, a)));
+            var picks = new List<string>();
+            int power = 0;
+            for (int i = 0; i < ranked.Count && picks.Count < def.minHeroes; i++)
+            {
+                picks.Add(ranked[i].id);
+                power += ChroniclesGrowth.EffectiveLevel(Data, ranked[i]);
+            }
+            if (picks.Count < def.minHeroes || power < def.requiredPower)
+                return false;
+            Data.activeBounties.Add(new ActiveBounty
+            {
+                id = bountyId,
+                heroIds = picks,
+                finishTicks = DateTime.UtcNow.Ticks +
+                    TimeSpan.FromHours(def.hours).Ticks
+            });
+            Save();
+            return true;
+        }
+
+        public bool ClaimBounty(string bountyId)
+        {
+            ActiveBounty running = FindActiveBounty(bountyId);
+            BountyDefinition def = ChroniclesBounty.Find(bountyId);
+            if (running == null || def == null ||
+                running.finishTicks > DateTime.UtcNow.Ticks) return false;
+            ResetBountyDayIfNeeded();
+            Data.activeBounties.Remove(running);
+            Data.claimedBountyIds.Add(bountyId);
+            Data.gold += def.gold;
+            Data.gems += def.gems;
+            Data.forgeDust += def.forgeDust;
+            Save();
+            return true;
+        }
+
         public int ClaimIdleGold()
         {
             int minutes = IdleAvailableMinutes();
             if (minutes <= 0) return 0;
             int collected = IdleProjectedGold();
+            collected += (int)(collected * ChroniclesGrowth.LegacyGoldBonus(Data));
             Data.gold += collected;
             // Consume only whole minutes so sub-minute earnings are preserved.
             Data.lastIdleClaimTicks = Math.Min(DateTime.UtcNow.Ticks,

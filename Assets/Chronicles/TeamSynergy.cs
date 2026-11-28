@@ -10,6 +10,9 @@ namespace MythicChronicles
         public float startingEnergy;
         public int largestOriginCount, uniqueOrigins;
         public string description;
+        // Whole team from one mythology: battle moves to their pantheon.
+        public bool monoPantheon;
+        public Origin pantheonOrigin;
     }
 
     public static class TeamSynergy
@@ -31,12 +34,20 @@ namespace MythicChronicles
                 }
             }
 
-            float attack = largest >= 5 ? 1.20f : largest >= 4 ? 1.15f :
+            int teamSize = heroes == null ? 0 : heroes.Count;
+            Origin mono = Origin.Egypt; bool isMono = false;
+            if (teamSize >= 5 && largest == teamSize)
+            {
+                foreach (var pair in count)
+                    if (pair.Value == largest) { mono = pair.Key; isMono = true; break; }
+            }
+            float attack = isMono ? 1.25f : largest >= 5 ? 1.20f : largest >= 4 ? 1.15f :
                 largest >= 3 ? 1.10f : largest >= 2 ? 1.06f : 1f;
-            float health = largest >= 5 ? 1.20f : largest >= 4 ? 1.13f :
+            float health = isMono ? 1.25f : largest >= 5 ? 1.20f : largest >= 4 ? 1.13f :
                 largest >= 3 ? 1.08f : largest >= 2 ? 1.04f : 1f;
-            float energy = count.Count >= 5 ? 20f : count.Count >= 4 ? 12f : 0f;
-            string name = largest >= 5 ? "Pure Origins V" :
+            float energy = isMono ? 25f : count.Count >= 5 ? 20f : count.Count >= 4 ? 12f : 0f;
+            string name = isMono ? "PANTHEON UNITY • " + mono.ToString().ToUpperInvariant() :
+                largest >= 5 ? "Pure Origins V" :
                 largest >= 4 ? "Pure Origins IV" :
                 largest >= 3 ? "Shared Origins III" :
                 largest >= 2 ? "Shared Origins II" : "No same-origin bonus";
@@ -44,7 +55,8 @@ namespace MythicChronicles
             return new TeamSynergyBonus
             {
                 hpMultiplier = health, attackMultiplier = attack, startingEnergy = energy,
-                largestOriginCount = largest, uniqueOrigins = count.Count, description = name
+                largestOriginCount = largest, uniqueOrigins = count.Count, description = name,
+                monoPantheon = isMono, pantheonOrigin = mono
             };
         }
     }

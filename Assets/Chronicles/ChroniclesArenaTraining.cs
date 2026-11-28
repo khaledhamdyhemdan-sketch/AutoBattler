@@ -12,6 +12,10 @@ namespace MythicChronicles
         public int attemptsToday;
         public int wins, losses;
         public string pendingMatchToken = "";
+        public string seasonKey = "";
+        public int seasonBest;
+        public string seasonTierClaimed = "";
+        public string prevSeasonSummary = "";
     }
 
     /// <summary>
@@ -66,6 +70,40 @@ namespace MythicChronicles
         public static int Gems(bool victory)
         {
             return victory ? 12 : 0;
+        }
+
+        // Monthly UTC seasons. On season flip the ladder soft-resets: ratings
+        // compress halfway back to the starting point, genre standard.
+        public static string SeasonKey(DateTime utcNow)
+        {
+            return utcNow.ToString("yyyy-MM");
+        }
+
+        public static DateTime SeasonEnd(DateTime utcNow)
+        {
+            return new DateTime(utcNow.Year, utcNow.Month, 1, 0, 0, 0,
+                DateTimeKind.Utc).AddMonths(1);
+        }
+
+        public static int SoftResetRating(int rating)
+        {
+            return StartingRating + Math.Max(0, rating - StartingRating) / 2;
+        }
+
+        public static string SeasonRewardLabel(string tier)
+        {
+            switch (tier)
+            {
+                case "MYTHIC": return "2,800 gems + 10 summon tickets";
+                case "LEGEND": return "2,000 gems + 6 summon tickets";
+                case "GRANDMASTER": return "1,500 gems + 5 summon tickets";
+                case "MASTER": return "1,100 gems + 4 summon tickets";
+                case "DIAMOND": return "800 gems + 3 summon tickets";
+                case "PLATINUM": return "550 gems + 2 summon tickets";
+                case "GOLD": return "350 gems + 1 summon ticket";
+                case "SILVER": return "200 gems";
+                default: return "100 gems";
+            }
         }
     }
 }

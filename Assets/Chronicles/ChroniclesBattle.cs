@@ -10,6 +10,7 @@ namespace MythicChronicles
     {
         private sealed class Combatant
         {
+            public bool entered;
             public HeroDefinition hero;
             public GameObject model;
             public HeroVisualDriver visual;
@@ -18,10 +19,21 @@ namespace MythicChronicles
             public float burn, burnTick, cursed, frozen, rallied, tauntSeconds, passiveTimer;
             public float skillFactor = 1f, ultimateFactor = 1f, passiveFactor = 1f;
             public bool savedOnce;
+            public float speed = 100f, gauge, hasteT;
+            public int turnsSinceSkill;
             public Combatant forcedTarget;
             public bool boss;
             public float bossSpecialTimer = 9f;
             public Vector3 formationPosition, arrivalPosition, displayScale;
+            public Vector3 panelAnchor;
+            public GameObject panelQuad;
+            public int slot;
+            public float castPopT;
+            public float panelCardSize = 2.2f;
+            public float lungeT, dealt, hitFlashT;
+            public Vector3 hitDir;
+            public float koT;
+            public Combatant lungeTarget;
             public bool Alive { get { return hp > 0f; } }
         }
         private sealed class FloatingText
@@ -30,14 +42,18 @@ namespace MythicChronicles
             public Vector3 world;
             public float remaining;
             public Color color;
+            public bool big;
         }
 
         private readonly List<Combatant> units = new List<Combatant>();
         private readonly List<FloatingText> popups = new List<FloatingText>();
         private readonly Dictionary<Origin, Material> materials = new Dictionary<Origin, Material>();
-        private Material goldMaterial, groundMaterial, redMaterial;
+        private Material goldMaterial, groundMaterial, redMaterial,
+            sandstoneMaterial, sandstoneDarkMaterial;
         private Camera cam;
         private StageDefinition stage;
+        private Origin arenaOrigin;
+        private Origin? playerPantheon;
         private Action<bool> finished;
         private bool ended, raidMode;
         private float raidDamage;
@@ -45,9 +61,25 @@ namespace MythicChronicles
         public int RaidDamageScore { get { return Mathf.FloorToInt(
             Mathf.Clamp(raidDamage, 0f, 2000000f)); } }
         public bool Paused { get; set; }
+        public bool PanelLayout { get; set; }
+        public string BannerOverride { set { bannerText = value ?? string.Empty; } }
         public bool Complete { get { return ended; } }
-        public float SecondsLeft { get { return Mathf.Max(0f, 90f - elapsed); } }
+        public float SecondsLeft { get { return Mathf.Max(0f, MaxBattleSeconds - elapsed); } }
         public float Speed { get; set; } = 1f;
+        private float shakeT, shakeAmp, hitStopT, slowMoT;
+        private Vector3 camBase = new Vector3(0f, 11.5f, -13f);
+        private string cutInHero;
+        private string cutInSkill;
+        private float cutInTime = 99f;
+        private bool cutInUltimate;
+        private string bannerText = string.Empty;
+        private float bannerT = 99f;
+        private Texture2D speechBubbleTex;
+        private readonly Dictionary<string, Texture2D> cutInPortraits = new Dictionary<string, Texture2D>();
+        private GUIStyle cutInNameStyle, cutInSkillStyle, popupBigStyle, popupSmallStyle, bannerStyle, bubbleStyle;
+        private Texture2D panelAllyTex, panelEnemyTex;
+        private readonly Dictionary<string, Texture2D[]> cutInAnimFrames =
+            new Dictionary<string, Texture2D[]>();
 
         public void Initialize(StageDefinition chosen, IList<OwnedHero> squad,
             PlayerSave savedProgress, Action<bool> onFinished,
@@ -58,10 +90,41 @@ namespace MythicChronicles
         {
             raidMode = raidBattle;
             raidDamage = 0f;
-            if (chosen == null || squad == null || squad.Count != 5) throw new ArgumentException("Battle requires stage and five heroes.");
+            if (chosen == null || squad == null || squad.Count != PlayerProgressService.TeamSize) throw new ArgumentException("Battle requires stage and six heroes.");
             stage = chosen; finished = onFinished;
+            // Battle-start banner: stage name; tournament rounds say ROUND N.
+            bannerText = mode == TrialMode.Normal ?
+                (stage.name ?? string.Empty).ToUpperInvariant() :
+                mode.ToString().ToUpperInvariant() + " \u2022 " +
+                    (stage.name ?? string.Empty).ToUpperInvariant();
+            bannerT = 99f;
+            arenaOrigin = towerOrigin.HasValue ?
+                towerOrigin.Value : WorldsCatalog.Chapters[stage.chapter - 1].origin;
+            // Mono-pantheon team: the battle moves to their mythology's stage and
+            // the opening banner announces the unity bonus.
+            playerPantheon = null;
+            if (squad != null && squad.Count >= 5)
+            {
+                var squadHeroes = new List<HeroDefinition>();
+                foreach (OwnedHero owned in squad)
+                {
+                    HeroDefinition def = WorldsCatalog.FindHero(owned.id);
+                    if (def != null) squadHeroes.Add(def);
+                }
+                if (squadHeroes.Count == squad.Count)
+                {
+                    TeamSynergyBonus probe = TeamSynergy.Calculate(squadHeroes);
+                    if (probe.monoPantheon)
+                    {
+                        playerPantheon = probe.pantheonOrigin;
+                        if (!towerOrigin.HasValue) arenaOrigin = probe.pantheonOrigin;
+                        bannerText = "PANTHEON UNITY • " +
+                            probe.pantheonOrigin.ToString().ToUpperInvariant();
+                    }
+                }
+            }
             BuildArena();
-            for (int i = 0; i < 5; i++)
+            for (int i = 0; i < squad.Count; i++)
             {
                 HeroDefinition hero = WorldsCatalog.FindHero(squad[i].id);
                 if (hero == null) throw new ArgumentException("Unknown hero: " + squad[i].id);
@@ -72,10 +135,14 @@ namespace MythicChronicles
                 HeroGrowthStats growth = ChroniclesGrowth.Calculate(savedProgress, squad[i]);
                 EquipmentBonuses gear = ChroniclesEquipment.Calculate(
                     savedProgress == null ? null : savedProgress.equipment, hero.id);
+                float mercenary = savedProgress != null &&
+                    savedProgress.friends != null &&
+                    savedProgress.friends.mercenaryPending ?
+                    1f + ChroniclesFriends.MercenaryPowerBonus : 1f;
                 fighter.attack = (fighter.attack + gear.attack) *
-                    growth.attackMultiplier * gear.attackMultiplier;
+                    growth.attackMultiplier * gear.attackMultiplier * mercenary;
                 fighter.maxHp = (fighter.maxHp + gear.health) *
-                    growth.hpMultiplier * gear.healthMultiplier;
+                    growth.hpMultiplier * gear.healthMultiplier * mercenary;
                 fighter.armor = (fighter.armor + gear.defense) * growth.defenseMultiplier;
                 fighter.hp = fighter.maxHp;
                 fighter.skillFactor = growth.skillMultiplier;
@@ -95,7 +162,7 @@ namespace MythicChronicles
                     (hero.origin == Origin.Japan || hero.origin == Origin.China))))
                     opponents.Add(hero);
             if (opponents.Count == 0) throw new InvalidOperationException("Chapter needs opponents.");
-            for (int i = 0; i < 5; i++)
+            for (int i = 0; i < squad.Count; i++)
             {
                 HeroDefinition enemy;
                 if (stage.boss && i == 0)
@@ -174,6 +241,7 @@ namespace MythicChronicles
                 }
             }
             ApplySynergy();
+            CreatePantheonAuras();
             ApplyRelic(savedProgress);
             if (labyrinth != null && labyrinthBlessings > 0)
                 foreach (Combatant unit in units)
@@ -198,6 +266,52 @@ namespace MythicChronicles
                 combatant.hp = combatant.maxHp;
                 combatant.energy = Mathf.Min(100f,
                     combatant.energy + relic.startingEnergy * power);
+            }
+        }
+
+        private void CreatePantheonAuras()
+        {
+            if (!playerPantheon.HasValue) return;
+            Color auraColor;
+            switch (playerPantheon.Value)
+            {
+                case Origin.Egypt: auraColor = new Color(1f, .78f, .25f); break;
+                case Origin.Greece: auraColor = new Color(.55f, .75f, 1f); break;
+                case Origin.Norse: auraColor = new Color(.55f, .9f, 1f); break;
+                case Origin.Japan: auraColor = new Color(1f, .35f, .4f); break;
+                case Origin.China: auraColor = new Color(.4f, .95f, .6f); break;
+                case Origin.EastAsia: auraColor = new Color(.45f, .95f, .85f); break;
+                case Origin.Folklore: auraColor = new Color(.8f, .5f, 1f); break;
+                default: auraColor = new Color(1f, .85f, .5f); break;
+            }
+            Shader shader = ChroniclesShaders.FindAny(
+                "Legacy Shaders/Particles/Alpha Blended", "Particles/Alpha Blended",
+                "Legacy Shaders/Particles/Additive", "Particles/Additive",
+                "Unlit/Transparent", "Unlit/Color");
+            if (shader == null) return;
+            foreach (Combatant fighter in units)
+            {
+                if (fighter.side != 0 || fighter.visual == null) continue;
+                GameObject ring = GameObject.CreatePrimitive(PrimitiveType.Quad);
+                ring.name = "pantheon unity aura";
+                Collider ringCollider = ring.GetComponent<Collider>();
+                if (ringCollider != null) Destroy(ringCollider);
+                ring.transform.SetParent(fighter.visual.transform, false);
+                ring.transform.localPosition = new Vector3(0f, .06f, 0f);
+                ring.transform.localRotation = Quaternion.Euler(90f, 0f, 0f);
+                ring.transform.localScale = Vector3.one * 1.6f;
+                var material = new Material(shader);
+                material.color = new Color(auraColor.r, auraColor.g, auraColor.b, .45f);
+                if (material.HasProperty("_TintColor"))
+                    material.SetColor("_TintColor",
+                        new Color(auraColor.r, auraColor.g, auraColor.b, .4f));
+                Renderer ringRenderer = ring.GetComponent<Renderer>();
+                if (ringRenderer != null)
+                {
+                    ringRenderer.sharedMaterial = material;
+                    ringRenderer.shadowCastingMode =
+                        UnityEngine.Rendering.ShadowCastingMode.Off;
+                }
             }
         }
 
@@ -230,9 +344,9 @@ namespace MythicChronicles
 
         private Material CreateMaterial(Color color)
         {
-            Shader shader = Shader.Find("Universal Render Pipeline/Lit");
-            if (shader == null) shader = Shader.Find("Standard");
-            if (shader == null) shader = Shader.Find("Sprites/Default");
+            Shader shader = ChroniclesShaders.FindAny(
+                "Universal Render Pipeline/Lit", "Standard", "Sprites/Default");
+            if (shader == null) return null; // renderer keeps its default material
             Material material = new Material(shader);
             material.color = color;
             return material;
@@ -265,7 +379,7 @@ namespace MythicChronicles
             go.name = name; go.transform.SetParent(parent);
             go.transform.position = position; go.transform.localScale = scale;
             Renderer renderer = go.GetComponent<Renderer>();
-            if (renderer != null) renderer.sharedMaterial = material;
+            if (renderer != null && material != null) renderer.sharedMaterial = material;
             Collider hit = go.GetComponent<Collider>();
             if (hit != null) Destroy(hit);
         }
@@ -273,47 +387,244 @@ namespace MythicChronicles
         private void BuildArena()
         {
             goldMaterial = CreateMaterial(new Color(.92f, .66f, .20f));
-            groundMaterial = CreateMaterial(new Color(.11f, .10f, .21f));
+            // Warm dusk floor that blends into the battlefield backdrop instead
+            // of a flat navy slab.
+            groundMaterial = CreateMaterial(new Color(.30f, .23f, .27f));
+            if (groundMaterial != null)
+                groundMaterial.mainTexture = ArenaFloorTexture();
             redMaterial = CreateMaterial(new Color(.69f, .17f, .30f));
+            // Carved sandstone columns: shaft + darker base and capital, so the
+            // arena frame reads as ruins, not bare capsules.
+            sandstoneMaterial = CreateMaterial(new Color(.58f, .44f, .30f));
+            sandstoneDarkMaterial = CreateMaterial(new Color(.40f, .30f, .21f));
+            if (!PanelLayout)
+            {
             MakePrimitive("Arena Floor", PrimitiveType.Cube, new Vector3(0f, -.40f, 0f), new Vector3(9f, .5f, 12f), groundMaterial, transform);
             MakePrimitive("Alliance Boundary", PrimitiveType.Cube, new Vector3(0f, -.10f, 0f), new Vector3(8f, .02f, .06f), goldMaterial, transform);
-            for (int side = -1; side <= 1; side += 2)
+            }
+            for (int side = -1; !PanelLayout && side <= 1; side += 2)
             {
-                MakePrimitive("Ruin Pillar", PrimitiveType.Cylinder, new Vector3(side * 4.0f, .8f, 3.9f), new Vector3(.65f, 1.1f, .65f), goldMaterial, transform);
-                MakePrimitive("Ruin Pillar", PrimitiveType.Cylinder, new Vector3(side * 4.0f, .8f, -3.9f), new Vector3(.65f, 1.1f, .65f), goldMaterial, transform);
+                for (int end = -1; end <= 1; end += 2)
+                {
+                    float px = side * 4.0f, pz = end * 3.9f;
+                    MakePrimitive("Ruin Pillar Base", PrimitiveType.Cylinder, new Vector3(px, -.02f, pz), new Vector3(.9f, .28f, .9f), sandstoneDarkMaterial, transform);
+                    MakePrimitive("Ruin Pillar", PrimitiveType.Cylinder, new Vector3(px, .8f, pz), new Vector3(.65f, 1.1f, .65f), sandstoneMaterial, transform);
+                    MakePrimitive("Ruin Pillar Capital", PrimitiveType.Cylinder, new Vector3(px, 1.88f, pz), new Vector3(.85f, .22f, .85f), sandstoneDarkMaterial, transform);
+                }
             }
 
             GameObject cameraObject = new GameObject("Chronicles Portrait Camera");
+            cameraObject.tag = "MainCamera";
             cameraObject.transform.SetParent(transform);
             cam = cameraObject.AddComponent<Camera>();
             cam.clearFlags = CameraClearFlags.SolidColor;
             cam.backgroundColor = new Color(.055f, .05f, .10f);
-            cam.fieldOfView = 52f;
-            cameraObject.transform.position = new Vector3(0f, 11.5f, -13f);
-            cameraObject.transform.LookAt(new Vector3(0f, 0f, 0f));
+            if (PanelLayout)
+            {
+                cam.orthographic = true;
+                cam.orthographicSize = 5.4f;
+                cameraObject.transform.position = new Vector3(0f, 0f, -13.8f);
+                camBase = cameraObject.transform.position;
+                cameraObject.transform.LookAt(new Vector3(0f, 0f, 0f));
+            }
+            else
+            {
+            cam.fieldOfView = 50f;
+            // Lower, more side-on view: heroes read upright with visible depth
+            // between front and back rows (AFK Arena/Omniheroes battle framing).
+            cameraObject.transform.position = new Vector3(0f, 9.2f, -13.8f);
+            camBase = cameraObject.transform.position;
+            cameraObject.transform.LookAt(new Vector3(0f, .8f, .2f));
+            }
             AudioListener activeListener = FindFirstObjectByType<AudioListener>();
             if (activeListener == null || !activeListener.isActiveAndEnabled)
                 cameraObject.AddComponent<AudioListener>();
+            // Authored battlefield backdrop behind the 3D arena (falls back to
+            // the solid camera clear color when the art is missing).
+            Texture2D battlefield = ChroniclesStageArt.Background(arenaOrigin);
+            if (battlefield != null)
+            {
+                GameObject backdrop = GameObject.CreatePrimitive(PrimitiveType.Quad);
+                backdrop.name = "Battlefield Backdrop";
+                Collider backdropCollider = backdrop.GetComponent<Collider>();
+                if (backdropCollider != null) Destroy(backdropCollider);
+                backdrop.transform.SetParent(transform);
+                if (PanelLayout)
+                {
+                    // Panel mode: cover the full orthographic frame edge-to-edge
+                    // behind the panels (no empty border), preserving the art's
+                    // aspect like a background crop.
+                    float halfH = cam.orthographicSize;
+                    float halfW = halfH * cam.aspect;
+                    float texAspect = (float)battlefield.width / battlefield.height;
+                    float coverH = halfH * 2f;
+                    float coverW = halfW * 2f;
+                    float scaleW = Mathf.Max(coverW, coverH * texAspect) * 1.02f;
+                    float scaleH = Mathf.Max(coverH, coverW / texAspect) * 1.02f;
+                    backdrop.transform.position = new Vector3(0f, 0f, 18f);
+                    backdrop.transform.localScale = new Vector3(scaleW, scaleH, 1f);
+                }
+                else
+                {
+                    backdrop.transform.position = new Vector3(0f, -13f, 18f);
+                    backdrop.transform.localScale = new Vector3(18f, 33f, 1f);
+                }
+                Shader backdropShader = ChroniclesShaders.FindAny(
+                    "Unlit/Texture", "Sprites/Default",
+                    "Universal Render Pipeline/Unlit");
+                MeshRenderer backdropRenderer = backdrop.GetComponent<MeshRenderer>();
+                if (backdropShader != null && backdropRenderer != null)
+                {
+                    var backdropMaterial = new Material(backdropShader);
+                    backdropMaterial.mainTexture = battlefield;
+                    backdropRenderer.material = backdropMaterial;
+                }
+                // When every lookup fails the quad keeps its default material,
+                // which is still a dark backdrop; battle must never fail on this.
+            }
+
             GameObject lightObject = new GameObject("Chronicles Arena Light");
             lightObject.transform.SetParent(transform);
             Light light = lightObject.AddComponent<Light>();
-            light.type = LightType.Directional; light.intensity = 1.7f;
+            light.type = LightType.Directional; light.intensity = 1.15f;
             lightObject.transform.rotation = Quaternion.Euler(60f, -35f, 0f);
+        }
+
+        // Panel slot geometry from the LIVE camera aspect (no clamp to the
+        // design aspect): columns always span the full screen width edge to
+        // edge, rows reach the top and bottom edges. Card size is capped so
+        // two rows fit in each half on wide screens.
+        // Right rail (speed, timer, damage, NEXT) takes the right 62 of 540 design
+        // pixels; the card walls fill the rest and each gets a blue frame in the HUD.
+        public const float RailPx = 62f;
+
+        private void PanelMetrics(out float halfW, out float halfH, out float colW, out float size)
+        {
+            float aspect = cam != null && cam.aspect > .2f ? cam.aspect : .5625f;
+            halfH = 5.4f;
+            halfW = halfH * aspect;
+            colW = halfW * 2f * ((540f - RailPx) / 540f) / 3f;
+            size = Mathf.Min(colW, halfH * .47f);
+        }
+
+        // GUI rect (540x960 design space) of one side's card block.
+        public Rect PanelBlockGui(int side)
+        {
+            float halfW, halfH, colW, size;
+            PanelMetrics(out halfW, out halfH, out colW, out size);
+            float rowPx = size / (2f * halfH) * 960f;
+            float h = rowPx * 2f;
+            float w = (540f - RailPx);
+            return side == 1 ? new Rect(0f, 0f, w, h) : new Rect(0f, 960f - h, w, h);
+        }
+
+        private void PanelSlot(int side, int slot, out Vector3 pos, out float size)
+        {
+            int col = slot % 3, row = slot / 3;
+            float halfW, halfH, colW;
+            PanelMetrics(out halfW, out halfH, out colW, out size);
+            float rowGap = size * 1.0f;
+            float blockRow = side == 1 ? row : (1 - row);
+            float px = -halfW + colW * (col + .5f);
+            float py = (side == 1 ? 1f : -1f) *
+                (halfH - size * .5f - blockRow * rowGap)
+                + (col - 1) * .09f * (side == 1 ? 1f : -1f);
+            pos = new Vector3(px, py, -0.4f);
+        }
+
+        // Middle-band embers: drifting warm sparks so the open scene band
+        // is alive. Pure Update-driven, so it only animates on device.
+        private Transform[] emberQuads;
+        private float[] emberSeed;
+        private Material emberMaterial;
+
+        private void UpdateEmbers()
+        {
+            if (cam == null) return;
+            float aspect = cam.aspect > .2f ? cam.aspect : .5625f;
+            float halfW = 5.4f * aspect;
+            const int n = 26;
+            if (emberQuads == null)
+            {
+                Shader sh = HeroSkillEffects.SharedBlendShader();
+                if (sh == null) { emberQuads = new Transform[0]; return; }
+                emberMaterial = new Material(sh);
+                if (emberMaterial.HasProperty("_MainTex")) emberMaterial.mainTexture = HeroSkillEffects.SharedGlow();
+                emberQuads = new Transform[n]; emberSeed = new float[n];
+                for (int i = 0; i < n; i++)
+                {
+                    GameObject q = GameObject.CreatePrimitive(PrimitiveType.Quad);
+                    q.name = "ember " + i;
+                    Collider c = q.GetComponent<Collider>(); if (c != null) Destroy(c);
+                    q.transform.SetParent(transform);
+                    q.GetComponent<Renderer>().sharedMaterial = emberMaterial;
+                    emberQuads[i] = q.transform; emberSeed[i] = i * 0.6180339f;
+                }
+            }
+            if (emberMaterial != null) emberMaterial.color = new Color(1f, .62f, .25f, .75f);
+            for (int i = 0; i < emberQuads.Length; i++)
+            {
+                float ph = (elapsed * .11f + emberSeed[i]) % 1f;      // 0..1 rise cycle
+                float x = (Mathf.Sin(emberSeed[i] * 37.1f) * .5f) * halfW * 2f
+                    + Mathf.Sin(elapsed * .7f + i) * .25f;
+                float y = Mathf.Lerp(-1.6f, 1.6f, ph);
+                float fadeE = Mathf.Sin(ph * Mathf.PI);
+                float sz = .14f + .10f * ((i * 7) % 5) / 4f;
+                emberQuads[i].position = new Vector3(x, y, -0.2f);
+                emberQuads[i].rotation = Quaternion.identity;
+                emberQuads[i].localScale = new Vector3(sz * (.5f + fadeE), sz * (.5f + fadeE), 1f);
+            }
+        }
+
+        private void RelayoutPanels()
+        {
+            UpdateEmbers();
+            if (cam == null) return;
+            HeroSkillEffects.PanelMode = true;
+            foreach (Combatant f in units)
+            {
+                Vector3 p; float sz;
+                PanelSlot(f.side, f.slot, out p, out sz);
+                Vector3 arrive = p + new Vector3(0f, f.side == 0 ? -4f : 4f, 0f);
+                f.formationPosition = p; f.panelAnchor = p;
+                f.arrivalPosition = arrive; f.panelCardSize = sz;
+                if (introTime <= 0f && f.panelQuad != null)
+                    f.panelQuad.transform.localScale = new Vector3(sz, sz, 1f);
+            }
         }
 
         private void Spawn(HeroDefinition hero, int side, int slot, int level, bool boss,
             int weaponLevel = 0, int armorLevel = 0, int stars = 1, string skin = "default")
         {
-            bool front = slot < 2;
-            float x = front ? (slot == 0 ? -1.55f : 1.55f) : (slot - 3) * 2.45f;
+            bool front = slot < 3;
+            Vector3 destination;
+            float panelCardSizeLocal = 2.2f;
+            if (PanelLayout)
+            {
+                // Card-battle wall per Khalid's reference (X-Hero style, his
+                // screenshot 15824735): three FULL-BLEED columns edge to edge,
+                // two rows reaching the top and bottom screen edges, a fanned
+                // tilt (cards rotate with the column), and the middle band
+                // left open for the scene and VFX. Sized to the design aspect
+                // so nothing clips on tall phones.
+                PanelSlot(side, slot, out destination, out panelCardSizeLocal);
+            }
+            else
+            {
+            // 3v3 arena rows: three front, three back.
+            float x = front ? (slot - 1) * 2.2f : (slot - 4) * 2.45f;
             float z = (front ? 1.6f : 3.9f) * (side == 0 ? -1f : 1f);
-            Vector3 destination = new Vector3(x, 1.0f, z);
+            destination = new Vector3(x, 1.0f, z);
+            }
             float tier = hero.rarity == Rarity.UR ? 1.30f :
                 hero.rarity == Rarity.SSR ? 1.20f :
                 hero.rarity == Rarity.SR ? 1.08f : 1f;
             float roleHp = hero.role == CombatRole.Tank ? 1.8f : hero.role == CombatRole.Warrior ? 1.35f : 1f;
             float roleAttack = hero.role == CombatRole.Assassin ? 1.4f : hero.role == CombatRole.Mage ? 1.35f : 1f;
             float chapterScale = side == 1 ? 1f + stage.id * .042f : 1f;
+            if (side == 1 && stage.id <= 6)
+                // Opening stages must be feel-good wins; the curve rejoins at stage 7.
+                chapterScale *= .55f + stage.id * .06f;
             float ascensionScale = 1f + (stars - 1) * .075f;
             Combatant unit = new Combatant
             {
@@ -323,14 +634,24 @@ namespace MythicChronicles
                 armor = 9f + level * 1.3f + armorLevel * 2f + (hero.role == CombatRole.Tank ? 18f : 0f),
                 attackCd = .5f + slot * .09f, skillCd = 2.6f + slot * .4f,
                 formationPosition = destination,
-                arrivalPosition = destination + new Vector3(0f, 0f, side == 0 ? -5f : 5f)
+                panelCardSize = panelCardSizeLocal,
+                arrivalPosition = destination + (PanelLayout ?
+                    new Vector3(0f, side == 0 ? -4f : 4f, 0f) :
+                    new Vector3(0f, 0f, side == 0 ? -5f : 5f)),
+                panelAnchor = destination,
+                slot = slot
             };
             unit.hp = unit.maxHp;
+            unit.speed = BaseSpeed(hero, boss);
+            unit.gauge = Mathf.Min(70f, unit.speed * .4f);
+            unit.skillFactor = 1.7f;
             unit.visual = HeroVisualDriver.Spawn(hero, skin, transform,
                 side == 0 ? OriginMaterial(hero.origin) : redMaterial);
             unit.model = unit.visual.gameObject;
             unit.model.transform.position = unit.arrivalPosition;
             unit.displayScale = unit.model.transform.localScale;
+            // In panel mode the hero art insets inside the card frame.
+            if (PanelLayout) unit.displayScale *= .80f;
             unit.model.transform.localScale = unit.displayScale * .001f;
             if (unit.visual.IsPlaceholder)
             {
@@ -345,13 +666,201 @@ namespace MythicChronicles
             }
             unit.visual.Play(HeroAnimation.Entrance);
             unit.visual.EntranceFX(hero.id);
+            if (PanelLayout)
+            {
+                if (panelAllyTex == null)
+                    panelAllyTex = Resources.Load<Texture2D>("Chronicles/UI/panel_battle_ally");
+                if (panelEnemyTex == null)
+                    panelEnemyTex = Resources.Load<Texture2D>("Chronicles/UI/panel_battle_enemy");
+                // Card face is the hero's full splash art (mock look: art
+                // fills the card edge-to-edge); the dark ornate panel texture
+                // is only a fallback when a hero has no portrait yet.
+                Texture2D cardArt = ChroniclesPortraitAssets.Static(hero.id);
+                Texture2D panelTex = cardArt != null ? cardArt
+                    : (side == 0 ? panelAllyTex : panelEnemyTex);
+                if (panelTex != null)
+                {
+                    int panelRow = slot / 3;
+                    int panelCol = slot % 3;
+                    float cardScale = unit.panelCardSize;
+                    GameObject quad = GameObject.CreatePrimitive(PrimitiveType.Quad);
+                    quad.name = "Panel - " + hero.name;
+                    Collider quadCollider = quad.GetComponent<Collider>();
+                    if (quadCollider != null) Destroy(quadCollider);
+                    quad.transform.SetParent(transform);
+                    quad.transform.position = new Vector3(
+                        unit.panelAnchor.x, unit.panelAnchor.y,
+                        0.6f - panelRow * .02f - panelCol * .008f);
+                    quad.transform.localScale = new Vector3(cardScale, cardScale, 1f);
+                    Shader panelShader = ChroniclesShaders.FindAny(
+                        "Unlit/Texture", "Sprites/Default",
+                        "Universal Render Pipeline/Unlit");
+                    MeshRenderer panelRenderer = quad.GetComponent<MeshRenderer>();
+                    if (panelShader != null && panelRenderer != null)
+                    {
+                        var panelMaterial = new Material(panelShader);
+                        panelMaterial.mainTexture = panelTex;
+                        panelRenderer.material = panelMaterial;
+                    }
+                    quad.transform.rotation = Quaternion.Euler(-6f, 0f,
+                        (slot % 3 - 1) * 2.2f); // fanned tilt like the reference
+                    unit.panelQuad = quad;
+                    // Rarity-colored metallic frame behind the card, parented
+                    // to it so attack lunges move card and frame together.
+                    GameObject frame = GameObject.CreatePrimitive(PrimitiveType.Quad);
+                    frame.name = "Panel Frame - " + hero.name;
+                    Collider frameCollider = frame.GetComponent<Collider>();
+                    if (frameCollider != null) Destroy(frameCollider);
+                    frame.transform.SetParent(quad.transform, false);
+                    frame.transform.localPosition = new Vector3(0f, 0f, .035f);
+                    frame.transform.localScale = new Vector3(1.07f, 1.07f, 1f);
+                    frame.transform.localRotation = Quaternion.identity;
+                    Shader frameShader = ChroniclesShaders.FindAny(
+                        "Sprites/Default", "Unlit/Transparent",
+                        "Universal Render Pipeline/Unlit");
+                    MeshRenderer frameRenderer = frame.GetComponent<MeshRenderer>();
+                    if (frameShader != null && frameRenderer != null)
+                    {
+                        var frameMaterial = new Material(frameShader);
+                        frameMaterial.mainTexture = PanelFrameTexture(hero.rarity);
+                        frameRenderer.material = frameMaterial;
+                    }
+                }
+                // The card face carries the art in panel mode; the 2D battle
+                // rig (cutout) would double the portrait, so it stays hidden.
+                if (unit.model != null) unit.model.SetActive(false);
+            }
             units.Add(unit);
+        }
+
+        private static readonly System.Collections.Generic.Dictionary<Rarity, Texture2D>
+            panelFrameCache = new System.Collections.Generic.Dictionary<Rarity, Texture2D>();
+
+        private static Texture2D PanelFrameTexture(Rarity rarity)
+        {
+            Texture2D cached;
+            if (panelFrameCache.TryGetValue(rarity, out cached))
+                return cached;
+            Color col = PanelRarityColor(rarity);
+            col.a = 1f;
+            const int size = 96, border = 3, innerLine = 1;
+            Texture2D tex = new Texture2D(size, size, TextureFormat.RGBA32, false);
+            // Solid dark card center, no alpha dependence: renders as a card
+            // with a rarity border no matter which unlit shader the runtime has.
+            // Slim metallic frame: vertical sheen (bright top, darker bottom)
+            // with a darker inner hairline so the frame reads as metal edging,
+            // not a flat block of color.
+            Color center = new Color(.09f, .07f, .13f, 1f);
+            Color hairline = new Color(.03f, .025f, .05f, 1f);
+            for (int y = 0; y < size; y++)
+                for (int x = 0; x < size; x++)
+                {
+                    bool edge = x < border || x >= size - border ||
+                        y < border || y >= size - border;
+                    if (edge)
+                    {
+                        float t = (float)y / (size - 1);
+                        float sheen = 1.12f - .5f * t;
+                        Color c = col * sheen;
+                        c.a = 1f;
+                        tex.SetPixel(x, y, c);
+                    }
+                    else if (x < border + innerLine || x >= size - border - innerLine ||
+                        y < border + innerLine || y >= size - border - innerLine)
+                    {
+                        tex.SetPixel(x, y, hairline);
+                    }
+                    else
+                    {
+                        tex.SetPixel(x, y, center);
+                    }
+                }
+            tex.Apply();
+            panelFrameCache[rarity] = tex;
+            return tex;
+        }
+
+        private static Color PanelRarityColor(Rarity rarity)
+        {
+            switch (rarity)
+            {
+                case Rarity.UR: return new Color(1f, .85f, .5f);
+                case Rarity.EX: return new Color(.9f, .55f, .9f);
+                case Rarity.SSR: return new Color(.86f, .66f, .28f);
+                case Rarity.SR: return new Color(.72f, .78f, .9f);
+                default: return new Color(.68f, .54f, .36f);
+            }
+        }
+
+        private static Texture2D arenaFloorTexture;
+
+        // Procedural sandstone tile texture for the arena floor: warm value
+        // noise plus darker seams so the ground reads as stone tiling, not a
+        // flat colored slab. Deterministic hash noise keeps every run identical.
+        private static Texture2D ArenaFloorTexture()
+        {
+            if (arenaFloorTexture != null) return arenaFloorTexture;
+            const int size = 128, tile = 32;
+            Texture2D tex = new Texture2D(size, size, TextureFormat.RGBA32, false);
+            tex.wrapMode = TextureWrapMode.Repeat;
+            for (int y = 0; y < size; y++)
+                for (int x = 0; x < size; x++)
+                {
+                    uint h = (uint)(x * 374761393 + y * 668265263);
+                    h = (h ^ (h >> 13)) * 1274126177;
+                    float n = ((h ^ (h >> 16)) & 0xffff) / 65535f;
+                    float v = .92f + .18f * n; // subtle mottling, avg ~1
+                    bool seamX = (x % tile) < 2, seamY = (y % tile) < 2;
+                    bool bevelX = (x % tile) == 2, bevelY = (y % tile) == 2;
+                    if (seamX || seamY) v = .45f + .1f * n;
+                    else if (bevelX || bevelY) v = 1.06f + .06f * n;
+                    tex.SetPixel(x, y, new Color(v, v * .96f, v * .92f, 1f));
+                }
+            tex.Apply();
+            arenaFloorTexture = tex;
+            return tex;
         }
 
         private void Update()
         {
+            Tick(Time.deltaTime, Time.unscaledDeltaTime);
+        }
+
+        // Advances the battle by explicit frame times. Update() feeds real Unity
+        // time; the editor screenshot rig feeds fixed steps for deterministic
+        // headless captures.
+        public void Tick(float frameDt, float unscaledDt)
+        {
             if (ended || Paused) return;
-            float dt = Mathf.Min(.05f, Time.deltaTime * Speed);
+            float dt = Mathf.Min(.05f, frameDt * Speed);
+            if (hitStopT > 0f)
+            {
+                hitStopT -= unscaledDt;
+                dt *= .15f;
+            }
+            if (cutInTime < 3f) cutInTime += unscaledDt;
+            if (slowMoT > 0f)
+            {
+                slowMoT -= unscaledDt;
+                if (slowMoT <= 0f) Time.timeScale = 1f;
+            }
+            if (PanelLayout && cam != null && cam.orthographic)
+            {
+                // Subtle pulse under an ultimate cut-in, ease back after.
+                // Keep it shallow: the card grid must never clip off-frame
+                // (a hard 4.35 zoom cut the enemy top row in half).
+                float targetSize = cutInUltimate && cutInTime < 1.75f &&
+                    !string.IsNullOrEmpty(cutInHero) ? 5.15f : 5.4f;
+                cam.orthographicSize = Mathf.Lerp(cam.orthographicSize, targetSize,
+                    Mathf.Clamp01(unscaledDt * 5f));
+            }
+            if (shakeT > 0f && cam != null)
+            {
+                shakeT -= unscaledDt;
+                Vector2 shakeOffset = UnityEngine.Random.insideUnitCircle * shakeAmp * Mathf.Max(0f, shakeT);
+                cam.transform.position = camBase + new Vector3(shakeOffset.x, shakeOffset.y, 0f);
+                if (shakeT <= 0f) cam.transform.position = camBase;
+            }
             if (introTime > 0f)
             {
                 introTime -= dt;
@@ -362,9 +871,29 @@ namespace MythicChronicles
                     float stagger = Mathf.Clamp01(t * 1.6f - (i % 5) * .12f);
                     f.model.transform.position = Vector3.Lerp(f.arrivalPosition, f.formationPosition, stagger);
                     f.model.transform.localScale = f.displayScale * Mathf.Max(.001f, stagger) * (f.boss ? 1.4f : 1f);
+                    if (PanelLayout && f.panelQuad != null)
+                    {
+                        // Card flip-in: smoothstep scale with a small overshoot
+                        // pop, staggered per card - the grid assembles like a
+                        // dealt hand instead of popping in at full size.
+                        float ease = stagger * stagger * (3f - 2f * stagger);
+                        float pop = 1f + Mathf.Sin(stagger * Mathf.PI) * .07f;
+                        float s = Mathf.Max(.001f, ease) * pop;
+                        f.panelQuad.transform.localScale = new Vector3(
+                            f.panelCardSize * s, f.panelCardSize * s, 1f);
+                    }
+                    if (stagger >= 1f && !f.entered)
+                    {
+                        f.entered = true;
+                        if (f.hero.rarity == Rarity.UR || f.hero.rarity == Rarity.EX)
+                            HeroSkillEffects.Play(f.hero, false, f.model.transform, null);
+                    }
                 }
                 return;
             }
+
+            if (bannerT >= 99f && !string.IsNullOrEmpty(bannerText)) bannerT = 0f;
+            if (bannerT < 2.2f) bannerT += dt;
 
             elapsed += dt;
             foreach (Combatant f in units)
@@ -373,54 +902,111 @@ namespace MythicChronicles
                 TickStatuses(f, dt);
                 if (!f.Alive) continue;
                 if (f.boss) TickBossMechanics(f, dt);
-                f.attackCd -= dt;
-                f.skillCd -= dt;
-                if (f.stunned > 0f) continue;
-                Combatant target = FindTarget(f);
-                if (target == null) continue;
-
-                HeroKit kit = HeroAbilityCatalog.For(f.hero.id);
-                if (f.energy >= 100f)
-                {
-                    f.energy = 0f;
-                    CastUltimate(f, target);
-                    continue;
-                }
-                if (f.skillCd <= 0f)
-                {
-                    f.skillCd = kit == null ? 6f : kit.cooldown;
-                    if (kit != null && (kit.passive == HeroPassive.Sage || kit.passive == HeroPassive.Oracle))
-                        f.skillCd *= .85f;
-                    CastSkill(f, target);
-                    continue;
-                }
-
-                float range = f.hero.role == CombatRole.Mage || f.hero.role == CombatRole.Healer ||
-                    f.hero.role == CombatRole.Support || f.hero.role == CombatRole.Controller ? 4.5f : 1.6f;
-                Vector3 direction = target.model.transform.position - f.model.transform.position;
-                direction.y = 0f;
-                if (direction.magnitude > range)
-                {
-                    float moveSpeed = f.frozen > 0f ? 1.0f : 2.1f;
-                    f.visual.Play(HeroAnimation.Run);
-                    f.model.transform.position += direction.normalized *
-                        Mathf.Min(moveSpeed * dt, direction.magnitude - range);
-                    f.model.transform.LookAt(new Vector3(target.model.transform.position.x,
-                        f.model.transform.position.y, target.model.transform.position.z));
-                }
-                else if (f.attackCd <= 0f)
-                {
-                    f.visual.Play(HeroAnimation.Attack);
-                    Hit(f, target, f.attack);
-                    float baseCooldown = f.hero.role == CombatRole.Assassin ? .85f : 1.25f;
-                    if (f.frozen > 0f) baseCooldown *= 1.45f;
-                    if (kit != null && kit.passive == HeroPassive.Stormborn && f.rallied > 0f)
-                        baseCooldown *= .8f;
-                    f.attackCd = baseCooldown;
-                    f.energy = Mathf.Min(100f, f.energy + (kit != null &&
-                        kit.passive == HeroPassive.Enchantress ? 23f : 17f));
-                }
+                if (f.stunned > 0f || !f.Alive) { }
                 else f.visual.Play(HeroAnimation.Idle);
+            }
+            turnWait -= dt;
+            if (turnWait <= 0f)
+            {
+                turnWait = TurnGap;
+                TakeTurn();
+            }
+
+            Combatant upNext = null;
+            if (PanelLayout && !ended)
+            {
+                float upNeed;
+                upNext = NextInTurn(out upNeed);
+            }
+            if (PanelLayout)
+            {
+                RelayoutPanels();
+                foreach (Combatant f in units)
+                {
+                    if (f.panelQuad == null) continue;
+                    Vector3 home = f.panelAnchor;
+                    // Dead cards gray out and stay put; live cards lunge at
+                    // their target (card and frame move together).
+                    MeshRenderer cardRenderer = f.panelQuad.GetComponent<MeshRenderer>();
+                    if (cardRenderer != null && cardRenderer.material.HasProperty("_Color"))
+                        cardRenderer.material.color = f.Alive ? Color.white
+                            : new Color(.32f, .32f, .36f, 1f);
+                    if (!f.Alive)
+                    {
+                        // KO: sink, shrink a little and tilt over ~.6s, then rest greyed.
+                        f.koT = Mathf.Min(.6f, f.koT + dt);
+                        float ko = Mathf.SmoothStep(0f, 1f, f.koT / .6f);
+                        f.panelQuad.transform.position = new Vector3(
+                            home.x, home.y - .12f * ko, f.panelQuad.transform.position.z);
+                        float ks = f.panelCardSize * (1f - .08f * ko);
+                        f.panelQuad.transform.localScale = new Vector3(ks, ks, 1f);
+                        f.panelQuad.transform.localRotation = Quaternion.Euler(0f, 0f, (f.side == 0 ? 1f : -1f) * 6f * ko);
+                        if (f.model != null) f.model.transform.position = home;
+                        continue;
+                    }
+                    Vector3 pos = new Vector3(
+                        home.x, home.y, f.panelQuad.transform.position.z);
+                    if (f.lungeT > 0f && f.lungeTarget != null)
+                    {
+                        f.lungeT -= dt;
+                        float phase = 1f - Mathf.Max(0f, f.lungeT) / .36f;
+                        // Wind-up pull-back (first 30%), then a fast strike
+                        // toward the target with a slight scale punch.
+                        float swing = phase < .3f
+                            ? -.3f * Mathf.Sin(phase / .3f * Mathf.PI * .5f)
+                            : Mathf.Sin((phase - .3f) / .7f * Mathf.PI);
+                        Vector3 dir = f.lungeTarget.panelAnchor - f.panelAnchor;
+                        pos += dir.normalized * swing * .75f;
+                        float punch = 1f + .09f * Mathf.Max(0f, swing);
+                        f.panelQuad.transform.localScale = new Vector3(
+                            f.panelCardSize * punch, f.panelCardSize * punch, 1f);
+                    }
+                    // Cast pop: the caster swells with a glow-in, settles back.
+                    if (f.castPopT > 0f)
+                    {
+                        f.castPopT = Mathf.Max(0f, f.castPopT - dt);
+                        float cp = Mathf.Sin(Mathf.Clamp01(f.castPopT / .55f) * Mathf.PI);
+                        float cs = f.panelCardSize * (1f + .14f * cp);
+                        f.panelQuad.transform.localScale = new Vector3(cs, cs, 1f);
+                        pos.z -= .3f * cp;
+                    }
+                    // Hit reaction: brief red flash and jitter on the card.
+                    float flash = 0f;
+                    if (f.hitFlashT > 0f)
+                    {
+                        f.hitFlashT = Mathf.Max(0f, f.hitFlashT - dt);
+                        flash = f.hitFlashT / .22f;
+                        pos.x += Mathf.Sin(f.hitFlashT * 60f) * .07f * flash;
+                        pos += f.hitDir * .16f * flash * flash;
+                    }
+                    // Idle life: a slow breathing bob, phased per card, so the
+                    // lineup sways gently instead of sitting frozen.
+                    if (f.lungeT <= 0f && f.hitFlashT <= 0f)
+                        pos.y += Mathf.Sin(elapsed * 1.35f +
+                            f.panelAnchor.x * 1.1f + f.side * 1.7f) * .035f;
+                    // Anticipation: the hero about to act breathes a warm glow and
+                    // grows slightly, so the next turn is readable before it fires.
+                    float upGlow = 0f;
+                    if (f == upNext && f.lungeT <= 0f && f.castPopT <= 0f && f.stunned <= 0f)
+                    {
+                        upGlow = .5f + .5f * Mathf.Sin(elapsed * 9f);
+                        float us = f.panelCardSize * (1f + .05f * upGlow);
+                        f.panelQuad.transform.localScale = new Vector3(us, us, 1f);
+                    }
+                    if (cardRenderer != null && cardRenderer.material.HasProperty("_Color"))
+                    {
+                        Color cardTint = Color.Lerp(
+                            Color.white, new Color(1f, .5f, .45f, 1f), flash * .85f);
+                        if (upGlow > 0f)
+                            cardTint = Color.Lerp(cardTint, new Color(1f, .95f, .6f, 1f), .6f * upGlow);
+                        cardRenderer.material.color = cardTint;
+                    }
+                    f.panelQuad.transform.position = pos;
+                    // The hidden rig stays the logical anchor for projectiles
+                    // and damage popups.
+                    if (f.model != null)
+                        f.model.transform.position = pos;
+                }
             }
 
             for (int i = popups.Count - 1; i >= 0; i--)
@@ -431,7 +1017,7 @@ namespace MythicChronicles
             }
             bool playerAlive = units.Exists(x => x.side == 0 && x.Alive);
             bool enemyAlive = units.Exists(x => x.side == 1 && x.Alive);
-            if (!playerAlive || !enemyAlive || elapsed >= 90f)
+            if (!playerAlive || !enemyAlive || elapsed >= MaxBattleSeconds)
             {
                 ended = true;
                 float left = 0f, right = 0f;
@@ -446,6 +1032,137 @@ namespace MythicChronicles
                         unit.visual.Play(HeroAnimation.Victory);
                 if (finished != null) finished(won);
             }
+        }
+
+        // ---- Turn order: action-meter system. Every hero's meter fills at its
+        // speed; the first full meter acts alone. Speed buffs and slows change
+        // the order live.
+        private const float MaxBattleSeconds = 150f;
+        private const float TurnGap = .55f;
+        private const float MeterFull = 100f;
+        private float turnWait = .6f;
+        public string NextActorName { get; private set; }
+
+        private static float BaseSpeed(HeroDefinition h, bool boss)
+        {
+            float v;
+            switch (h.role)
+            {
+                case CombatRole.Assassin: v = 118f; break;
+                case CombatRole.Mage: v = 104f; break;
+                case CombatRole.Controller: v = 102f; break;
+                case CombatRole.Support: v = 100f; break;
+                case CombatRole.Healer: v = 98f; break;
+                case CombatRole.Warrior: v = 95f; break;
+                default: v = 82f; break;
+            }
+            v += 3f * Mathf.Min(4, (int)h.rarity);
+            int hash = 0;
+            for (int i = 0; i < h.id.Length; i++) hash = hash * 31 + h.id[i];
+            v += (hash & 0x7fffffff) % 7;
+            if (boss) v -= 8f;
+            return v;
+        }
+
+        public static int SpeedOf(HeroDefinition h) { return Mathf.RoundToInt(BaseSpeed(h, false)); }
+
+        private static float EffectiveSpeed(Combatant f)
+        {
+            float v = f.speed;
+            if (f.rallied > 0f) v *= 1.25f;
+            if (f.hasteT > 0f) v *= 1.2f;
+            if (f.frozen > 0f) v *= .55f;
+            if (f.cursed > 0f) v *= .8f;
+            HeroKit sk = HeroAbilityCatalog.For(f.hero.id);
+            if (sk != null && (sk.passive == HeroPassive.Sage || sk.passive == HeroPassive.Oracle))
+                v *= 1f + .08f * PassiveScale(f.hero.rarity);
+            return Mathf.Max(20f, v);
+        }
+
+        private Combatant NextInTurn(out float need)
+        {
+            Combatant best = null; need = 0f;
+            foreach (Combatant f in units)
+            {
+                if (!f.Alive) continue;
+                float n = Mathf.Max(0f, (MeterFull - f.gauge) / (EffectiveSpeed(f) * .1f));
+                if (best == null || n < need) { best = f; need = n; }
+            }
+            return best;
+        }
+
+        public struct TurnEntry { public string heroId; public int side; public int speed; }
+
+        // Predicted order of the next count actors, from current meters.
+        public void FillTurnOrder(List<TurnEntry> output, int count)
+        {
+            output.Clear();
+            int n = units.Count;
+            float[] g = new float[n];
+            for (int i = 0; i < n; i++) g[i] = units[i].gauge;
+            for (int k = 0; k < count; k++)
+            {
+                int best = -1; float bestNeed = 0f;
+                for (int i = 0; i < n; i++)
+                {
+                    if (!units[i].Alive) continue;
+                    float need = Mathf.Max(0f, (MeterFull - g[i]) / (EffectiveSpeed(units[i]) * .1f));
+                    if (best < 0 || need < bestNeed) { best = i; bestNeed = need; }
+                }
+                if (best < 0) return;
+                for (int i = 0; i < n; i++)
+                    if (units[i].Alive) g[i] += EffectiveSpeed(units[i]) * .1f * bestNeed;
+                g[best] -= MeterFull;
+                output.Add(new TurnEntry { heroId = units[best].hero.id, side = units[best].side,
+                    speed = Mathf.RoundToInt(EffectiveSpeed(units[best])) });
+            }
+        }
+
+        public int AlliesAlive { get { int n = 0; foreach (Combatant u in units) if (u.side == 0 && u.Alive) n++; return n; } }
+        public int AlliesTotal { get { int n = 0; foreach (Combatant u in units) if (u.side == 0) n++; return n; } }
+        public int TurnsTaken;
+        public int RoundNumber { get { return 1 + TurnsTaken / 12; } }
+
+        private void TakeTurn()
+        {
+            float need;
+            Combatant actor = NextInTurn(out need);
+            if (actor == null) return;
+            TurnsTaken++;
+            foreach (Combatant f in units)
+                if (f.Alive) f.gauge += EffectiveSpeed(f) * .1f * need;
+            actor.gauge -= MeterFull;
+            if (actor.gauge < 0f) actor.gauge = 0f;
+            if (actor.hasteT > 0f) actor.hasteT = Mathf.Max(0f, actor.hasteT - 1f);
+            if (actor.stunned > 0f)
+            {
+                // A stunned hero loses the turn and its meter.
+                actor.stunned = Mathf.Max(0f, actor.stunned - 1.2f);
+                actor.gauge = 0f;
+                Floating("STUNNED", actor, new Color(.8f, .8f, 1f));
+                return;
+            }
+            Combatant target = FindTarget(actor);
+            if (target == null) return;
+            HeroKit kit = HeroAbilityCatalog.For(actor.hero.id);
+            if (actor.energy >= 100f)
+            {
+                actor.energy = 0f;
+                CastUltimate(actor, target);
+                return;
+            }
+            if (actor.turnsSinceSkill >= 2)
+            {
+                actor.turnsSinceSkill = 0;
+                CastSkill(actor, target);
+                return;
+            }
+            actor.turnsSinceSkill++;
+            actor.visual.Play(HeroAnimation.Attack);
+            if (PanelLayout) { actor.lungeT = .36f; actor.lungeTarget = target; }
+            Hit(actor, target, actor.attack * 3f);
+            actor.energy = Mathf.Min(100f, actor.energy + (kit != null &&
+                kit.passive == HeroPassive.Enchantress ? 30f + 8f * PassiveScale(actor.hero.rarity) : 34f));
         }
 
         private void TickStatuses(Combatant hero, float dt)
@@ -473,12 +1190,12 @@ namespace MythicChronicles
             if (kit.passive == HeroPassive.Rebirth && hero.passiveTimer >= 4f)
             {
                 hero.passiveTimer = 0f;
-                Heal(hero, hero.maxHp * .03f);
+                Heal(hero, hero.maxHp * .03f * PassiveScale(hero.hero.rarity));
             }
             else if (kit.passive == HeroPassive.Equilibrium && hero.passiveTimer >= 8f)
             {
                 hero.passiveTimer = 0f;
-                Shield(LowestFriend(hero), hero.attack * 2f);
+                Shield(LowestFriend(hero), hero.attack * 2f * PassiveScale(hero.hero.rarity));
             }
         }
 
@@ -526,6 +1243,9 @@ namespace MythicChronicles
                     break;
             }
             boss.visual.Play(HeroAnimation.Ultimate);
+            CutIn(boss, string.Empty);
+            HeroSkillEffects.Play(boss.hero, true, boss.model.transform,
+                target == null ? null : target.model.transform);
         }
 
         private Combatant FindTarget(Combatant actor)
@@ -564,11 +1284,24 @@ namespace MythicChronicles
             return found;
         }
 
-        private void Floating(string message, Combatant target, Color color)
+        private void Floating(string message, Combatant target, Color color, bool big = false)
         {
             if (popups.Count >= 22) popups.RemoveAt(0);
-            popups.Add(new FloatingText { text = message, color = color, remaining = .9f,
-                world = target.model.transform.position + Vector3.up * 1.6f });
+            popups.Add(new FloatingText { text = message, color = color, big = big, remaining = .9f,
+                world = PanelLayout ? target.panelAnchor + new Vector3(0f, target.panelCardSize * .1f, -.5f) : target.model.transform.position + Vector3.up * 1.6f });
+        }
+
+        // Passive strength scales with rarity: SR is baseline, R weaker,
+        // SSR and UR stronger, so higher-tier heroes feel better per tier.
+        private static float PassiveScale(Rarity rarity)
+        {
+            switch (rarity)
+            {
+                case Rarity.UR: case Rarity.EX: case Rarity.SSRP: return 1.45f;
+                case Rarity.SSR: return 1.2f;
+                case Rarity.SR: return 1f;
+                default: return .8f;
+            }
         }
 
         private void Hit(Combatant attacker, Combatant defender, float raw)
@@ -589,27 +1322,27 @@ namespace MythicChronicles
                 switch (attackingKit.passive)
                 {
                     case HeroPassive.Executioner:
-                        if (defender.hp < defender.maxHp * .4f) raw *= 1.4f;
+                        if (defender.hp < defender.maxHp * .4f) raw *= 1f + .4f * PassiveScale(attacker.hero.rarity);
                         break;
                     case HeroPassive.SolarFlame:
-                        defender.burn = Mathf.Max(defender.burn, 3.5f);
+                        defender.burn = Mathf.Max(defender.burn, 3.5f * PassiveScale(attacker.hero.rarity));
                         break;
                     case HeroPassive.Fury:
-                        raw *= 1f + .45f * (1f - attacker.hp / attacker.maxHp);
+                        raw *= 1f + .45f * PassiveScale(attacker.hero.rarity) * (1f - attacker.hp / attacker.maxHp);
                         break;
                     case HeroPassive.NightHunter:
                     case HeroPassive.DeathChill:
-                        if (defender.cursed > 0f) raw *= 1.28f;
+                        if (defender.cursed > 0f) raw *= 1f + .28f * PassiveScale(attacker.hero.rarity);
                         break;
                     case HeroPassive.Winterborn:
-                        if (defender.frozen > 0f) raw *= 1.3f;
+                        if (defender.frozen > 0f) raw *= 1f + .3f * PassiveScale(attacker.hero.rarity);
                         break;
                     case HeroPassive.Hunter:
-                        if (UnityEngine.Random.value < .22f) raw *= 1.65f;
+                        if (UnityEngine.Random.value < .22f) raw *= 1f + .65f * PassiveScale(attacker.hero.rarity);
                         break;
                     case HeroPassive.Thunderlord:
                         if (UnityEngine.Random.value < .12f)
-                            defender.stunned = Mathf.Max(defender.stunned, .65f);
+                            defender.stunned = Mathf.Max(defender.stunned, .65f * PassiveScale(attacker.hero.rarity));
                         break;
                 }
 
@@ -619,7 +1352,7 @@ namespace MythicChronicles
                     HeroKit allyKit = HeroAbilityCatalog.For(ally.hero.id);
                     if (allyKit != null && (allyKit.passive == HeroPassive.Banner ||
                         allyKit.passive == HeroPassive.Tactician))
-                        { raw *= 1.06f; break; }
+                        { raw *= 1f + .06f * PassiveScale(ally.hero.rarity); break; }
                 }
                 if (attacker.rallied > 0f) raw *= 1.22f;
             }
@@ -633,7 +1366,16 @@ namespace MythicChronicles
             if (defender.cursed > 0f) damage *= 1.2f;
             if (defendingKit != null && (defendingKit.passive == HeroPassive.Guardian ||
                 defendingKit.passive == HeroPassive.Ironhide || defendingKit.passive == HeroPassive.Knight))
-                damage *= .87f;
+                damage *= 1f - .13f * PassiveScale(defender.hero.rarity);
+            // Critical strikes: 12% chance, 1.6x damage, big gold popup (genre standard).
+            bool crit = UnityEngine.Random.value < .12f;
+            if (crit)
+            {
+                damage *= 1.6f;
+                shakeT = Mathf.Max(shakeT, .14f);
+                shakeAmp = Mathf.Max(shakeAmp, .16f);
+                hitStopT = Mathf.Max(hitStopT, .05f);
+            }
             float absorbed = Mathf.Min(defender.shield, damage);
             defender.shield -= absorbed;
             damage = Mathf.Max(0f, damage - absorbed);
@@ -642,12 +1384,29 @@ namespace MythicChronicles
                 attacker != null && attacker.side == 0)
                 raidDamage += actualDamage;
             defender.hp = Mathf.Max(0f, defender.hp - actualDamage);
-            defender.energy = Mathf.Min(100f, defender.energy + actualDamage * .12f);
-            Floating("-" + Mathf.RoundToInt(damage), defender, new Color(1f, .72f, .54f));
+            if (actualDamage > 0f)
+            {
+                defender.hitFlashT = .22f;
+                if (attacker != null)
+                {
+                    Vector3 kd = defender.panelAnchor - attacker.panelAnchor;
+                    defender.hitDir = kd.sqrMagnitude > .0001f ? kd.normalized : Vector3.zero;
+                }
+            }
+            if (attacker != null) attacker.dealt += actualDamage;
+            defender.energy = Mathf.Min(100f, defender.energy + actualDamage * .09f);
+            if (crit)
+                Floating("CRIT -" + Mathf.RoundToInt(damage), defender,
+                    new Color(1f, .84f, .2f), true);
+            else
+                Floating("-" + Mathf.RoundToInt(damage), defender, new Color(1f, .72f, .54f));
+            if (ChroniclesAudioDirector.Instance != null)
+                ChroniclesAudioDirector.Instance.PlayEffect(
+                    crit || actualDamage >= defender.maxHp * .22f ? "hit_heavy" : "hit");
 
             if (attacker != null && attackingKit != null &&
                 attackingKit.passive == HeroPassive.Bloodthirst && attacker.Alive)
-                Heal(attacker, damage * .12f);
+                Heal(attacker, damage * .12f * PassiveScale(attacker.hero.rarity));
 
             if (defender.Alive) return;
             if (defendingKit != null &&
@@ -655,8 +1414,8 @@ namespace MythicChronicles
                 !defender.savedOnce)
             {
                 defender.savedOnce = true;
-                defender.hp = Mathf.Max(1f, defender.maxHp * .16f);
-                Shield(defender, defender.maxHp * .13f);
+                defender.hp = Mathf.Max(1f, defender.maxHp * .16f * PassiveScale(defender.hero.rarity));
+                Shield(defender, defender.maxHp * .13f * PassiveScale(defender.hero.rarity));
                 Floating("LAST STAND", defender, Color.yellow);
                 return;
             }
@@ -667,20 +1426,21 @@ namespace MythicChronicles
                 if (allyKit != null && allyKit.passive == HeroPassive.GuardianAngel)
                 {
                     ally.savedOnce = true;
-                    defender.hp = defender.maxHp * .23f;
-                    Shield(defender, defender.maxHp * .15f);
+                    defender.hp = defender.maxHp * .23f * PassiveScale(ally.hero.rarity);
+                    Shield(defender, defender.maxHp * .15f * PassiveScale(ally.hero.rarity));
                     Floating("RESCUED", defender, Color.green);
                     return;
                 }
             }
             defender.visual.Play(HeroAnimation.Death);
+            hitStopT = Mathf.Max(hitStopT, .32f);
             if (defender.visual.IsPlaceholder) defender.model.SetActive(false);
             foreach (Combatant unit in units)
             {
                 if (!unit.Alive || unit.side == defender.side) continue;
                 HeroKit kit = HeroAbilityCatalog.For(unit.hero.id);
                 if (kit != null && kit.passive == HeroPassive.Gravekeeper)
-                    Shield(unit, unit.attack * .8f);
+                    Shield(unit, unit.attack * .8f * PassiveScale(unit.hero.rarity));
             }
         }
 
@@ -691,15 +1451,17 @@ namespace MythicChronicles
             {
                 if (teammate.side != target.side || !teammate.Alive) continue;
                 HeroKit kit = HeroAbilityCatalog.For(teammate.hero.id);
-                if (kit != null && kit.passive == HeroPassive.Dawnborn) { value *= 1.10f; break; }
+                if (kit != null && kit.passive == HeroPassive.Dawnborn) { value *= 1f + .10f * PassiveScale(teammate.hero.rarity); break; }
             }
             float actual = Mathf.Min(value, target.maxHp - target.hp);
             if (actual <= 0f) return;
             target.hp += actual;
             Floating("+" + Mathf.RoundToInt(actual), target, Color.green);
+            if (ChroniclesAudioDirector.Instance != null)
+                ChroniclesAudioDirector.Instance.PlayEffect("heal");
             HeroKit healerKit = healer == null ? null : HeroAbilityCatalog.For(healer.hero.id);
             if (healerKit != null && healerKit.passive == HeroPassive.Compassion)
-                Shield(target, actual * .16f);
+                Shield(target, actual * .16f * PassiveScale(healer.hero.rarity));
         }
 
         private void Shield(Combatant target, float value)
@@ -707,20 +1469,47 @@ namespace MythicChronicles
             if (target == null || !target.Alive) return;
             target.shield = Mathf.Min(target.maxHp * .75f, target.shield + value);
             Floating("SHIELD", target, Color.cyan);
+            if (ChroniclesAudioDirector.Instance != null)
+                ChroniclesAudioDirector.Instance.PlayEffect("shield");
+        }
+
+        private void CutIn(Combatant actor, string skillName)
+        {
+            CutIn(actor, skillName, false);
+        }
+
+        private void CutIn(Combatant actor, string skillName, bool ultimate)
+        {
+            cutInHero = actor.hero.id;
+            cutInSkill = skillName;
+            cutInUltimate = ultimate;
+            cutInTime = 0f;
+            hitStopT = .16f;
+            if (ultimate)
+            {
+                // Cinematic beat: the world drops into slow motion under the takeover.
+                slowMoT = .95f;
+                Time.timeScale = .42f;
+            }
+            shakeT = .28f;
+            shakeAmp = .35f;
         }
 
         private void CastSkill(Combatant actor, Combatant target)
         {
             HeroKit kit = HeroAbilityCatalog.For(actor.hero.id);
             if (kit == null) { Hit(actor, target, actor.attack * 1.4f); return; }
-            actor.energy = Mathf.Min(100f, actor.energy + 13f);
+            actor.energy = Mathf.Min(100f, actor.energy + 9f);
             if (kit.passive == HeroPassive.Stormborn)
                 actor.rallied = Mathf.Max(actor.rallied, 3.2f);
             actor.visual.Play(HeroAnimation.Skill);
-            FirstFiveURVisualEffects.Play(actor.hero.id, false,
+            actor.castPopT = .55f;
+            HeroSkillEffects.Play(actor.hero, false,
                 actor.model.transform, target == null ? null : target.model.transform);
             CastEffect(actor, target, kit.skill, kit.skillPower * actor.skillFactor, false);
             Floating(kit.skillName, actor, Color.yellow);
+            if (ChroniclesAudioDirector.Instance != null)
+                ChroniclesAudioDirector.Instance.PlayEffect("skill");
         }
 
         private void CastUltimate(Combatant actor, Combatant target)
@@ -728,15 +1517,32 @@ namespace MythicChronicles
             HeroKit kit = HeroAbilityCatalog.For(actor.hero.id);
             if (kit == null) { Hit(actor, target, actor.attack * 3f); return; }
             actor.visual.Play(HeroAnimation.Ultimate);
-            FirstFiveURVisualEffects.Play(actor.hero.id, true,
+            actor.castPopT = .8f;
+            CutIn(actor, kit != null ? kit.ultimateName : string.Empty, true);
+            HeroSkillEffects.Play(actor.hero, true,
                 actor.model.transform, target == null ? null : target.model.transform);
             if (ChroniclesAudioDirector.Instance != null)
                 ChroniclesAudioDirector.Instance.HeroUltimate(actor.hero.id);
             CastEffect(actor, target, kit.ultimate, kit.ultimatePower * actor.ultimateFactor, true);
-            Floating(kit.ultimateName, actor, new Color(1f, .75f, .22f));
+            Floating(kit.ultimateName, actor, new Color(1f, .75f, .22f), true);
         }
 
         private void CastEffect(Combatant actor, Combatant target, AbilityEffect effect, float power, bool ultimate)
+        {
+            float[] speedBefore = new float[units.Count];
+            for (int i = 0; i < units.Count; i++) speedBefore[i] = EffectiveSpeed(units[i]);
+            CastEffectCore(actor, target, effect, power, ultimate);
+            for (int i = 0; i < units.Count; i++)
+            {
+                Combatant u = units[i];
+                if (!u.Alive) continue;
+                float now = EffectiveSpeed(u);
+                if (now > speedBefore[i] * 1.04f) Floating("SPEED UP", u, new Color(.55f, 1f, .6f));
+                else if (now < speedBefore[i] * .96f) Floating("SPEED DOWN", u, new Color(.6f, .75f, 1f));
+            }
+        }
+
+        private void CastEffectCore(Combatant actor, Combatant target, AbilityEffect effect, float power, bool ultimate)
         {
             switch (effect)
             {
@@ -762,7 +1568,7 @@ namespace MythicChronicles
                     break;
                 case AbilityEffect.StunStrike:
                     Hit(actor, target, actor.attack * power);
-                    if (target.Alive) target.stunned = Mathf.Max(target.stunned, 1.1f);
+                    if (target.Alive) { target.stunned = Mathf.Max(target.stunned, 1.1f); target.gauge = Mathf.Min(target.gauge, 0f); }
                     break;
                 case AbilityEffect.FrostStrike:
                     Hit(actor, target, actor.attack * power);
@@ -791,7 +1597,7 @@ namespace MythicChronicles
                             HeroKit curseKit = HeroAbilityCatalog.For(actor.hero.id);
                             float curseDuration = ultimate ? 6f : 4.5f;
                             if (curseKit != null && curseKit.passive == HeroPassive.Sorcery)
-                                curseDuration *= 1.3f;
+                                curseDuration *= 1f + .3f * PassiveScale(actor.hero.rarity);
                             enemy.cursed = Mathf.Max(enemy.cursed, curseDuration);
                         }
                     }
@@ -819,7 +1625,7 @@ namespace MythicChronicles
                 case AbilityEffect.EnergizeTeam:
                     foreach (Combatant ally in units)
                         if (ally.side == actor.side && ally.Alive)
-                            ally.energy = Mathf.Min(100f, ally.energy + power * 11f);
+                            { ally.energy = Mathf.Min(100f, ally.energy + power * 11f); ally.hasteT = Mathf.Max(ally.hasteT, 4f); }
                     break;
                 case AbilityEffect.TauntGuard:
                     Shield(actor, actor.maxHp * .14f * power);
@@ -867,41 +1673,461 @@ namespace MythicChronicles
             }
         }
 
+        public struct DamageEntry { public string heroId; public int amount; public bool ally; }
+
+        public void FillDamageMeter(List<DamageEntry> output)
+        {
+            output.Clear();
+            foreach (Combatant u in units)
+            {
+                if (u.dealt <= 0f) continue;
+                output.Add(new DamageEntry {
+                    heroId = u.hero.id, amount = Mathf.RoundToInt(u.dealt),
+                    ally = u.side == 0 });
+            }
+            output.Sort((a, b) => b.amount.CompareTo(a.amount));
+        }
+
+        private GUIStyle badgeStyle;
+
         public void DrawWorldLabels(float uiScale)
         {
             if (cam == null || introTime > 0) return;
             foreach (var unit in units)
             {
                 if (!unit.Alive) continue;
+                if (PanelLayout)
+                {
+                    // Bars overlay the card's bottom edge like the approved
+                    // mock: LV badge bottom-left, HP + energy bars across the
+                    // card width.
+                    Vector3 anchor = cam.WorldToScreenPoint(
+                        unit.panelAnchor + new Vector3(0f, -(unit.panelCardSize * .5f - .04f), 0f));
+                    if (anchor.z <= 0f) continue;
+                    float px = anchor.x / uiScale, py = (Screen.height - anchor.y) / uiScale;
+                    float halfW = cam.orthographicSize * cam.aspect;
+                    float cardPx = unit.panelCardSize / (2f * halfW) * (Screen.width / uiScale);
+                    float barW = cardPx * .66f;
+                    float barX = px - cardPx * .5f + cardPx * .22f;
+                    // Illustrated plate behind the bars (Khalid: art, not flat plates)
+                    Texture2D plate = OrnateGuiSkin.Art("bar_plate");
+                    if (plate != null)
+                        GUI.DrawTexture(new Rect(px - cardPx * .5f - 2f, py - 21f, cardPx + 4f, 38f), plate);
+                    {
+                        // Thin rarity-colored frame around the whole card (our own style).
+                        Color fc = ChroniclesGame.RarityFrameColor(unit.hero.rarity);
+                        fc.a = .9f; GUI.color = fc;
+                        float fx = px - cardPx * .5f, fy = py - cardPx + 4f, fw = cardPx, fh = cardPx - 4f;
+                        if (unit.panelQuad != null)
+                        {
+                            // Follow the card (lunge, hit shake) so the frame never detaches.
+                            Vector3 qp = cam.WorldToScreenPoint(unit.panelQuad.transform.position);
+                            fx = qp.x / uiScale - cardPx * .5f;
+                            fy = (Screen.height - qp.y) / uiScale - cardPx * .5f + 2f;
+                            fh = cardPx - 4f;
+                        }
+                        GUI.DrawTexture(new Rect(fx, fy, fw, 2f), Texture2D.whiteTexture);
+                        GUI.DrawTexture(new Rect(fx, fy + fh - 2f, fw, 2f), Texture2D.whiteTexture);
+                        GUI.DrawTexture(new Rect(fx, fy, 2f, fh), Texture2D.whiteTexture);
+                        GUI.DrawTexture(new Rect(fx + fw - 2f, fy, 2f, fh), Texture2D.whiteTexture);
+                        GUI.color = Color.white;
+                    }
+                    // level badge: rarity-colored ring circle + number
+                    Color rarity = ChroniclesGame.RarityFrameColor(unit.hero.rarity);
+                    Texture2D badgeRing = OrnateGuiSkin.Frame(
+                        "panel-badge-" + unit.side + "-" + (int)unit.hero.rarity,
+                        rarity, new Color(.08f, .06f, .12f, .95f), 28, 3);
+                    if (badgeRing != null)
+                        GUI.DrawTexture(new Rect(px - cardPx * .5f - 1f, py - 22f, 28f, 28f), badgeRing);
+                    if (badgeStyle == null)
+                    {
+                        badgeStyle = new GUIStyle(GUI.skin.label);
+                        badgeStyle.fontSize = 14; badgeStyle.fontStyle = FontStyle.Bold;
+                        badgeStyle.alignment = TextAnchor.MiddleCenter;
+                        badgeStyle.padding = new RectOffset(0, 0, 0, 0);
+                        badgeStyle.margin = new RectOffset(0, 0, 0, 0);
+                        badgeStyle.wordWrap = false; badgeStyle.clipping = TextClipping.Overflow;
+                        badgeStyle.normal.textColor = new Color(1f, .96f, .82f);
+                    }
+                    GUI.color = Color.white;
+                    GUI.Label(new Rect(px - cardPx * .5f - 1f, py - 22f, 28f, 28f), unit.level.ToString(), badgeStyle);
+                    // Inset dark channels, then enamel gradient fills with
+                    // rounded caps - art bars, not flat color strips.
+                    Texture2D channel = OrnateGuiSkin.BarChannel("panel-bar-channel");
+                    if (channel != null)
+                    {
+                        GUI.color = Color.white;
+                        GUI.DrawTexture(new Rect(barX - 1f, py - 15f, barW + 2f, 12f), channel);
+                        GUI.DrawTexture(new Rect(barX - 1f, py - 2f, barW + 2f, 8f), channel);
+                    }
+                    Color hpColor = unit.side == 0
+                        ? new Color(.28f, .82f, .34f)
+                        : new Color(.92f, .26f, .20f);
+                    GUI.color = Color.white;
+                    GUI.DrawTexture(new Rect(barX, py - 14f,
+                        barW * Mathf.Clamp01(unit.hp / unit.maxHp), 10f),
+                        OrnateGuiSkin.StatBar(unit.side == 0 ? "hp-ally" : "hp-enemy", hpColor));
+                    // Energy: gold enamel; a pulsing ready-glow when the
+                    // ultimate is charged (professional gacha "ult ready" cue).
+                    if (unit.energy >= 100f)
+                        OrnateGuiSkin.PulseGlow(new Rect(barX - 2f, py - 4f, barW + 4f, 11f),
+                            new Color(1f, .85f, .3f), 3.2f);
+                    GUI.color = Color.white;
+                    GUI.DrawTexture(new Rect(barX, py - 1f,
+                        barW * Mathf.Clamp01(unit.energy / 100f), 6f),
+                        OrnateGuiSkin.StatBar("energy-gold", new Color(1f, .76f, .22f)));
+                    GUI.color = Color.white;
+                    continue;
+                }
                 Vector3 point = cam.WorldToScreenPoint(unit.model.transform.position + Vector3.up * 2f);
                 if (point.z <= 0f) continue;
                 float x = point.x / uiScale - 38f;
                 float y = (Screen.height - point.y) / uiScale - 15f;
-                GUI.Box(new Rect(x, y, 76, 30), "");
+                // Illustrated name plate instead of a flat code box.
+                Texture2D unitPlate = OrnateGuiSkin.Art("bar_plate");
+                Color oldC = GUI.color;
+                if (unitPlate != null)
+                {
+                    GUI.color = new Color(.14f, .12f, .26f, .95f);
+                    GUI.DrawTexture(new Rect(x - 4f, y - 3f, 84f, 36f),
+                        unitPlate, ScaleMode.StretchToFill);
+                }
+                else
+                {
+                    GUI.color = new Color(.05f, .045f, .10f, .92f);
+                    GUI.DrawTexture(new Rect(x, y, 76f, 30f),
+                        Texture2D.whiteTexture);
+                }
+                GUI.color = ChroniclesGame.RarityFrameColor(unit.hero.rarity);
                 GUI.Label(new Rect(x + 3f, y + 2f, 73f, 16f),
                     unit.hero.name.Length > 11 ? unit.hero.name.Substring(0, 11) : unit.hero.name);
+                // Bars sit in a dark inset channel, not floating strips.
+                GUI.color = new Color(0f, 0f, 0f, .65f);
+                GUI.DrawTexture(new Rect(x + 1f, y + 18f, 74f, 6f), Texture2D.whiteTexture);
+                GUI.DrawTexture(new Rect(x + 1f, y + 24f, 74f, 5f), Texture2D.whiteTexture);
                 GUI.color = Color.green;
                 GUI.DrawTexture(new Rect(x + 2f, y + 19f, 72f * unit.hp / unit.maxHp, 4f), Texture2D.whiteTexture);
                 GUI.color = Color.cyan;
                 GUI.DrawTexture(new Rect(x + 2f, y + 25f, 72f * unit.energy / 100f, 3f), Texture2D.whiteTexture);
-                GUI.color = Color.white;
+                GUI.color = oldC;
             }
             foreach (var popup in popups)
             {
                 Vector3 point = cam.WorldToScreenPoint(popup.world);
                 if (point.z <= 0f) continue;
-                GUI.color = popup.color;
-                GUI.Label(new Rect(point.x / uiScale - 30f, (Screen.height - point.y) / uiScale - 18f, 100f, 30f), popup.text);
+                if (popupBigStyle == null)
+                {
+                    popupBigStyle = new GUIStyle(GUI.skin.label) { fontSize = PanelLayout ? 28 : 26, fontStyle = FontStyle.BoldAndItalic, alignment = TextAnchor.MiddleCenter, wordWrap = false, clipping = TextClipping.Overflow };
+                    popupSmallStyle = new GUIStyle(GUI.skin.label) { fontSize = PanelLayout ? 28 : 20, fontStyle = FontStyle.Bold, alignment = TextAnchor.MiddleCenter, wordWrap = false, clipping = TextClipping.Overflow };
+                }
+                GUIStyle st = popup.big ? popupBigStyle : popupSmallStyle;
+                float life = Mathf.Clamp01(popup.remaining / .9f);
+                float alpha = Mathf.Clamp01(life * 3f);
+                float pop = 1f + Mathf.Max(0f, life - .75f) * 2.4f;   // quick pop-in
+                float w = popup.big ? 320f : 140f, h = popup.big ? (PanelLayout ? 64f : 52f) : (PanelLayout ? 44f : 34f);
+                float cx = point.x / uiScale, cy = (Screen.height - point.y) / uiScale;
+                if (PanelLayout)
+                {
+                    // Keep long skill names inside the card walls (left of the rail).
+                    float halfText = Mathf.Min(220f, popup.text.Length * (popup.big ? 28f : 24f) * .30f + 8f);
+                    cx = Mathf.Clamp(cx, halfText + 4f, (540f - RailPx) - halfText - 4f);
+                }
+                Matrix4x4 oldM = GUI.matrix;
+                GUIUtility.ScaleAroundPivot(new Vector2(pop, pop), new Vector2(cx, cy));
+                Rect r = new Rect(cx - w * .5f, cy - h * .5f, w, h);
+                // dark outline: four offset copies, then the colored text
+                GUI.color = new Color(.05f, .03f, .02f, alpha);
+                float o = popup.big ? 2f : 1.5f;
+                GUI.Label(new Rect(r.x - o, r.y, r.width, r.height), popup.text, st);
+                GUI.Label(new Rect(r.x + o, r.y, r.width, r.height), popup.text, st);
+                GUI.Label(new Rect(r.x, r.y - o, r.width, r.height), popup.text, st);
+                GUI.Label(new Rect(r.x, r.y + o, r.width, r.height), popup.text, st);
+                Color tc = popup.color; tc.a = alpha;
+                GUI.color = tc;
+                GUI.Label(r, popup.text, st);
+                GUI.matrix = oldM;
                 GUI.color = Color.white;
             }
+            DrawCutIn();
+            DrawBanner();
+        }
+
+        private void DrawBanner()
+        {
+            if (bannerT >= 2.2f || string.IsNullOrEmpty(bannerText)) return;
+            float t = bannerT / 2.2f;
+            float inT = Mathf.Clamp01(t / .22f); inT = inT * inT * (3f - 2f * inT);
+            float outT = Mathf.Clamp01((t - .78f) / .22f); outT = outT * outT * (3f - 2f * outT);
+            float a = inT * (1f - outT);
+            if (bannerStyle == null)
+            {
+                bannerStyle = new GUIStyle(GUI.skin.label) {
+                    fontSize = 46, fontStyle = FontStyle.BoldAndItalic,
+                    alignment = TextAnchor.MiddleCenter };
+                bannerStyle.normal.textColor = new Color(1f, .92f, .6f);
+            }
+            float x = Mathf.Lerp(-560f, 0f, inT) + 560f * outT;
+            // Illustrated ornate plaque (art) behind the text, with a soft
+            // gold glow; falls back to the dark sweep when the art is missing.
+            Texture2D bannerArt = OrnateGuiSkin.Art("bar_plate");
+            if (bannerArt != null)
+            {
+                Texture2D glow = OrnateGuiSkin.Glow("banner_glow", new Color(1f, .8f, .35f));
+                if (glow != null)
+                {
+                    GUI.color = new Color(1f, 1f, 1f, .55f * a);
+                    GUI.DrawTexture(new Rect(x - 20f, 385f, 580f, 150f), glow);
+                }
+                GUI.color = new Color(1f, 1f, 1f, a);
+                GUI.DrawTexture(new Rect(x + 10f, 410f, 520f, 100f), bannerArt, ScaleMode.StretchToFill);
+            }
+            else
+            {
+                GUI.color = new Color(0f, 0f, 0f, .45f * a);
+                GUI.DrawTexture(new Rect(0f, 415f, 540f, 90f), Texture2D.whiteTexture);
+                GUI.color = new Color(1f, .85f, .4f, .9f * a);
+                GUI.DrawTexture(new Rect(0f, 415f, 540f, 3f), Texture2D.whiteTexture);
+                GUI.DrawTexture(new Rect(0f, 502f, 540f, 3f), Texture2D.whiteTexture);
+            }
+            GUI.color = new Color(0f, 0f, 0f, a);
+            GUI.Label(new Rect(x + 3f, 423f, 540f, 80f), bannerText, bannerStyle);
+            GUI.color = new Color(1f, .92f, .6f, a);
+            GUI.Label(new Rect(x, 420f, 540f, 80f), bannerText, bannerStyle);
+            GUI.color = Color.white;
+        }
+
+        private void DrawCutIn()
+        {
+            if (cutInNameStyle == null)
+            {
+                cutInNameStyle = new GUIStyle(GUI.skin.label) { fontSize = 30, fontStyle = FontStyle.Bold };
+                cutInNameStyle.normal.textColor = new Color(1f, .87f, .55f);
+                cutInSkillStyle = new GUIStyle(GUI.skin.label) { fontSize = 17, fontStyle = FontStyle.Bold };
+            }
+            bool takeoverCheck = false;
+            {
+                HeroDefinition checkHero = WorldsCatalog.FindHero(cutInHero);
+                takeoverCheck = checkHero != null && (checkHero.rarity == Rarity.UR ||
+                    checkHero.rarity == Rarity.EX || checkHero.rarity == Rarity.SSRP);
+            }
+            float cutInDuration = (cutInUltimate && takeoverCheck) ? 1.75f : 1.15f;
+            if (cutInTime >= cutInDuration || string.IsNullOrEmpty(cutInHero)) return;
+            float t = cutInTime / cutInDuration;
+            float inT = Mathf.Clamp01(t / .18f); inT = inT * inT * (3f - 2f * inT);
+            float outT = Mathf.Clamp01((t - .8f) / .2f); outT = outT * outT * (3f - 2f * outT);
+            float a = inT * (1f - outT);
+            HeroDefinition cutHero = WorldsCatalog.FindHero(cutInHero);
+            Color ec = cutHero != null ? HeroSkillEffects.ColorFor(cutHero.element) : new Color(1f, .75f, .3f);
+            bool premiumCut = cutHero != null &&
+                (cutHero.rarity == Rarity.UR || cutHero.rarity == Rarity.EX ||
+                cutHero.rarity == Rarity.SSRP);
+            // SSR+ signature: violet-silver; UR: gold; EX: prismatic white-gold
+            Color edgeColor = cutHero != null && cutHero.rarity == Rarity.SSRP ?
+                new Color(.78f, .65f, 1f) :
+                premiumCut ? new Color(1f, .85f, .5f) : ec;
+            bool takeover = cutInUltimate && premiumCut;
+            // subtle full-screen flash: gold for premium rarities, element otherwise
+            GUI.color = new Color(edgeColor.r, edgeColor.g, edgeColor.b,
+                (takeover ? .30f : premiumCut ? .22f : .16f) * (1f - t));
+            GUI.DrawTexture(new Rect(0f, 0f, 540f, 960f), Texture2D.whiteTexture);
+            if (takeover)
+            {
+                // Full-screen ultimate takeover: dark veil + expanding tier ring
+                Matrix4x4 ringKeep = GUI.matrix;
+                GUI.color = new Color(0f, 0f, 0f, .55f * a);
+                GUI.DrawTexture(new Rect(0f, 0f, 540f, 960f), Texture2D.whiteTexture);
+                float ringR = 90f + 620f * t;
+                int ringSegs = 28;
+                for (int i = 0; i < ringSegs; i++)
+                {
+                    float ang = i * 6.28318f / ringSegs;
+                    float segFade = .5f + .5f * Mathf.Sin(ang * 3f + t * 9f);
+                    GUI.color = new Color(edgeColor.r, edgeColor.g, edgeColor.b,
+                        .5f * segFade * a);
+                    GUIUtility.RotateAroundPivot(ang * 57.2958f, new Vector2(270f, 480f));
+                    GUI.DrawTexture(new Rect(270f - 2f, 480f - ringR, 4f, 26f + 30f * segFade),
+                        Texture2D.whiteTexture);
+                }
+                GUI.matrix = ringKeep;
+                // Short animated ultimate clip for heroes with frame art
+                // (charge -> strike): plays full-screen over the veil.
+                Texture2D[] frames;
+                if (!cutInAnimFrames.TryGetValue(cutInHero, out frames))
+                {
+                    frames = ChroniclesPortraitAssets.AnimatedFrames(cutInHero);
+                    // End the clip on the hero's ultimate splash art when it exists
+                    Texture2D ultArt = Resources.Load<Texture2D>(
+                        "Chronicles/Poses/" + cutInHero + "_ultimate");
+                    if (ultArt != null)
+                    {
+                        int n = frames != null ? frames.Length : 0;
+                        Texture2D[] withUlt = new Texture2D[n + 3];
+                        if (n > 0) frames.CopyTo(withUlt, 0);
+                        withUlt[n] = ultArt; withUlt[n + 1] = ultArt; withUlt[n + 2] = ultArt;
+                        frames = withUlt;
+                    }
+                    cutInAnimFrames[cutInHero] = frames;
+                }
+                if (frames != null && frames.Length > 1)
+                {
+                    int fi = Mathf.Clamp((int)(t * frames.Length * .92f),
+                        0, frames.Length - 1);
+                    Texture2D frame = frames[fi];
+                    if (frame != null)
+                    {
+                        // cover-crop to the full screen, preserving aspect
+                        float scrAr = 540f / 960f;
+                        float texAr = (float)frame.width / frame.height;
+                        Rect uv = new Rect(0f, 0f, 1f, 1f);
+                        if (texAr > scrAr)
+                        {
+                            float w = scrAr / texAr;
+                            uv = new Rect((1f - w) * .5f, 0f, w, 1f);
+                        }
+                        else
+                        {
+                            float h = texAr / scrAr;
+                            uv = new Rect(0f, (1f - h) * .5f, 1f, h);
+                        }
+                        GUI.color = new Color(1f, 1f, 1f, a);
+                        GUI.DrawTextureWithTexCoords(
+                            new Rect(0f, 0f, 540f, 960f), frame, uv);
+                    }
+                }
+            }
+            // diagonal slash band with element edge lines and speed lines
+            Matrix4x4 keepMatrix = GUI.matrix;
+            GUIUtility.RotateAroundPivot(-9f, new Vector2(270f, 470f));
+            GUI.color = new Color(0f, 0f, 0f, .8f * a);
+            GUI.DrawTexture(new Rect(-60f, 392f, 660f, 196f), Texture2D.whiteTexture);
+            GUI.color = new Color(edgeColor.r, edgeColor.g, edgeColor.b, .85f * a);
+            GUI.DrawTexture(new Rect(-60f, 392f, 660f, 4f), Texture2D.whiteTexture);
+            GUI.DrawTexture(new Rect(-60f, 584f, 660f, 4f), Texture2D.whiteTexture);
+            if (premiumCut)
+            {
+                GUI.color = new Color(1f, .85f, .5f, .5f * a);
+                GUI.DrawTexture(new Rect(-60f, 399f, 660f, 2f), Texture2D.whiteTexture);
+                GUI.DrawTexture(new Rect(-60f, 579f, 660f, 2f), Texture2D.whiteTexture);
+            }
+            for (int i = 0; i < 4; i++)
+            {
+                float lineY = 412f + i * 42f + 14f * Mathf.Sin(i * 2.1f);
+                float lineW = 210f + 80f * i;
+                GUI.color = new Color(ec.r, ec.g, ec.b, (.38f - .07f * i) * a);
+                GUI.DrawTexture(new Rect(560f - lineW + 26f * i, lineY, lineW, 3f), Texture2D.whiteTexture);
+            }
+            GUI.matrix = keepMatrix;
+            // hero splash: full-body cutout when one exists, else static portrait
+            // comic speech bubble with the skill name near the splash
+            if (!string.IsNullOrEmpty(cutInSkill))
+            {
+                if (speechBubbleTex == null)
+                    speechBubbleTex = Resources.Load<Texture2D>("Chronicles/UI/speech_bubble");
+                if (bubbleStyle == null)
+                {
+                    bubbleStyle = new GUIStyle(GUI.skin.label) {
+                        fontSize = 17, fontStyle = FontStyle.BoldAndItalic,
+                        alignment = TextAnchor.MiddleCenter };
+                    bubbleStyle.normal.textColor = new Color(.1f, .08f, .14f);
+                }
+                float bubA = Mathf.Clamp01((t - .1f) / .12f) * (1f - outT);
+                if (bubA > 0f)
+                {
+                    GUI.color = new Color(1f, 1f, 1f, bubA);
+                    if (speechBubbleTex != null)
+                        GUI.DrawTexture(new Rect(250f, 128f, 250f, 140f), speechBubbleTex);
+                    GUI.color = new Color(.1f, .08f, .14f, bubA);
+                    GUI.Label(new Rect(258f, 150f, 234f, 84f), cutInSkill, bubbleStyle);
+                    GUI.color = Color.white;
+                }
+            }
+            Texture2D portrait;
+            string portraitKey = cutInHero + (cutInUltimate ? "_u" : "_s");
+            if (!cutInPortraits.TryGetValue(portraitKey, out portrait))
+            {
+                // Prefer the hero's generated skill/ultimate splash pose
+                portrait = Resources.Load<Texture2D>("Chronicles/Poses/" + cutInHero +
+                    (cutInUltimate ? "_ultimate" : "_skill"));
+                if (portrait == null)
+                    portrait = Resources.Load<Texture2D>("Chronicles/HomeCutouts/" + cutInHero);
+                if (portrait == null)
+                    portrait = Resources.Load<Texture2D>("Chronicles/Portraits/Static/" + cutInHero);
+                cutInPortraits[portraitKey] = portrait;
+            }
+            if (portrait != null)
+            {
+                float slide = Mathf.Lerp(-430f, 0f, inT) - 390f * outT;
+                float maxW = takeover ? 540f : 470f, maxH = takeover ? 800f : 700f;
+                float ar = (float)portrait.width / portrait.height;
+                float ph = maxH, pw = ph * ar;
+                if (pw > maxW) { pw = maxW; ph = pw / ar; }
+                Rect fit = new Rect(-70f + slide, 170f + (maxH - ph), pw, ph);
+                float fadeW = Mathf.Min(110f, fit.width * .35f);
+                float fadeH = Mathf.Min(100f, fit.height * .2f);
+                float bodyW = fit.width - fadeW, bodyH = fit.height - fadeH;
+                GUI.color = new Color(1f, 1f, 1f, a);
+                // opaque body (left + bottom chunk)
+                GUI.DrawTextureWithTexCoords(
+                    new Rect(fit.x, fit.y + fadeH, bodyW, bodyH), portrait,
+                    new Rect(0f, 0f, bodyW / fit.width, bodyH / fit.height));
+                // right-edge fade: vertical strips with falling alpha
+                for (int i = 0; i < 5; i++)
+                {
+                    float sx = bodyW + i * fadeW / 5f;
+                    GUI.color = new Color(1f, 1f, 1f, a * (1f - (i + 1f) / 5f));
+                    GUI.DrawTextureWithTexCoords(
+                        new Rect(fit.x + sx, fit.y, fadeW / 5f, fit.height), portrait,
+                        new Rect(sx / fit.width, 0f, fadeW / 5f / fit.width, 1f));
+                }
+                // top-edge fade over the body region
+                for (int i = 0; i < 4; i++)
+                {
+                    float sy = fadeH - (i + 1f) * fadeH / 4f;
+                    GUI.color = new Color(1f, 1f, 1f, a * (1f - (i + 1f) / 4f));
+                    GUI.DrawTextureWithTexCoords(
+                        new Rect(fit.x, fit.y + sy, bodyW, fadeH / 4f), portrait,
+                        new Rect(0f, (fit.height - sy - fadeH / 4f) / fit.height,
+                            bodyW / fit.width, fadeH / 4f / fit.height));
+                }
+            }
+            if (cutHero != null)
+            {
+                if (premiumCut)
+                {
+                    cutInSkillStyle.normal.textColor = Color.white;
+                    GUI.color = new Color(0f, 0f, 0f, .9f * a);
+                    GUI.Label(new Rect(298f, 396f, 240f, 26f),
+                        cutHero.rarity == Rarity.EX ? "* EXCLUSIVE *" :
+                        cutHero.rarity == Rarity.SSRP ? "* SSR+ *" : "* ULTRA RARE *", cutInSkillStyle);
+                    GUI.color = new Color(1f, .85f, .5f, a);
+                    GUI.Label(new Rect(296f, 394f, 240f, 26f),
+                        cutHero.rarity == Rarity.EX ? "* EXCLUSIVE *" :
+                        cutHero.rarity == Rarity.SSRP ? "* SSR+ *" : "* ULTRA RARE *", cutInSkillStyle);
+                }
+                string cutName = cutHero.name.ToUpperInvariant();
+                GUI.color = new Color(0f, 0f, 0f, .9f * a);
+                GUI.Label(new Rect(298f, 426f, 240f, 52f), cutName, cutInNameStyle);
+                GUI.Label(new Rect(298f, 478f, 240f, 36f), string.IsNullOrEmpty(cutInSkill) ? "" : cutInSkill.ToUpperInvariant(), cutInSkillStyle);
+                GUI.color = new Color(1f, 1f, 1f, a);
+                GUI.Label(new Rect(296f, 424f, 240f, 52f), cutName, cutInNameStyle);
+                if (!string.IsNullOrEmpty(cutInSkill))
+                {
+                    cutInSkillStyle.normal.textColor = ec;
+                    GUI.Label(new Rect(296f, 476f, 240f, 36f), cutInSkill.ToUpperInvariant(), cutInSkillStyle);
+                }
+            }
+            GUI.color = Color.white;
         }
 
         private void OnDestroy()
         {
+            Time.timeScale = 1f;
             foreach (var item in materials) if (item.Value != null) Destroy(item.Value);
             if (goldMaterial != null) Destroy(goldMaterial);
             if (groundMaterial != null) Destroy(groundMaterial);
             if (redMaterial != null) Destroy(redMaterial);
+            if (sandstoneMaterial != null) Destroy(sandstoneMaterial);
+            if (sandstoneDarkMaterial != null) Destroy(sandstoneDarkMaterial);
         }
     }
 }

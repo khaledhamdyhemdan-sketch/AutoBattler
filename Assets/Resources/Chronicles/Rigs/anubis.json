@@ -1,0 +1,15 @@
+{
+  "height": 2.1,
+  "parts": [
+    {
+      "name": "body",
+      "role": "body",
+      "x": 0.0,
+      "y": 0.0,
+      "w": 1.0,
+      "h": 1.0,
+      "pivotX": 0.5,
+      "pivotY": 0.0
+    }
+  ]
+}

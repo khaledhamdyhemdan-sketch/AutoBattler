@@ -46,17 +46,61 @@ namespace MythicChronicles
                 "ASTRAL COVENANT - LIGHT & DARK UR" : "STANDARD SUMMON";
         }
 
+        public static float EffectiveAstralUrRate(System.DateTime utcNow)
+        {
+            return AstralUrRate * (ChroniclesEvents.AstralRateUpActive(utcNow) ? 2f : 1f);
+        }
+
         public static string Rates(SummonBannerType banner)
         {
-            return banner == SummonBannerType.AstralCovenant ?
-                "SR 70.0% | SSR 28.5% | UR 1.5% | 70-pull UR pity" :
-                "R 20% | SR 65% | SSR 15% | 40-pull SSR pity";
+            if (banner == SummonBannerType.AstralCovenant)
+                return ChroniclesEvents.AstralRateUpActive(System.DateTime.UtcNow) ?
+                    "SR 70.0% | SSR 28.5% | UR 3.0% FESTIVAL | 70-pull UR pity" :
+                    "SR 70.0% | SSR 28.5% | UR 1.5% | 70-pull UR pity";
+            return "R 20% | SR 65% | SSR 15% | 40-pull SSR pity";
         }
 
         public static int GemCost(SummonBannerType banner)
         {
             return banner == SummonBannerType.AstralCovenant ?
                 AstralCostGems : StandardCostGems;
+        }
+
+        // Wishlist: a chosen UR wins half of all UR hits on the Astral banner.
+        public const float WishlistUrShare = .5f;
+
+        public static HeroDefinition PickFromPool(SummonBannerType banner,
+            Rarity tier, List<HeroDefinition> pool, string wishHeroId)
+        {
+            if (banner == SummonBannerType.AstralCovenant && tier == Rarity.UR &&
+                !string.IsNullOrEmpty(wishHeroId) &&
+                UnityEngine.Random.value < WishlistUrShare)
+            {
+                foreach (HeroDefinition candidate in pool)
+                    if (candidate.id == wishHeroId) return candidate;
+            }
+            return pool[UnityEngine.Random.Range(0, pool.Count)];
+        }
+
+        public static string WishlistLabel(string wishHeroId)
+        {
+            if (string.IsNullOrEmpty(wishHeroId)) return "WISHLIST: NONE";
+            HeroDefinition hero = WorldsCatalog.FindHero(wishHeroId);
+            return hero == null ? "WISHLIST: NONE" :
+                "WISH UP 50%: " + hero.name.ToUpperInvariant();
+        }
+
+        // Cycles to the next eligible UR; returns "" after the last one.
+        public static string NextWishlistPick(string currentId)
+        {
+            List<HeroDefinition> pool = Eligible(
+                SummonBannerType.AstralCovenant, Rarity.UR);
+            if (pool.Count == 0) return "";
+            if (string.IsNullOrEmpty(currentId)) return pool[0].id;
+            for (int i = 0; i < pool.Count; i++)
+                if (pool[i].id == currentId)
+                    return i + 1 < pool.Count ? pool[i + 1].id : "";
+            return pool[0].id;
         }
 
         public static List<HeroDefinition> Eligible(SummonBannerType banner, Rarity rarity)

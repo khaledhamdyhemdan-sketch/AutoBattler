@@ -11,7 +11,7 @@ namespace MythicChronicles
         {
             "WELCOME! Explore a world of " + HeroRosterData.HeroCount + " mythic heroes.",
             "HEROES: inspect rarity, element and signature skills.",
-            "FORMATION: assemble five heroes before entering combat.",
+            "FORMATION: assemble six heroes before entering combat.",
             "ADVENTURE: clear story chapters, Elite and Dark trials.",
             "SUMMON: spend earned tickets or gems to expand your roster."
         };

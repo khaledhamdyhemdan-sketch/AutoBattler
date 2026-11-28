@@ -1,0 +1,39 @@
+{
+  "height": 2.1,
+  "parts": [
+    {
+      "name": "body",
+      "role": "body",
+      "x": 0.0,
+      "y": 0.0,
+      "w": 0.5,
+      "h": 1.0,
+      "pivotX": 0.5,
+      "pivotY": 0.0
+    },
+    {
+      "name": "head",
+      "role": "head",
+      "parent": "body",
+      "x": 0.666,
+      "y": 0.694,
+      "w": 0.1758,
+      "h": 0.306,
+      "pivotX": 0.486,
+      "pivotY": 0.2979,
+      "sampleOffsetU": 0.5
+    },
+    {
+      "name": "arm_r",
+      "role": "armFront",
+      "parent": "body",
+      "x": 0.8711,
+      "y": 0.4987,
+      "w": 0.1289,
+      "h": 0.2148,
+      "pivotX": 0.2652,
+      "pivotY": 0.3485,
+      "sampleOffsetU": 0.5
+    }
+  ]
+}

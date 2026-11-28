@@ -69,6 +69,65 @@ namespace MythicChronicles.Editor
                 PlayerSettings.Android.useCustomKeystore = previousCustomKeystore;
             }
         }
+
+        /// <summary>
+        /// CI entry point: builds the release-signed APK using the keystore
+        /// supplied through environment variables (never committed). Falls
+        /// back to debug signing when the variables are absent.
+        /// </summary>
+        public static void BuildApkFromCi()
+        {
+            if (!File.Exists(MainScene))
+                throw new InvalidOperationException("Main game scene is missing.");
+            PlayerSettings.defaultInterfaceOrientation = UIOrientation.Portrait;
+            string ks = Environment.GetEnvironmentVariable("KEYSTORE_PATH");
+            string ksPass = Environment.GetEnvironmentVariable("KEYSTORE_PASS");
+            string alias = Environment.GetEnvironmentVariable("KEYALIAS_NAME");
+            string aliasPass = Environment.GetEnvironmentVariable("KEYALIAS_PASS");
+            bool signed = !string.IsNullOrEmpty(ks) && File.Exists(ks);
+            Debug.Log("[Chronicles] CI keystore path='" + ks + "' exists=" +
+                (ks != null && File.Exists(ks)) +
+                (signed ? "" : " -> debug signing fallback"));
+            if (signed)
+            {
+                // Unity validates the keystore relative to the project in some
+                // pipeline paths, so copy it inside the workspace.
+                string localKs = Path.Combine(Directory.GetCurrentDirectory(),
+                    "Builds", "Chronicles", "ci.keystore");
+                Directory.CreateDirectory(Path.GetDirectoryName(localKs));
+                File.Copy(ks, localKs, true);
+                PlayerSettings.Android.useCustomKeystore = true;
+                PlayerSettings.Android.keystoreName = localKs;
+                PlayerSettings.Android.keystorePass = ksPass;
+                PlayerSettings.Android.keyaliasName = alias;
+                PlayerSettings.Android.keyaliasPass = aliasPass;
+                Debug.Log("[Chronicles] CI signing with keystore '" + localKs +
+                    "' alias='" + alias + "' fileExists=" + File.Exists(localKs));
+            }
+            else
+            {
+                PlayerSettings.Android.useCustomKeystore = false;
+                Debug.LogWarning("[Chronicles] CI keystore not found; building with debug signing.");
+            }
+            string folder = Path.Combine(Directory.GetCurrentDirectory(), "Builds", "Chronicles");
+            Directory.CreateDirectory(folder);
+            string destination = Path.Combine(folder, "Chronicles_Android.apk");
+            EditorUserBuildSettings.buildAppBundle = false;
+            var settings = new BuildPlayerOptions
+            {
+                scenes = new[] { MainScene },
+                locationPathName = destination,
+                target = BuildTarget.Android,
+                options = BuildOptions.None
+            };
+            BuildReport report = BuildPipeline.BuildPlayer(settings);
+            if (report.summary.result != BuildResult.Succeeded)
+                throw new InvalidOperationException(
+                    "Android build failed: " + report.summary.result);
+            Debug.Log("[Chronicles] CI Android build succeeded: " + destination);
+            EditorApplication.Exit(0);
+        }
     }
 }
+
 #endif

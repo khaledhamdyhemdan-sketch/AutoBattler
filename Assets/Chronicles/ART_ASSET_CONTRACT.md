@@ -4,6 +4,12 @@
 
 # Original artwork / animations / audio: integration contract
 
+> **Interim battle visuals (2026-11-24):** until the rigs below exist, battles render
+> heroes through a runtime 2D skeletal rig built from the portrait art
+> (`HeroBattleVisual2D`, see [docs/BATTLE_2D_HERO_RIGS.md](../../docs/BATTLE_2D_HERO_RIGS.md)).
+> The capsule fallback now appears only for heroes with no portrait art. The 3D prefab
+> contract below stays the final production path and takes precedence when prefabs land.
+
 **State:** Art and audio production specification. These assets are **NOT** in the repository yet.
 **Working game title:** Chronicles of the Loom (temporary).
 

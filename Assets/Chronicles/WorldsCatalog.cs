@@ -10,6 +10,8 @@ namespace MythicChronicles
     // Launch ranks: R -> SR -> SSR -> UR. EX is reserved and cannot be obtained.
     // Aliases preserve compatibility with earlier development data and source.
     public enum Rarity { R = 0, SR = 1, SSR = 2, UR = 3, EX = 4,
+        SSRP = 5, // SSR+ ascended tier: between SSR and UR in power,
+                  // ultimate gets the full-screen takeover like UR/EX.
         Rare = R, Epic = SR, Legendary = SSR }
 
     [Serializable]
@@ -103,6 +105,6 @@ namespace MythicChronicles
         // Starter team provides all four ordinary elements and a healer,
         // without granting scarce Light/Dark UR units at sign-up.
         public static readonly string[] StartingHeroes =
-            { "sobek", "bastet", "set", "nephthys", "persephone" };
+            { "sobek", "bastet", "set", "nephthys", "persephone", "hypatia" };
     }
 }
