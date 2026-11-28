@@ -3440,17 +3440,17 @@ namespace MythicChronicles
                 int lost = battle.AlliesTotal - battle.AlliesAlive;
                 int stars = lost <= 0 ? 3 : (lost == 1 ? 2 : 1);
                 GUIStyle starStyle = new GUIStyle(heading) {
-                    alignment = TextAnchor.MiddleCenter, fontSize = 30,
+                    alignment = TextAnchor.MiddleCenter, fontSize = 40,
                     fontStyle = FontStyle.Bold };
                 starStyle.clipping = TextClipping.Overflow; starStyle.wordWrap = false;
                 for (int si = 0; si < 3; si++)
                 {
-                    Rect sr = new Rect(186 + si * 56, 424, 50, 34);
+                    Rect sr = new Rect(180 + si * 60, 406, 56, 42);
                     starStyle.normal.textColor = si < stars ?
-                        new Color(1f, .82f, .25f) : new Color(.3f, .28f, .36f);
+                        new Color(1f, .82f, .25f) : new Color(.55f, .55f, .68f);
                     GUI.Label(new Rect(sr.x + 1, sr.y + 2, sr.width, sr.height), "\u2605",
                         new GUIStyle(starStyle) { normal = { textColor = new Color(0f, 0f, 0f, .6f) } });
-                    GUI.Label(sr, "\u2605", starStyle);
+                    GUI.Label(sr, si < stars ? "\u2605" : "\u2606", starStyle);
                 }
             }
             DrawVsResults(new Rect(38, 452, 464, 196), 452f);
