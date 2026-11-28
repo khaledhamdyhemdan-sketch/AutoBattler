@@ -990,7 +990,7 @@ namespace MythicChronicles
                     if (f == upNext && f.lungeT <= 0f && f.castPopT <= 0f && f.stunned <= 0f)
                     {
                         upGlow = .5f + .5f * Mathf.Sin(elapsed * 9f);
-                        float us = f.panelCardSize * (1f + .035f * upGlow);
+                        float us = f.panelCardSize * (1f + .05f * upGlow);
                         f.panelQuad.transform.localScale = new Vector3(us, us, 1f);
                     }
                     if (cardRenderer != null && cardRenderer.material.HasProperty("_Color"))
@@ -998,7 +998,7 @@ namespace MythicChronicles
                         Color cardTint = Color.Lerp(
                             Color.white, new Color(1f, .5f, .45f, 1f), flash * .85f);
                         if (upGlow > 0f)
-                            cardTint = Color.Lerp(cardTint, new Color(1f, .95f, .6f, 1f), .35f * upGlow);
+                            cardTint = Color.Lerp(cardTint, new Color(1f, .95f, .6f, 1f), .6f * upGlow);
                         cardRenderer.material.color = cardTint;
                     }
                     f.panelQuad.transform.position = pos;
@@ -1796,7 +1796,7 @@ namespace MythicChronicles
                 if (point.z <= 0f) continue;
                 if (popupBigStyle == null)
                 {
-                    popupBigStyle = new GUIStyle(GUI.skin.label) { fontSize = PanelLayout ? 32 : 26, fontStyle = FontStyle.BoldAndItalic, alignment = TextAnchor.MiddleCenter, wordWrap = false, clipping = TextClipping.Overflow };
+                    popupBigStyle = new GUIStyle(GUI.skin.label) { fontSize = PanelLayout ? 28 : 26, fontStyle = FontStyle.BoldAndItalic, alignment = TextAnchor.MiddleCenter, wordWrap = false, clipping = TextClipping.Overflow };
                     popupSmallStyle = new GUIStyle(GUI.skin.label) { fontSize = PanelLayout ? 28 : 20, fontStyle = FontStyle.Bold, alignment = TextAnchor.MiddleCenter, wordWrap = false, clipping = TextClipping.Overflow };
                 }
                 GUIStyle st = popup.big ? popupBigStyle : popupSmallStyle;
@@ -1808,7 +1808,7 @@ namespace MythicChronicles
                 if (PanelLayout)
                 {
                     // Keep long skill names inside the card walls (left of the rail).
-                    float halfText = Mathf.Min(220f, popup.text.Length * (popup.big ? 16f : 14f) * .5f * .9f + 6f);
+                    float halfText = Mathf.Min(220f, popup.text.Length * (popup.big ? 28f : 24f) * .30f + 8f);
                     cx = Mathf.Clamp(cx, halfText + 4f, (540f - RailPx) - halfText - 4f);
                 }
                 Matrix4x4 oldM = GUI.matrix;
