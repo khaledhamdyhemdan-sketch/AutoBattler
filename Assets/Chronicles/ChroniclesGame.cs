@@ -3434,6 +3434,25 @@ namespace MythicChronicles
                 activeTrialMode + " • " + stage.name +
                     "\nCampaign rank: " + ChroniclesTrials.CampaignRank(progress.Data),
                 subtitle);
+            if (lastVictory && battle != null)
+            {
+                // Three-star rating from survivors: all alive = 3, lose one = 2, else 1.
+                int lost = battle.AlliesTotal - battle.AlliesAlive;
+                int stars = lost <= 0 ? 3 : (lost == 1 ? 2 : 1);
+                GUIStyle starStyle = new GUIStyle(heading) {
+                    alignment = TextAnchor.MiddleCenter, fontSize = 30,
+                    fontStyle = FontStyle.Bold };
+                starStyle.clipping = TextClipping.Overflow; starStyle.wordWrap = false;
+                for (int si = 0; si < 3; si++)
+                {
+                    Rect sr = new Rect(186 + si * 56, 424, 50, 34);
+                    starStyle.normal.textColor = si < stars ?
+                        new Color(1f, .82f, .25f) : new Color(.3f, .28f, .36f);
+                    GUI.Label(new Rect(sr.x + 1, sr.y + 2, sr.width, sr.height), "\u2605",
+                        new GUIStyle(starStyle) { normal = { textColor = new Color(0f, 0f, 0f, .6f) } });
+                    GUI.Label(sr, "\u2605", starStyle);
+                }
+            }
             DrawVsResults(new Rect(38, 452, 464, 196), 452f);
             if (lastVictory && activeTrialMode == TrialMode.Normal &&
                 !inTower && !inGuildBoss && !inEventAdventure && !inElementalGate &&

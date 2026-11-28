@@ -1118,6 +1118,8 @@ namespace MythicChronicles
             }
         }
 
+        public int AlliesAlive { get { int n = 0; foreach (Combatant u in units) if (u.side == 0 && u.Alive) n++; return n; } }
+        public int AlliesTotal { get { int n = 0; foreach (Combatant u in units) if (u.side == 0) n++; return n; } }
         public int TurnsTaken;
         public int RoundNumber { get { return 1 + TurnsTaken / 12; } }
 
